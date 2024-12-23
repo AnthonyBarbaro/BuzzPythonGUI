@@ -1,0 +1,22 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+
+# Virtual environment
+.venv/
+venv/
+
+# Local config / secrets
+login.py
+config.txt
+guiScript.py
+
+# Generated output
+files/
+done/
+
+# OS artifacts
+.DS_Store
+Thumbs.db
