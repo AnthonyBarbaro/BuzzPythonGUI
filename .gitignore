@@ -24,3 +24,6 @@ deals.db
 # OS artifacts
 .DS_Store
 Thumbs.db
+# Ignore generated brand reports
+brand_reports_LM/
+brand_reports_MV/
