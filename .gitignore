@@ -12,11 +12,15 @@ venv/
 login.py
 config.txt
 guiScript.py
+brand_reports/
+deal_reports/
+old/
 
 # Generated output
 files/
 done/
 
+deals.db
 # OS artifacts
 .DS_Store
 Thumbs.db

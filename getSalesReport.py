@@ -140,44 +140,47 @@ def clickActionsAndExport(current_store):
         files_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "files")
         before_files = set(os.listdir(files_dir))
 
+        # Click the Actions button
         actions_button = wait.until(EC.element_to_be_clickable((By.ID, 'actions-menu-button')))
         actions_button.click()
         print("Actions button clicked successfully.")
         time.sleep(1)
-        
+
+        # Select the Export option
         export_option = wait.until(EC.element_to_be_clickable((By.XPATH, "//li[contains(text(),'Export')]")))
         export_option.click()
         print("Export option clicked successfully.")
         time.sleep(1)
 
+        # Click the Export CSV button
         export_csv_button = wait.until(EC.element_to_be_clickable(
-            (By.CSS_SELECTOR, "body > div.sc-jYnRlT.kGxwGQ.sc-heKhxA.Bgfyt.MuiDialog-root.sc-bBPnyn.hrApOB.MuiModal-root "
-                              "> div.sc-fhrEpP.dWiAWv.MuiDialog-container.MuiDialog-scrollPaper "
-                              "> div > div.sc-iyxVF.bdkceX.MuiDialogActions-root.MuiDialogActions-spacing.sc-fopvND.finsng "
-                              "> div.primary-actions > button:nth-child(1)")))
-        time.sleep(1)
+            (By.CSS_SELECTOR, 
+             "body > div.sc-jYnRlT.kGxwGQ.sc-heKhxA.Bgfyt.MuiDialog-root.sc-bBPnyn.hrApOB.MuiModal-root "
+             "> div.sc-fhrEpP.dWiAWv.MuiDialog-container.MuiDialog-scrollPaper "
+             "> div > div.sc-iyxVF.bdkceX.MuiDialogActions-root.MuiDialogActions-spacing.sc-fopvND.finsng "
+             "> div.primary-actions > button:nth-child(1)")))
         export_csv_button.click()
         print("Export CSV button clicked successfully.")
 
-        new_file = wait_for_new_file(files_dir, before_files, timeout=60)
+        # Wait for the new file to be downloaded
+        new_file = wait_for_new_file(files_dir, before_files, timeout=120)
         if new_file:
             print(f"New file downloaded: {new_file}")
             store_abbr = store_abbr_map.get(current_store, "UNK")
             extension = os.path.splitext(new_file)[1]
 
-            # If you want the format:
-            # SR_{store_abbr}_{start_str}-{end_str}{extension}
-            # Example: SR_MV_12-09-2024-12-15-2024.csv
-            new_filename = f"sales{store_abbr}_{start_str}-{end_str}{extension}"
+            # Construct the new filename
+            new_filename = f"SR_{store_abbr}_{start_str}-{end_str}{extension}"
 
             original_path = os.path.join(files_dir, new_file)
             new_path = os.path.join(files_dir, new_filename)
 
-            # If file with same name exists, delete it to replace
+            # Remove any existing file with the new name
             if os.path.exists(new_path):
                 os.remove(new_path)
                 print(f"Removed existing file: {new_filename}")
 
+            # Attempt to rename the file
             try:
                 os.rename(original_path, new_path)
                 print(f"Renamed {new_file} to {new_filename}")
@@ -186,13 +189,12 @@ def clickActionsAndExport(current_store):
         else:
             print("No new file detected after export.")
 
-
-        
         time.sleep(1)
     except TimeoutException:
         print("An element could not be found or clicked within the timeout period.")
     except Exception as e:
-        print(f"An error occurred during export: {e}")
+        print(f"An error occurred during export: {traceback.format_exc()}")
+
 
 def update_days_combobox(year_combo, month_combo, day_combo):
     # Weekday abbreviations
