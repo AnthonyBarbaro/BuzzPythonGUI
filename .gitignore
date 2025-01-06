@@ -3,11 +3,12 @@ __pycache__/
 *.py[cod]
 *.egg-info/
 *.egg
-
+.env
 # Virtual environment
 .venv/
 venv/
 
+credentials.json
 # Local config / secrets
 login.py
 config.txt
@@ -27,3 +28,5 @@ Thumbs.db
 # Ignore generated brand reports
 brand_reports_LM/
 brand_reports_MV/
+links.txt
+token.json

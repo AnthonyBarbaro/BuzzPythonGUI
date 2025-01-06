@@ -50,7 +50,8 @@ brand_criteria = {
         'discount': 0.50,
         'kickback': 0.20,
         'categories': ['Pre-Rolls'],
-        'brands': ['Jeeter']
+        'brands': ['Jeeter'],
+        'excluded_phrases': ['(3pk)','Jeeter | SVL']
     },
     'Kiva': {
         'vendors': ['KIVA / LCISM CORP', 'Vino & Cigarro, LLC'],
@@ -59,7 +60,7 @@ brand_criteria = {
         'kickback': 0.25,
         'brands': ['Terra', 'Petra', 'Kiva', 'Lost Farms', 'Camino']
     },
-    'Big Petes': {
+    'BigPetes': {
         'vendors': ['KIVA / LCISM CORP', 'Vino & Cigarro, LLC'],
         'days': ['Tuesday'],
         'discount': 0.50,
@@ -109,7 +110,7 @@ brand_criteria = {
         'brands': ['Wyld', 'Good Tide']
     },
     'Jetty': {
-        'vendors': ['KIVA / LCISM CORP', 'Vino & Cigarro, LLC'],
+        'vendors': ['KIVA / LCISM CORP', 'Vino & Cigarro, LLC','Garden Of Weeden Inc.'],
         'days': ['Thursday'],
         'discount': 0.50,
         'kickback': 0.25,
@@ -124,9 +125,9 @@ def run_deals_for_store(store):
     Returns a list of dicts: [{'store': ..., 'brand': ..., 'inventory_cost': ..., 'kickback': ..., 'start': ..., 'end': ...}, ...]
     """
     if store == 'MV':
-        file_path = 'files/salesMV.xlsx'
+        file_path = 'files/salesMV1.xlsx'
     elif store == 'LM':
-        file_path = 'files/salesLM.xlsx'
+        file_path = 'files/salesLM1.xlsx'
     else:
         raise ValueError(f"Invalid store: {store}")
 

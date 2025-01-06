@@ -5,12 +5,6 @@ import sqlite3
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 from datetime import datetime
-from enhanced_deals import (
-    update_deal_kickbacks,  # Updates deals with calculated kickbacks and descriptions
-    attach_invoice,         # Handles invoice file management
-    update_applied_status,  # Marks a deal as applied with optional notes
-    init_enhancements       # Ensures database schema enhancements are applied
-)
 
 
 # If your deals logic returns {brand, owed, start, end, location, ...}, import that function:
