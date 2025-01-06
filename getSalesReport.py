@@ -135,11 +135,14 @@ def click_run_button():
 
 def clickActionsAndExport(current_store):
     try:
-        time.sleep(10)
+        print("\n=== Exporting data for store:", current_store, "===")
+        time.sleep(10)  # Wait for any UI loading
         wait = WebDriverWait(driver, 10)
         files_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "files")
-        before_files = set(os.listdir(files_dir))
-
+        
+        # Get a unique identifier for the current operation
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        
         # Click the Actions button
         actions_button = wait.until(EC.element_to_be_clickable((By.ID, 'actions-menu-button')))
         actions_button.click()
@@ -154,7 +157,7 @@ def clickActionsAndExport(current_store):
 
         # Click the Export CSV button
         export_csv_button = wait.until(EC.element_to_be_clickable(
-            (By.CSS_SELECTOR, 
+            (By.CSS_SELECTOR,
              "body > div.sc-jYnRlT.kGxwGQ.sc-heKhxA.Bgfyt.MuiDialog-root.sc-bBPnyn.hrApOB.MuiModal-root "
              "> div.sc-fhrEpP.dWiAWv.MuiDialog-container.MuiDialog-scrollPaper "
              "> div > div.sc-iyxVF.bdkceX.MuiDialogActions-root.MuiDialogActions-spacing.sc-fopvND.finsng "
@@ -163,33 +166,30 @@ def clickActionsAndExport(current_store):
         print("Export CSV button clicked successfully.")
 
         # Wait for the new file to be downloaded
-        new_file = wait_for_new_file(files_dir, before_files, timeout=120)
-        if new_file:
-            print(f"New file downloaded: {new_file}")
-            store_abbr = store_abbr_map.get(current_store, "UNK")
-            extension = os.path.splitext(new_file)[1]
+        print("Waiting for file to download...")
+        downloaded_file = wait_for_new_file(files_dir, set(os.listdir(files_dir)), timeout=120)
+        if downloaded_file:
+            print(f"New file downloaded: {downloaded_file}")
+            original_path = os.path.join(files_dir, downloaded_file)
 
-            # Construct the new filename
-            new_filename = f"SR_{store_abbr}_{start_str}-{end_str}{extension}"
+            # Determine store-specific filename
+            if current_store == "Buzz Cannabis - Mission Valley":
+                new_filename = f"salesMV_{timestamp}.csv"
+            elif current_store == "Buzz Cannabis-La Mesa":
+                new_filename = f"salesLM_{timestamp}.csv"
+            else:
+                new_filename = f"sales_{current_store}_{timestamp}.csv"
 
-            original_path = os.path.join(files_dir, new_file)
             new_path = os.path.join(files_dir, new_filename)
 
-            # Remove any existing file with the new name
-            if os.path.exists(new_path):
-                os.remove(new_path)
-                print(f"Removed existing file: {new_filename}")
-
-            # Attempt to rename the file
+            # Rename the file
             try:
                 os.rename(original_path, new_path)
-                print(f"Renamed {new_file} to {new_filename}")
+                print(f"Renamed file to: {new_filename}")
             except Exception as e:
                 print(f"Error renaming file: {e}")
         else:
             print("No new file detected after export.")
-
-        time.sleep(1)
     except TimeoutException:
         print("An element could not be found or clicked within the timeout period.")
     except Exception as e:
