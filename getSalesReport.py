@@ -191,16 +191,12 @@ def clickActionsAndExport(current_store):
         print("Export option clicked successfully.")
         time.sleep(1)
 
-        # Click the Export CSV button
-        try:
-            export_csv_button = wait.until(EC.element_to_be_clickable(
-                (By.XPATH, "//button[contains(text(),'Export CSV')]")
-            ))
-            export_csv_button.click()
-            print("Export CSV button clicked successfully.")
-        except TimeoutException:
-            print("Export CSV button was not explicitly detected, but download may proceed.")
-
+        # Wait for a new file to appear in the directory
+        downloaded_file = wait_for_new_file(files_dir, before_files, timeout=120)
+        if downloaded_file:
+            original_path = os.path.join(files_dir, downloaded_file)
+            print(f"New file detected: {downloaded_file}")
+            
         # Check the folder contents after download
         time.sleep(1)  # Short wait to ensure the file is written
         after_files = set(os.listdir(files_dir))
