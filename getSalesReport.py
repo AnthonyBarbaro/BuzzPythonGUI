@@ -34,7 +34,7 @@ start_str = None
 end_str = None
 driver = None
 
-def wait_for_new_file(download_directory, before_files, timeout=30):
+def wait_for_new_file(download_directory, before_files, timeout=12):
     end_time = time.time() + timeout
     while time.time() < end_time:
         after_files = set(os.listdir(download_directory))
@@ -132,19 +132,58 @@ def click_run_button():
     run_button.click()
     print("Run button clicked successfully.")
     time.sleep(1)
+def monitor_folder_for_new_file(folder_path, before_files, timeout=120):
+    """Monitor a folder for new files."""
+    start_time = time.time()
+    while time.time() - start_time < timeout:
+        current_files = set(os.listdir(folder_path))
+        new_files = current_files - before_files
+        if new_files:
+            # Return the first fully downloaded file
+            for file in new_files:
+                if not file.endswith('.crdownload'):  # Exclude partially downloaded files
+                    return file
+        time.sleep(1)
+    return None
+def wait_until_file_is_stable(file_path, stable_time=2, max_wait=30):
+    """Wait until a file's size is stable."""
+    start_time = time.time()
+    last_size = -1
+    stable_start = None
 
+    while True:
+        try:
+            current_size = os.path.getsize(file_path)
+        except FileNotFoundError:
+            current_size = -1
+
+        if current_size == last_size and current_size != -1:
+            if stable_start is None:
+                stable_start = time.time()
+            elif time.time() - stable_start >= stable_time:
+                return True
+        else:
+            stable_start = None
+
+        last_size = current_size
+        if time.time() - start_time > max_wait:
+            return False
+        time.sleep(0.5)
 def clickActionsAndExport(current_store):
     try:
-        time.sleep(10)
-        wait = WebDriverWait(driver, 10)
+        print(f"\n=== Exporting data for store: {current_store} ===")
+        wait = WebDriverWait(driver, 5)
         files_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "files")
+
+        # Capture initial state of the download folder
         before_files = set(os.listdir(files_dir))
+        print("Files before download:", before_files)
 
         # Click the Actions button
         actions_button = wait.until(EC.element_to_be_clickable((By.ID, 'actions-menu-button')))
         actions_button.click()
         print("Actions button clicked successfully.")
-        time.sleep(1)
+        time.sleep(2)
 
         # Select the Export option
         export_option = wait.until(EC.element_to_be_clickable((By.XPATH, "//li[contains(text(),'Export')]")))
@@ -152,48 +191,53 @@ def clickActionsAndExport(current_store):
         print("Export option clicked successfully.")
         time.sleep(1)
 
-        # Click the Export CSV button
-        export_csv_button = wait.until(EC.element_to_be_clickable(
-            (By.CSS_SELECTOR, 
-             "body > div.sc-jYnRlT.kGxwGQ.sc-heKhxA.Bgfyt.MuiDialog-root.sc-bBPnyn.hrApOB.MuiModal-root "
-             "> div.sc-fhrEpP.dWiAWv.MuiDialog-container.MuiDialog-scrollPaper "
-             "> div > div.sc-iyxVF.bdkceX.MuiDialogActions-root.MuiDialogActions-spacing.sc-fopvND.finsng "
-             "> div.primary-actions > button:nth-child(1)")))
-        export_csv_button.click()
-        print("Export CSV button clicked successfully.")
+        # Wait for a new file to appear in the directory
+        downloaded_file = wait_for_new_file(files_dir, before_files, timeout=120)
+        if downloaded_file:
+            original_path = os.path.join(files_dir, downloaded_file)
+            print(f"New file detected: {downloaded_file}")
+            
+        # Check the folder contents after download
+        time.sleep(1)  # Short wait to ensure the file is written
+        after_files = set(os.listdir(files_dir))
+        print("Files after download:", after_files)
 
-        # Wait for the new file to be downloaded
-        new_file = wait_for_new_file(files_dir, before_files, timeout=120)
-        if new_file:
-            print(f"New file downloaded: {new_file}")
-            store_abbr = store_abbr_map.get(current_store, "UNK")
-            extension = os.path.splitext(new_file)[1]
+        # Identify new files
+        new_files = after_files - before_files
+        if new_files:
+            downloaded_file = max(new_files, key=lambda f: os.path.getctime(os.path.join(files_dir, f)))
+            print(f"New file detected: {downloaded_file}")
+            original_path = os.path.join(files_dir, downloaded_file)
 
-            # Construct the new filename
-            new_filename = f"SR_{store_abbr}_{start_str}-{end_str}{extension}"
+            # Ensure file is stable before renaming
+            if wait_until_file_is_stable(original_path):
+                # Generate a new filename
+                timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+                if current_store == "Buzz Cannabis - Mission Valley":
+                    new_filename = f"salesMV.xlsx"
+                elif current_store == "Buzz Cannabis-La Mesa":
+                    new_filename = f"salesLM.xlsx"
+                else:
+                    new_filename = f"sales_{current_store}_{timestamp}.xlsx"
 
-            original_path = os.path.join(files_dir, new_file)
-            new_path = os.path.join(files_dir, new_filename)
+                new_path = os.path.join(files_dir, new_filename)
 
-            # Remove any existing file with the new name
-            if os.path.exists(new_path):
-                os.remove(new_path)
-                print(f"Removed existing file: {new_filename}")
-
-            # Attempt to rename the file
-            try:
-                os.rename(original_path, new_path)
-                print(f"Renamed {new_file} to {new_filename}")
-            except Exception as e:
-                print(f"Error renaming file: {e}")
+                # Rename the file
+                try:
+                    os.rename(original_path, new_path)
+                    print(f"Renamed file to: {new_filename}")
+                except Exception as e:
+                    print(f"Error renaming file: {e}")
+            else:
+                print("File did not stabilize in time.")
         else:
             print("No new file detected after export.")
 
-        time.sleep(1)
     except TimeoutException:
         print("An element could not be found or clicked within the timeout period.")
     except Exception as e:
         print(f"An error occurred during export: {traceback.format_exc()}")
+
 
 
 def update_days_combobox(year_combo, month_combo, day_combo):

@@ -6,6 +6,7 @@ import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 from datetime import datetime
 
+
 # If your deals logic returns {brand, owed, start, end, location, ...}, import that function:
 from deals import run_deals_for_store  # This should return rows like {"brand":..., "owed":..., "start":..., "end":..., "location":"MV" or "LM"}
 
