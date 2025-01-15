@@ -70,6 +70,7 @@ def click_dropdown():
     dropdown = wait.until(EC.element_to_be_clickable((By.XPATH, dropdown_xpath)))
     driver.execute_script("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", dropdown)
     dropdown.click()
+    
 
 def select_dropdown_item(item_text):
     wait = WebDriverWait(driver, 10)
@@ -80,6 +81,9 @@ def select_dropdown_item(item_text):
         item = wait.until(EC.element_to_be_clickable((By.XPATH, xpath)))
         item.click()
         print(f"Selected store: {item_text}")
+        time.sleep(1)
+        driver.refresh()
+        time.sleep(1)
         return True
     except (TimeoutException, NoSuchElementException) as e:
         print(f"Error while trying to select '{item_text}' from the dropdown: {e}")
