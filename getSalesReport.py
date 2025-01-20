@@ -99,8 +99,6 @@ def select_dropdown_item(item_text):
         print(f"Error selecting store '{item_text}': {e}")
         return False
 
-from selenium.webdriver.common.keys import Keys
-
 def set_date_range(start_date, end_date):
     global start_str, end_str
 
@@ -132,6 +130,7 @@ def click_run_button():
     run_button.click()
     print("Run button clicked successfully.")
     time.sleep(1)
+
 def monitor_folder_for_new_file(folder_path, before_files, timeout=120):
     """Monitor a folder for new files."""
     start_time = time.time()
@@ -145,6 +144,7 @@ def monitor_folder_for_new_file(folder_path, before_files, timeout=120):
                     return file
         time.sleep(1)
     return None
+
 def wait_until_file_is_stable(file_path, stable_time=2, max_wait=30):
     """Wait until a file's size is stable."""
     start_time = time.time()
@@ -169,6 +169,7 @@ def wait_until_file_is_stable(file_path, stable_time=2, max_wait=30):
         if time.time() - start_time > max_wait:
             return False
         time.sleep(0.5)
+
 def clickActionsAndExport(current_store):
     try:
         print(f"\n=== Exporting data for store: {current_store} ===")
@@ -217,6 +218,8 @@ def clickActionsAndExport(current_store):
                     new_filename = f"salesMV.xlsx"
                 elif current_store == "Buzz Cannabis-La Mesa":
                     new_filename = f"salesLM.xlsx"
+                elif current_store == "Buzz Cannabis - SORRENTO VALLEY":
+                    new_filename = f"salesSV.xlsx"
                 else:
                     new_filename = f"sales_{current_store}_{timestamp}.xlsx"
 
@@ -237,8 +240,6 @@ def clickActionsAndExport(current_store):
         print("An element could not be found or clicked within the timeout period.")
     except Exception as e:
         print(f"An error occurred during export: {traceback.format_exc()}")
-
-
 
 def update_days_combobox(year_combo, month_combo, day_combo):
     # Weekday abbreviations
@@ -266,6 +267,34 @@ def update_days_combobox(year_combo, month_combo, day_combo):
     current_day_idx = day_combo.current()
     if current_day_idx == -1 or current_day_idx >= len(day_values):
         day_combo.current(0)
+
+def create_store_checkboxes(frame):
+    """
+    Creates three checkboxes for the three store locations,
+    with each checkbox selected by default.
+    Returns a dict of {store_name: IntVar}.
+    """
+    store_vars = {}
+
+    # Mission Valley
+    varMV = tk.IntVar(value=1)
+    cbMV = tk.Checkbutton(frame, text="Buzz Cannabis - Mission Valley", variable=varMV)
+    cbMV.pack(anchor='w')
+    store_vars["Buzz Cannabis - Mission Valley"] = varMV
+
+    # La Mesa
+    varLM = tk.IntVar(value=1)
+    cbLM = tk.Checkbutton(frame, text="Buzz Cannabis-La Mesa", variable=varLM)
+    cbLM.pack(anchor='w')
+    store_vars["Buzz Cannabis-La Mesa"] = varLM
+
+    # Sorrento Valley
+    varSV = tk.IntVar(value=1)
+    cbSV = tk.Checkbutton(frame, text="Buzz Cannabis - SORRENTO VALLEY", variable=varSV)
+    cbSV.pack(anchor='w')
+    store_vars["Buzz Cannabis - SORRENTO VALLEY"] = varSV
+
+    return store_vars
 
 def open_gui_and_run():
     root = tk.Tk()
@@ -316,14 +345,19 @@ def open_gui_and_run():
     main_frame = tk.Frame(root)
     main_frame.pack(pady=20, padx=20)
 
+    # Create date selectors
     start_year_combo, start_month_combo, start_day_combo = create_date_selector(main_frame, "Select Start Date:")
     end_year_combo, end_month_combo, end_day_combo = create_date_selector(main_frame, "Select End Date:")
 
+    # Create checkboxes for selecting stores
+    tk.Label(main_frame, text="Select Store(s):", font=("Arial", 12, "bold")).pack(pady=(10,5), anchor='w')
+    store_vars = create_store_checkboxes(main_frame)
+
     def on_ok():
+        # Gather date info
         sy = int(start_year_combo.get())
         sm = start_month_combo.current()+1
-        # day format: "1 (Mon)", split by space
-        sday_str = start_day_combo.get().split()[0]
+        sday_str = start_day_combo.get().split()[0]  # "1 (Mon)" -> "1"
         sd = int(sday_str)
 
         ey = int(end_year_combo.get())
@@ -338,14 +372,29 @@ def open_gui_and_run():
             messagebox.showerror("Error", "Start date cannot be after End date.")
             return
 
+        # Determine which stores are selected
+        selected_stores = []
+        for store_name, var in store_vars.items():
+            if var.get() == 1:  # if box checked
+                selected_stores.append(store_name)
+
+        # If none selected, default to all
+        if not selected_stores:
+            selected_stores = [
+                "Buzz Cannabis - Mission Valley",
+                "Buzz Cannabis-La Mesa",
+                "Buzz Cannabis - SORRENTO VALLEY"
+            ]
+
+        # Close GUI
         root.destroy()
 
+        # Launch browser, login, iterate over stores
         global driver
         driver = launchBrowser()
         login()
 
-        store_names = ["Buzz Cannabis - Mission Valley", "Buzz Cannabis-La Mesa"]
-        for store in store_names:
+        for store in selected_stores:
             if not select_dropdown_item(store):
                 break
             set_date_range(start_date, end_date)
@@ -359,4 +408,5 @@ def open_gui_and_run():
     root.mainloop()
 
 # Main execution through GUI
-open_gui_and_run()
+if __name__ == "__main__":
+    open_gui_and_run()
