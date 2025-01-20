@@ -8,15 +8,20 @@ from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 from openpyxl.utils import get_column_letter
 from pathlib import Path
 import locale
+
 locale.setlocale(locale.LC_ALL, '')  # Use '' for system's default locale (e.g., USD for the US)
 
 def process_file(file_path):
+    """Reads an Excel file with a known structure (header=4),
+    standardizes columns, and adds a 'day of week' column."""
     if not os.path.exists(file_path):
         print(f"Error: The file at path {file_path} does not exist.")
         return None
 
     df = pd.read_excel(file_path, header=4)
     df.columns = df.columns.str.strip().str.lower()
+
+    # Standard set of columns for Dutchie sales exports
     df.columns = [
         "order id", "order time", "budtender name", "customer name", "customer type",
         "vendor name", "product name", "category", "package id", "batch id",
@@ -26,8 +31,14 @@ def process_file(file_path):
         "producer", "order profit"
     ]
 
+    # Convert order time to datetime, then create day-of-week
     df['order time'] = pd.to_datetime(df['order time'], errors='coerce')
     df['day of week'] = df['order time'].dt.strftime('%A')
+
+    # Debug: show shape and columns
+    print(f"DEBUG: Successfully read {file_path}")
+    print(f"DEBUG: {file_path} shape: {df.shape}")
+    print(f"DEBUG: {file_path} columns: {list(df.columns)}")
     return df
 
 def apply_discounts_and_kickbacks(data, discount, kickback):
@@ -36,6 +47,7 @@ def apply_discounts_and_kickbacks(data, discount, kickback):
     data['kickback amount'] = data['inventory cost'] * kickback
     return data
 
+# Define brand-based criteria
 brand_criteria = {
     'Hashish': {
         'vendors': ['BTC Ventures', 'Zenleaf LLC', 'Garden Of Weeden Inc.'],
@@ -118,6 +130,7 @@ brand_criteria = {
         'brands': ['Jetty']
     }
 }
+
 def style_summary_sheet(sheet, brand_name):
     """
     Styles the Summary sheet:
@@ -147,25 +160,22 @@ def style_summary_sheet(sheet, brand_name):
         top=Side(style='thin'),
         bottom=Side(style='thin')
     )
-
     for col_idx in range(1, max_col + 1):
         cell = sheet.cell(row=header_row_idx, column=col_idx)
-        # Make it bold, white text, center aligned, gray fill
         cell.font = Font(name="Calibri", size=12, bold=True, color="FFFFFF")
         cell.alignment = Alignment(horizontal="center", vertical="center")
         cell.fill = PatternFill(start_color="808080", end_color="808080", fill_type="solid")
         cell.border = thin_border
 
-    # 3) Freeze panes at row 3 (so row 1 & 2 stay visible)
+    # 3) Freeze panes at row 3
     sheet.freeze_panes = "A3"
 
     # 4) Style data rows (row 3 downward)
-    for row_idx in range(3, max_row + 1):  # Adjusted to start styling from row 3
+    for row_idx in range(3, max_row + 1):
         for col_idx in range(1, max_col + 1):
             cell = sheet.cell(row=row_idx, column=col_idx)
             cell.border = thin_border
 
-            # Check the header text
             hdr_val = sheet.cell(row=header_row_idx, column=col_idx).value
             if hdr_val and ("owed" in str(hdr_val).lower()):
                 # Format as currency
@@ -176,12 +186,12 @@ def style_summary_sheet(sheet, brand_name):
                 cell.number_format = "YYYY-MM-DD"
                 cell.alignment = Alignment(horizontal="center", vertical="center")
             else:
-                # Default alignment is left
                 cell.alignment = Alignment(horizontal="left", vertical="center")
 
-            # Banded row coloring for readability
+            # Banded row coloring
             if row_idx % 2 == 1:  # Odd data row
                 cell.fill = PatternFill(start_color="F2F2F2", end_color="F2F2F2", fill_type="solid")
+
     # 5) Auto-fit column widths
     for col_idx in range(1, max_col + 1):
         col_letter = get_column_letter(col_idx)
@@ -196,9 +206,8 @@ def style_summary_sheet(sheet, brand_name):
 
 def style_worksheet(sheet):
     """
-    Similar styling for other sheets like MV_Sales, LM_Sales, etc.
+    Similar styling for other sheets like MV_Sales, LM_Sales, SV_Sales, etc.
     """
-
     max_col = sheet.max_column
     # Make header row bold and center-aligned
     for col_idx in range(1, max_col + 1):
@@ -212,17 +221,20 @@ def style_worksheet(sheet):
         max_length = 0
         for row_idx in range(1, sheet.max_row + 1):
             val = sheet.cell(row=row_idx, column=col_idx).value
-            try:
-                max_length = max(max_length, len(str(val)) if val else 0)
-            except:
-                pass
+            if val is not None:
+                val_length = len(str(val))
+                if val_length > max_length:
+                    max_length = val_length
         sheet.column_dimensions[column_letter].width = max_length + 2
-        sheet.freeze_panes = "A2"
+
+    # Freeze row 1
+    sheet.freeze_panes = "A2"
+
 def style_top_sellers_sheet(sheet):
     """
     Styles a 'Top Sellers' sheet:
       - Bold header
-      - Currency formatting for Gross Sales
+      - Currency formatting for "Gross Sales"
       - Alternating row colors
       - Auto-fit columns
     """
@@ -246,11 +258,15 @@ def style_top_sellers_sheet(sheet):
         for col_idx in range(1, max_col + 1):
             cell = sheet.cell(row=row_idx, column=col_idx)
             cell.border = thin_border
-            if col_idx == 2:  # "Gross Sales" column
+
+            # "Gross Sales" is column 2 in "Top Sellers"
+            if col_idx == 2:
                 cell.number_format = '"$"#,##0.00'
                 cell.alignment = Alignment(horizontal="right")
             else:
                 cell.alignment = Alignment(horizontal="left")
+
+            # Alternating row color
             if row_idx % 2 == 1:
                 cell.fill = PatternFill(start_color="F2F2F2", end_color="F2F2F2", fill_type="solid")
 
@@ -260,200 +276,248 @@ def style_top_sellers_sheet(sheet):
         max_length = 0
         for row_idx in range(1, sheet.max_row + 1):
             val = sheet.cell(row=row_idx, column=col_idx).value
-            try:
-                max_length = max(max_length, len(str(val)) if val else 0)
-            except:
-                pass
+            if val is not None:
+                val_length = len(str(val))
+                if val_length > max_length:
+                    max_length = val_length
         sheet.column_dimensions[column_letter].width = max_length + 2
 
 def run_deals_reports():
     """
-    1) Reads salesMV.xlsx, salesLM.xlsx
-    2) Generates brand_reports/<brand>_report_...xlsx
-       - Summary sheet first
-       - Reorders columns so store is first, then Kickback Owed, Days Active, Date Range, etc.
-       - If brand runs all 7 days, show 'Everyday' instead of listing them all.
-    3) Returns list of dict: [{"brand":..., "owed":..., "start":..., "end":...}, ...]
+    Reads salesMV.xlsx, salesLM.xlsx, and salesSV.xlsx (if present).
+    Generates brand_reports/<brand>_report_...xlsx:
+      - Summary sheet first
+      - Optional MV_Sales, LM_Sales, SV_Sales (if data exists)
+      - Top Sellers
+      - Consolidated summary across all brands if any data is found
+    Returns a list of dict: [{"brand":..., "owed":..., "start":..., "end":...}, ...]
     """
     output_dir = 'brand_reports'
     Path(output_dir).mkdir(exist_ok=True)
 
+    # Debug: Attempt to read each file
     mv_data = process_file('files/salesMV.xlsx')
     lm_data = process_file('files/salesLM.xlsx')
-    if mv_data is None or lm_data is None:
-        print("One or both sales files missing; no data returned.")
-        return []
+    sv_data = process_file('files/salesSV.xlsx')  # NEW - If missing, returns None
 
-    # We'll define all days for easy check
+    # If a store file is None, we skip that store
+    if mv_data is None:
+        print("DEBUG: MV data not found or empty. Skipping Mission Valley.")
+        mv_data = pd.DataFrame()
+    if lm_data is None:
+        print("DEBUG: LM data not found or empty. Skipping La Mesa.")
+        lm_data = pd.DataFrame()
+    if sv_data is None:
+        print("DEBUG: SV data not found or empty. Skipping Sorrento Valley.")
+        sv_data = pd.DataFrame()
+
     ALL_DAYS = {"Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"}
-
     consolidated_summary = []
     results_for_app = []
 
+    # For each brand, gather data from whichever stores are not empty
     for brand, criteria in brand_criteria.items():
-        # Gather brand data for MV
-        mv_brand_data = mv_data[
-            (mv_data['vendor name'].isin(criteria['vendors'])) &
-            (mv_data['day of week'].isin(criteria['days']))
-        ].copy()
 
-        # Gather brand data for LM
-        lm_brand_data = lm_data[
-            (lm_data['vendor name'].isin(criteria['vendors'])) &
-            (lm_data['day of week'].isin(criteria['days']))
-        ].copy()
+        # ----- Mission Valley ----- #
+        mv_brand_data = pd.DataFrame()
+        if not mv_data.empty:
+            mv_brand_data = mv_data[
+                (mv_data['vendor name'].isin(criteria['vendors'])) &
+                (mv_data['day of week'].isin(criteria['days']))
+            ].copy()
 
-        # Filter categories, if any
+        # ----- La Mesa ----- #
+        lm_brand_data = pd.DataFrame()
+        if not lm_data.empty:
+            lm_brand_data = lm_data[
+                (lm_data['vendor name'].isin(criteria['vendors'])) &
+                (lm_data['day of week'].isin(criteria['days']))
+            ].copy()
+
+        # ----- Sorrento Valley ----- #
+        sv_brand_data = pd.DataFrame()
+        if not sv_data.empty:
+            sv_brand_data = sv_data[
+                (sv_data['vendor name'].isin(criteria['vendors'])) &
+                (sv_data['day of week'].isin(criteria['days']))
+            ].copy()
+
+        # Debug: shapes before further filtering
+        print(f"\nDEBUG: {brand} - Initial shapes => MV: {mv_brand_data.shape}, LM: {lm_brand_data.shape}, SV: {sv_brand_data.shape}")
+
+        # Filter categories
         if 'categories' in criteria:
-            mv_brand_data = mv_brand_data[mv_brand_data['category'].isin(criteria['categories'])]
-            lm_brand_data = lm_brand_data[lm_brand_data['category'].isin(criteria['categories'])]
+            if not mv_brand_data.empty:
+                mv_brand_data = mv_brand_data[mv_brand_data['category'].isin(criteria['categories'])]
+            if not lm_brand_data.empty:
+                lm_brand_data = lm_brand_data[lm_brand_data['category'].isin(criteria['categories'])]
+            if not sv_brand_data.empty:
+                sv_brand_data = sv_brand_data[sv_brand_data['category'].isin(criteria['categories'])]
 
-        # Filter brand names, if any
+        # Filter brand names
         if 'brands' in criteria:
-            mv_brand_data = mv_brand_data[mv_brand_data['product name'].apply(
-                lambda x: any(b in x for b in criteria['brands'] if isinstance(x, str))
-            )]
-            lm_brand_data = lm_brand_data[lm_brand_data['product name'].apply(
-                lambda x: any(b in x for b in criteria['brands'] if isinstance(x, str))
-            )]
+            brand_list = criteria['brands']
+            if not mv_brand_data.empty:
+                mv_brand_data = mv_brand_data[mv_brand_data['product name'].apply(
+                    lambda x: any(b in x for b in brand_list if isinstance(x, str))
+                )]
+            if not lm_brand_data.empty:
+                lm_brand_data = lm_brand_data[lm_brand_data['product name'].apply(
+                    lambda x: any(b in x for b in brand_list if isinstance(x, str))
+                )]
+            if not sv_brand_data.empty:
+                sv_brand_data = sv_brand_data[sv_brand_data['product name'].apply(
+                    lambda x: any(b in x for b in brand_list if isinstance(x, str))
+                )]
 
-        # Exclude certain phrases
+        # Excluded phrases
         if 'excluded_phrases' in criteria:
             for phrase in criteria['excluded_phrases']:
                 pat = re.escape(phrase)
-                mv_brand_data = mv_brand_data[~mv_brand_data['product name'].str.contains(pat, na=False)]
-                lm_brand_data = lm_brand_data[~lm_brand_data['product name'].str.contains(pat, na=False)]
 
-        # Skip if both are empty
-        if mv_brand_data.empty and lm_brand_data.empty:
+                if not mv_brand_data.empty:
+                    mv_brand_data = mv_brand_data[~mv_brand_data['product name'].str.contains(pat, na=False)]
+                if not lm_brand_data.empty:
+                    lm_brand_data = lm_brand_data[~lm_brand_data['product name'].str.contains(pat, na=False)]
+                if not sv_brand_data.empty:
+                    sv_brand_data = sv_brand_data[~sv_brand_data['product name'].str.contains(pat, na=False)]
+
+        # Debug: shapes after filtering
+        print(f"DEBUG: {brand} - After filtering => MV: {mv_brand_data.shape}, LM: {lm_brand_data.shape}, SV: {sv_brand_data.shape}")
+
+        # Skip brand if all stores are empty
+        if mv_brand_data.empty and lm_brand_data.empty and sv_brand_data.empty:
+            print(f"DEBUG: No data remains for brand '{brand}'. Skipping.")
             continue
 
-        # Apply discount & kickback
-        mv_brand_data = apply_discounts_and_kickbacks(mv_brand_data, criteria['discount'], criteria['kickback'])
-        lm_brand_data = apply_discounts_and_kickbacks(lm_brand_data, criteria['discount'], criteria['kickback'])
+        # Apply discount/kickback if columns exist
+        required_cols = {'gross sales','inventory cost'}
+        if not mv_brand_data.empty and required_cols.issubset(mv_brand_data.columns):
+            mv_brand_data = apply_discounts_and_kickbacks(mv_brand_data, criteria['discount'], criteria['kickback'])
+        if not lm_brand_data.empty and required_cols.issubset(lm_brand_data.columns):
+            lm_brand_data = apply_discounts_and_kickbacks(lm_brand_data, criteria['discount'], criteria['kickback'])
+        if not sv_brand_data.empty and required_cols.issubset(sv_brand_data.columns):
+            sv_brand_data = apply_discounts_and_kickbacks(sv_brand_data, criteria['discount'], criteria['kickback'])
 
-        # Figure out date range
-        if not mv_brand_data.empty:
-            start_mv = mv_brand_data['order time'].min().strftime('%Y-%m-%d')
-            end_mv = mv_brand_data['order time'].max().strftime('%Y-%m-%d')
-        else:
-            start_mv = end_mv = None
+        # Determine date ranges
+        def get_date_range(df):
+            if df.empty:
+                return None, None
+            return df['order time'].min(), df['order time'].max()
 
-        if not lm_brand_data.empty:
-            start_lm = lm_brand_data['order time'].min().strftime('%Y-%m-%d')
-            end_lm = lm_brand_data['order time'].max().strftime('%Y-%m-%d')
-        else:
-            start_lm = end_lm = None
+        start_mv, end_mv = get_date_range(mv_brand_data)
+        start_lm, end_lm = get_date_range(lm_brand_data)
+        start_sv, end_sv = get_date_range(sv_brand_data)
 
-        possible_starts = [s for s in [start_mv, start_lm] if s]
-        possible_ends = [e for e in [end_mv, end_lm] if e]
+        possible_starts = [d for d in [start_mv, start_lm, start_sv] if d]
+        possible_ends = [d for d in [end_mv, end_lm, end_sv] if d]
         if not possible_starts or not possible_ends:
+            print(f"DEBUG: Brand '{brand}' had data, but no valid date range. Skipping.")
             continue
 
-        start_date = min(possible_starts)
-        end_date = max(possible_ends)
+        # Convert to strings
+        start_date = min(possible_starts).strftime('%Y-%m-%d')
+        end_date = max(possible_ends).strftime('%Y-%m-%d')
         date_range = f"{start_date}_to_{end_date}"
 
-        # Summaries
-        mv_summary = mv_brand_data.agg({
-            'gross sales': 'sum',
-            'inventory cost': 'sum',
-            'discount amount': 'sum',
-            'kickback amount': 'sum'
-        }).to_frame().T
-        mv_summary['location'] = 'Misson Valley'
+        # Summaries for each store
+        # Create an aggregator function only if the DataFrame is not empty
+        def build_summary(df, store_name):
+            if df.empty:
+                # Return an empty summary with the same columns
+                return pd.DataFrame(columns=['gross sales','inventory cost','discount amount','kickback amount','location'])
+            summary = df.agg({
+                'gross sales': 'sum',
+                'inventory cost': 'sum',
+                'discount amount': 'sum',
+                'kickback amount': 'sum'
+            }).to_frame().T
+            summary['location'] = store_name
+            return summary
 
-        lm_summary = lm_brand_data.agg({
-            'gross sales': 'sum',
-            'inventory cost': 'sum',
-            'discount amount': 'sum',
-            'kickback amount': 'sum'
-        }).to_frame().T
-        lm_summary['location'] = 'La Mesa'
+        mv_summary = build_summary(mv_brand_data, 'Mission Valley')
+        lm_summary = build_summary(lm_brand_data, 'La Mesa')
+        sv_summary = build_summary(sv_brand_data, 'Sorrento Valley')
 
         # Combine them
-        brand_summary = pd.concat([mv_summary, lm_summary], ignore_index=True)
+        brand_summary = pd.concat([mv_summary, lm_summary, sv_summary], ignore_index=True)
 
-        # If the brand runs all days, show 'Everyday', else show them
+        # If the brand runs all days, show 'Everyday'
         if set(criteria['days']) == ALL_DAYS:
             days_text = "Everyday"
         else:
             days_text = ", ".join(criteria['days'])
 
-        # We want columns: 
-        # 1) Store (renamed from location)
-        # 2) Kickback Owed (from kickback amount)
-        # 3) Days Active
-        # 4) Date Range
-        # [We can also keep 'Brand' if you'd like, or remove other columns.]
-
-        # Let's rename existing columns to make the final DataFrame neat:
+        # Rename columns and add brand
         brand_summary.rename(columns={
             'location': 'Store',
             'kickback amount': 'Kickback Owed'
         }, inplace=True)
-    
-        # Add the new columns
+
         brand_summary['Days Active'] = days_text
         brand_summary['Date Range'] = f"{start_date} to {end_date}"
+        brand_summary['Brand'] = brand
 
-        # Reorder columns as requested: Store, Kickback Owed, Days Active, Date Range
-        # Optionally, we can also keep 'gross sales', 'inventory cost', etc. if needed.
-        # We'll keep them for reference but show the important ones first.
-        col_order = ['Store', 'Kickback Owed', 'Days Active', 'Date Range',
-                     'gross sales', 'inventory cost', 'discount amount', 'Brand']
-        
-        # brand_summary may not have 'Brand' yet, so let's add it
-
-        brand_summary['Brand'] = brand  # to show the brand name
-
-# Ensure the column order includes only columns that exist in the DataFrame
+        # Reorder columns
+        col_order = [
+            'Store', 'Kickback Owed', 'Days Active', 'Date Range',
+            'gross sales', 'inventory cost', 'discount amount', 'Brand'
+        ]
         final_cols = [c for c in col_order if c in brand_summary.columns]
         brand_summary = brand_summary[final_cols]
 
-        # We'll also store brand_summary into consolidated_summary for the final report
+        # Save to consolidated summary
         consolidated_summary.append(brand_summary)
 
-        # Generate brand-level file
+        # --- CREATE BRAND-LEVEL EXCEL ---
         safe_brand_name = brand.replace("/", " ")
         output_filename = os.path.join(output_dir, f"{safe_brand_name}_report_{date_range}.xlsx")
+        print(f"DEBUG: Creating {output_filename} for brand '{brand}'...")
 
-        # Create top sellers if desired
-        combined_df = pd.concat([mv_brand_data, lm_brand_data], ignore_index=True)
-        top_sellers_df = (combined_df.groupby('product name', as_index=False)
-                          .agg({'gross sales': 'sum'})
-                          .sort_values(by='gross sales', ascending=False)
-                          .head(10))
-        top_sellers_df.rename(columns={'product name': 'Product Name', 'gross sales': 'Gross Sales'}, inplace=True)
+        # Build "Top Sellers" with combined data from MV + LM + SV
+        combined_df = pd.concat([mv_brand_data, lm_brand_data, sv_brand_data], ignore_index=True)
+        if not combined_df.empty and 'gross sales' in combined_df.columns:
+            top_sellers_df = (
+                combined_df.groupby('product name', as_index=False)
+                .agg({'gross sales': 'sum'})
+                .sort_values(by='gross sales', ascending=False)
+                .head(10)
+            )
+            top_sellers_df.rename(columns={'product name': 'Product Name', 'gross sales': 'Gross Sales'}, inplace=True)
+        else:
+            # No data => create empty
+            top_sellers_df = pd.DataFrame(columns=['Product Name','Gross Sales'])
 
         with pd.ExcelWriter(output_filename) as writer:
-            # Summary first
+            # Summary
             brand_summary.to_excel(writer, sheet_name='Summary', index=False, startrow=1)
-
-            # MV Sales
-            mv_brand_data.to_excel(writer, sheet_name='MV_Sales', index=False)
-            # LM Sales
-            lm_brand_data.to_excel(writer, sheet_name='LM_Sales', index=False)
+            # MV Sales (if not empty)
+            if not mv_brand_data.empty:
+                mv_brand_data.to_excel(writer, sheet_name='MV_Sales', index=False)
+            # LM Sales (if not empty)
+            if not lm_brand_data.empty:
+                lm_brand_data.to_excel(writer, sheet_name='LM_Sales', index=False)
+            # SV Sales (if not empty)
+            if not sv_brand_data.empty:
+                sv_brand_data.to_excel(writer, sheet_name='SV_Sales', index=False)
             # Top Sellers
             top_sellers_df.to_excel(writer, sheet_name='Top Sellers', index=False)
 
-        # Apply styling
+        # Style
         wb = load_workbook(output_filename)
         if 'Summary' in wb.sheetnames:
             style_summary_sheet(wb['Summary'], brand)
-
         if 'MV_Sales' in wb.sheetnames:
             style_worksheet(wb['MV_Sales'])
-
         if 'LM_Sales' in wb.sheetnames:
             style_worksheet(wb['LM_Sales'])
-
+        if 'SV_Sales' in wb.sheetnames:
+            style_worksheet(wb['SV_Sales'])
         if 'Top Sellers' in wb.sheetnames:
             style_top_sellers_sheet(wb['Top Sellers'])
-
         wb.save(output_filename)
 
-        # total owed = sum of all 'Kickback Owed' for that brand (MV + LM)
+        # Kickback owed = sum of 'Kickback Owed' from all stores
         total_owed = brand_summary['Kickback Owed'].sum()
         results_for_app.append({
             "brand": brand,
@@ -462,22 +526,39 @@ def run_deals_reports():
             "end": end_date
         })
 
-    # Finally, build the consolidated report if we have data
+    # Build a consolidated summary (all brands) if we have data
     if consolidated_summary:
         final_df = pd.concat(consolidated_summary, ignore_index=True)
-        overall_range = f"{start_date}_to_{end_date}"
+        # For last brand, we used date_range, but let's re-derive overall range
+        # in case different brands have different date ranges
+        # We can keep it simple and just use the last brand's date_range or pick min->max from results_for_app
+        if results_for_app:
+            all_starts = [r['start'] for r in results_for_app if r['start']]
+            all_ends = [r['end'] for r in results_for_app if r['end']]
+            if all_starts and all_ends:
+                overall_start = min(all_starts)
+                overall_end = max(all_ends)
+                overall_range = f"{overall_start}_to_{overall_end}"
+            else:
+                # fallback
+                overall_range = date_range
+        else:
+            overall_range = date_range
+
         consolidated_file = os.path.join(output_dir, f"consolidated_brand_report_{overall_range}.xlsx")
+        print(f"DEBUG: Creating consolidated summary => {consolidated_file}")
         with pd.ExcelWriter(consolidated_file) as writer:
             final_df.to_excel(writer, sheet_name='Consolidated_Summary', index=False)
 
-        # Style the consolidated summary
+        # Style consolidated summary
         wb = load_workbook(consolidated_file)
         if 'Consolidated_Summary' in wb.sheetnames:
             sheet = wb['Consolidated_Summary']
-            style_summary_sheet(sheet, safe_brand_name)
+            # We'll just style it with "ALL_BRANDS"
+            style_summary_sheet(sheet, "ALL_BRANDS")
         wb.save(consolidated_file)
 
-        print("Individual brand reports and a consolidated report have been saved.")
+        print("Individual brand reports + consolidated report have been saved.")
     else:
         print("No brand data found; no Excel files generated.")
 

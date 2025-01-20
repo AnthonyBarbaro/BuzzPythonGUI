@@ -14,7 +14,8 @@ from login import username, password
 
 store_abbr_map = {
     "Buzz Cannabis - Mission Valley": "MV",
-    "Buzz Cannabis-La Mesa": "LM"
+    "Buzz Cannabis-La Mesa": "LM",
+    "Buzz Cannabis - SORRENTO VALLEY" : "SV"
 }
 
 def wait_for_new_file(download_directory, before_files, timeout=30):
@@ -139,7 +140,7 @@ def clickActionsAndExport(current_store):
 driver = launchBrowser()
 login()
 
-store_names = ["Buzz Cannabis - Mission Valley", "Buzz Cannabis-La Mesa"]
+store_names = ["Buzz Cannabis - Mission Valley", "Buzz Cannabis-La Mesa","Buzz Cannabis - SORRENTO VALLEY"]
 for store in store_names:
     if not select_dropdown_item(store):
         break
