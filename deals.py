@@ -41,10 +41,65 @@ def process_file(file_path):
     print(f"DEBUG: {file_path} columns: {list(df.columns)}")
     return df
 
+import numpy as np
 def apply_discounts_and_kickbacks(data, discount, kickback):
-    """Adds discount/kickback columns to the DataFrame."""
+    """
+    Adds discount/kickback columns and extra calculated metrics to the DataFrame.
+    """
+
+    # 1) Original discount/kickback
     data['discount amount'] = data['gross sales'] * discount
     data['kickback amount'] = data['inventory cost'] * kickback
+
+    # 2) Net Profit = Gross Sales - Inventory Cost - Discount Amount
+    data['net profit'] = data['gross sales'] - data['inventory cost'] - data['discount amount']
+
+    # 3) Gross Margin % = ((Gross Sales - Inventory Cost) / Gross Sales) * 100
+    #    Avoid division by zero using np.where
+    data['gross margin %'] = np.where(
+        data['gross sales'] != 0,
+        (data['gross sales'] - data['inventory cost']) / data['gross sales'] * 100,
+        0
+    )
+
+    # 4) Discount % = (Discount Amount / Gross Sales) * 100
+    data['discount %'] = np.where(
+        data['gross sales'] != 0,
+        (data['discount amount'] / data['gross sales']) * 100,
+        0
+    )
+
+    # 5) Profit Margin % = (Net Profit / Gross Sales) * 100
+    data['profit margin %'] = np.where(
+        data['gross sales'] != 0,
+        (data['net profit'] / data['gross sales']) * 100,
+        0
+    )
+
+    # 6) Break-Even Sales = Inventory Cost + Discount Amount
+    data['break-even sales'] = data['inventory cost'] + data['discount amount']
+
+    # 7) Efficiency Ratio = Gross Sales / Inventory Cost
+    data['efficiency ratio'] = np.where(
+        data['inventory cost'] != 0,
+        data['gross sales'] / data['inventory cost'],
+        0
+    )
+
+    # 8) Discount Impact % = (Discount Amount / Inventory Cost) * 100
+    data['discount impact %'] = np.where(
+        data['inventory cost'] != 0,
+        (data['discount amount'] / data['inventory cost']) * 100,
+        0
+    )
+
+    # 9) Sales to Cost Ratio = Gross Sales / Inventory Cost
+    data['sales to cost ratio'] = np.where(
+        data['inventory cost'] != 0,
+        data['gross sales'] / data['inventory cost'],
+        0
+    )
+
     return data
 
 # Define brand-based criteria
@@ -128,6 +183,28 @@ brand_criteria = {
         'discount': 0.50,
         'kickback': 0.25,
         'brands': ['Jetty']
+    },
+    'DrNorms': {
+        'vendors': ['Punch Media, LLC'],
+        'days': ['Thursday'],
+        'discount': 0.50,
+        'kickback': 0.25,
+        'brands': ['Dr. Norms']
+    },
+    'Punch': {
+        'vendors': ['Punch Media, LLC'],
+        'days': ['Sunday'],
+        'discount': 0.50,
+        'kickback': 0.25,
+        'brands': ['Punch'],
+        'categories': ['Pre-Rolls','Cartridges','Chocolates','Gummies']
+    },
+    'CBX':{
+        'vendors': ['Hilife LM','Four Star Distribution and Delivery LLC'],
+        'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
+        'discount': 0.30,
+        'kickback': 0,
+        'brands': ['CBX'],
     }
 }
 

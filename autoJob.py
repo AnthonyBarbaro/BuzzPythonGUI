@@ -72,7 +72,8 @@ except ImportError:
 
 store_abbr_map = {
     "Buzz Cannabis - Mission Valley": "MV",
-    "Buzz Cannabis-La Mesa": "LM"
+    "Buzz Cannabis-La Mesa": "LM",
+    "Buzz Cannabis - SORRENTO VALLEY": "SV"
 }
 
 def launch_sales_browser():
@@ -211,6 +212,8 @@ def export_sales_report(driver, store_name):
         old_path = os.path.join(files_dir, new_file)
         if store_name == "Buzz Cannabis - Mission Valley":
             new_name = "salesMV.xlsx"
+        elif store_name == "Buzz Cannabis - SORRENTO VALLEY":
+            new_name = "salesSV.xlsx"
         else:
             new_name = "salesLM.xlsx"
 
@@ -230,7 +233,8 @@ def run_sales_report(start_date, end_date):
     """
     store_names = [
         "Buzz Cannabis - Mission Valley",
-        "Buzz Cannabis-La Mesa"
+        "Buzz Cannabis-La Mesa",
+        "Buzz Cannabis - SORRENTO VALLEY"
     ]
     driver = launch_sales_browser()
     login_dutchie(driver)
@@ -248,403 +252,8 @@ def run_sales_report(start_date, end_date):
 ##############################################################################
 # 4) RUN deals.py (Brand-Level Deals Report)
 ##############################################################################
-# For brevity, we'll paste your deals.py code as a function:
 
-import pandas as pd
-from openpyxl import load_workbook
-from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
-from openpyxl.utils import get_column_letter
-
-def style_summary_sheet(sheet, brand_name):
-    max_col = sheet.max_column
-    max_row = sheet.max_row
-
-    sheet.merge_cells(start_row=1, start_column=1, end_row=1, end_column=max_col)
-    title_cell = sheet.cell(row=1, column=1)
-    title_cell.value = f"{brand_name.upper()} SUMMARY REPORT"
-    title_cell.font = Font(name="Calibri", size=16, bold=True, color="FFFFFF")
-    title_cell.alignment = Alignment(horizontal="center", vertical="center")
-    title_cell.fill = PatternFill(start_color="4F81BD", end_color="4F81BD", fill_type="solid")
-
-    header_row_idx = 2
-    thin_border = Border(
-        left=Side(style='thin'),
-        right=Side(style='thin'),
-        top=Side(style='thin'),
-        bottom=Side(style='thin')
-    )
-
-    for col_idx in range(1, max_col + 1):
-        cell = sheet.cell(row=header_row_idx, column=col_idx)
-        cell.font = Font(name="Calibri", size=12, bold=True, color="FFFFFF")
-        cell.alignment = Alignment(horizontal="center", vertical="center")
-        cell.fill = PatternFill(start_color="808080", end_color="808080", fill_type="solid")
-        cell.border = thin_border
-
-    sheet.freeze_panes = "A3"
-
-    for row_idx in range(3, max_row + 1):
-        for col_idx in range(1, max_col + 1):
-            cell = sheet.cell(row=row_idx, column=col_idx)
-            cell.border = thin_border
-            hdr_val = sheet.cell(row=header_row_idx, column=col_idx).value
-            if hdr_val and ("owed" in str(hdr_val).lower()):
-                cell.number_format = '"$"#,##0.00'
-                cell.alignment = Alignment(horizontal="right", vertical="center")
-            elif hdr_val and ("date" in str(hdr_val).lower()):
-                cell.number_format = "YYYY-MM-DD"
-                cell.alignment = Alignment(horizontal="center", vertical="center")
-            else:
-                cell.alignment = Alignment(horizontal="left", vertical="center")
-
-            if row_idx % 2 == 1:
-                cell.fill = PatternFill(start_color="F2F2F2", end_color="F2F2F2", fill_type="solid")
-
-    for col_idx in range(1, max_col + 1):
-        col_letter = get_column_letter(col_idx)
-        max_length = 0
-        for row_idx in range(1, max_row + 1):
-            val = sheet.cell(row=row_idx, column=col_idx).value
-            if val is not None:
-                val_length = len(str(val))
-                if val_length > max_length:
-                    max_length = val_length
-        sheet.column_dimensions[col_letter].width = max_length + 2
-
-def style_worksheet(sheet):
-    max_col = sheet.max_column
-    for col_idx in range(1, max_col + 1):
-        cell = sheet.cell(row=1, column=col_idx)
-        cell.font = Font(bold=True)
-        cell.alignment = Alignment(horizontal="center", vertical="center")
-
-    for col_idx in range(1, max_col + 1):
-        col_letter = get_column_letter(col_idx)
-        max_length = 0
-        for row_idx in range(1, sheet.max_row + 1):
-            val = sheet.cell(row=row_idx, column=col_idx).value
-            try:
-                max_length = max(max_length, len(str(val)) if val else 0)
-            except:
-                pass
-        sheet.column_dimensions[col_letter].width = max_length + 2
-    sheet.freeze_panes = "A2"
-
-def style_top_sellers_sheet(sheet):
-    thin_border = Border(
-        left=Side(style='thin'),
-        right=Side(style='thin'),
-        top=Side(style='thin'),
-        bottom=Side(style='thin')
-    )
-    max_col = sheet.max_column
-
-    for col_idx in range(1, max_col + 1):
-        cell = sheet.cell(row=1, column=col_idx)
-        cell.font = Font(name="Calibri", size=12, bold=True, color="FFFFFF")
-        cell.alignment = Alignment(horizontal="center", vertical="center")
-        cell.fill = PatternFill(start_color="4F81BD", end_color="4F81BD", fill_type="solid")
-
-    for row_idx in range(2, sheet.max_row + 1):
-        for col_idx in range(1, max_col + 1):
-            cell = sheet.cell(row=row_idx, column=col_idx)
-            cell.border = thin_border
-            if col_idx == 2:
-                cell.number_format = '"$"#,##0.00'
-                cell.alignment = Alignment(horizontal="right")
-            else:
-                cell.alignment = Alignment(horizontal="left")
-            if row_idx % 2 == 1:
-                cell.fill = PatternFill(start_color="F2F2F2", end_color="F2F2F2", fill_type="solid")
-
-    for col_idx in range(1, max_col + 1):
-        col_letter = get_column_letter(col_idx)
-        max_length = 0
-        for row_idx in range(1, sheet.max_row + 1):
-            val = sheet.cell(row=row_idx, column=col_idx).value
-            try:
-                max_length = max(max_length, len(str(val)) if val else 0)
-            except:
-                pass
-        sheet.column_dimensions[col_letter].width = max_length + 2
-
-
-def run_deals():
-    """
-    This runs your deals.py main function (run_deals_reports).
-    It will read salesMV.xlsx, salesLM.xlsx from 'files' directory,
-    generate brand reports in 'brand_reports'.
-    """
-    # Here is a direct inline copy of your run_deals_reports() logic:
-    print("\n===== Running deals.py logic to generate brand-level deals reports... =====\n")
-    import locale
-    locale.setlocale(locale.LC_ALL, '')
-
-    # We rely on 'files/salesMV.xlsx' and 'files/salesLM.xlsx' existing
-    # (exported from run_sales_report above).
-
-    # We define brand_criteria inline, same as your deals.py
-    brand_criteria = {
-        'Hashish': {
-            'vendors': ['BTC Ventures', 'Zenleaf LLC', 'Garden Of Weeden Inc.'],
-            'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
-            'discount': 0.50,
-            'kickback': 0.25,
-            'categories': ['Concentrate'],
-            'brands': ['Hashish']
-        },
-        'Jeeter': {
-            'vendors': ['Med For America Inc.'],
-            'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
-            'discount': 0.50,
-            'kickback': 0.25,
-            'categories': ['Pre-Rolls'],
-            'brands': ['Jeeter'],
-            'excluded_phrases': ['(3pk)','Jeeter | SVL']
-        },
-        'Kiva': {
-            'vendors': ['KIVA / LCISM CORP', 'Vino & Cigarro, LLC'],
-            'days': ['Monday'],
-            'discount': 0.50,
-            'kickback': 0.25,
-            'brands': ['Terra', 'Petra', 'Kiva', 'Lost Farms', 'Camino']
-        },
-        'BigPetes': {
-            'vendors': ['KIVA / LCISM CORP', 'Vino & Cigarro, LLC'],
-            'days': ['Tuesday'],
-            'discount': 0.50,
-            'kickback': 0.25,
-            'brands': ['Big Pete']
-        },
-        'HolySmoke/Water': {
-            'vendors': ['Heritage Holding of Califonia, Inc.', 'Barlow Printing LLC'],
-            'days': ['Sunday'],
-            'discount': 0.50,
-            'kickback': 0.25,
-            'brands': ['Holy Smokes', 'Holy Water']
-        },
-        'Dawoods': {
-            'vendors': ['The Clear Group Inc.'],
-            'days': ['Friday','Saturday'],
-            'discount': 0.50,
-            'kickback': 0.25,
-            'brands': ['Dabwoods']
-        },
-        'Time Machine': {
-            'vendors': ['Vino & Cigarro, LLC'],
-            'days': ['Tuesday','Thursday'],
-            'discount': 0.50,
-            'kickback': 0.25,
-            'brands': ['Time Machine']
-        },
-        'Pacific Stone': {
-            'vendors': ['Vino & Cigarro, LLC'],
-            'days': ['Friday','Monday'],
-            'discount': 0.50,
-            'kickback': 0.25,
-            'brands': ['Pacific Stone']
-        },
-        'Heavy Hitters': {
-            'vendors': ['Fluids Manufacturing Inc.'],
-            'days': ['Friday','Saturday'],
-            'discount': 0.50,
-            'kickback': 0.25,
-            'brands': ['Heavy Hitters']
-        },
-        'WYLD/GoodTide': {
-            'vendors': ['2020 Long Beach LLC'],
-            'days': ['Friday','Saturday'],
-            'discount': 0.50,
-            'kickback': 0.25,
-            'brands': ['Wyld', 'Good Tide']
-        },
-        'Jetty': {
-            'vendors': ['KIVA / LCISM CORP', 'Vino & Cigarro, LLC','Garden Of Weeden Inc.'],
-            'days': ['Thursday'],
-            'discount': 0.50,
-            'kickback': 0.25,
-            'brands': ['Jetty']
-        }
-    }
-
-    def process_file(file_path):
-        if not os.path.exists(file_path):
-            print(f"Error: The file at path {file_path} does not exist.")
-            return None
-        df = pd.read_excel(file_path, header=4)
-        df.columns = df.columns.str.strip().str.lower()
-        df.columns = [
-            "order id", "order time", "budtender name", "customer name", "customer type",
-            "vendor name", "product name", "category", "package id", "batch id",
-            "external package id", "total inventory sold", "unit weight sold", "total weight sold",
-            "gross sales", "inventory cost", "discounted amount", "loyalty as discount",
-            "net sales", "return date", "upc gtin (canada)", "provincial sku (canada)",
-            "producer", "order profit"
-        ]
-        df['order time'] = pd.to_datetime(df['order time'], errors='coerce')
-        df['day of week'] = df['order time'].dt.strftime('%A')
-        return df
-
-    def apply_discounts_and_kickbacks(data, discount, kickback):
-        data['discount amount'] = data['gross sales'] * discount
-        data['kickback amount'] = data['inventory cost'] * kickback
-        return data
-
-    mv_data = process_file('files/salesMV.xlsx')
-    lm_data = process_file('files/salesLM.xlsx')
-    if mv_data is None or lm_data is None:
-        print("One or both sales files missing; no data to process in deals.py.")
-        return
-
-    ALL_DAYS = {"Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"}
-    consolidated_summary = []
-    results_for_app = []
-
-    output_dir = 'brand_reports'
-    Path(output_dir).mkdir(exist_ok=True)
-
-    for brand, criteria in brand_criteria.items():
-        mv_brand_data = mv_data[
-            (mv_data['vendor name'].isin(criteria['vendors'])) &
-            (mv_data['day of week'].isin(criteria['days']))
-        ].copy()
-
-        lm_brand_data = lm_data[
-            (lm_data['vendor name'].isin(criteria['vendors'])) &
-            (lm_data['day of week'].isin(criteria['days']))
-        ].copy()
-
-        if 'categories' in criteria:
-            mv_brand_data = mv_brand_data[mv_brand_data['category'].isin(criteria['categories'])]
-            lm_brand_data = lm_brand_data[lm_brand_data['category'].isin(criteria['categories'])]
-
-        if 'brands' in criteria:
-            mv_brand_data = mv_brand_data[mv_brand_data['product name'].apply(
-                lambda x: any(b in x for b in criteria['brands'] if isinstance(x, str))
-            )]
-            lm_brand_data = lm_brand_data[lm_brand_data['product name'].apply(
-                lambda x: any(b in x for b in criteria['brands'] if isinstance(x, str))
-            )]
-
-        if 'excluded_phrases' in criteria:
-            for phrase in criteria['excluded_phrases']:
-                pat = re.escape(phrase)
-                mv_brand_data = mv_brand_data[~mv_brand_data['product name'].str.contains(pat, na=False)]
-                lm_brand_data = lm_brand_data[~lm_brand_data['product name'].str.contains(pat, na=False)]
-
-        if mv_brand_data.empty and lm_brand_data.empty:
-            continue
-
-        mv_brand_data = apply_discounts_and_kickbacks(mv_brand_data, criteria['discount'], criteria['kickback'])
-        lm_brand_data = apply_discounts_and_kickbacks(lm_brand_data, criteria['discount'], criteria['kickback'])
-
-        # Date range logic
-        start_mv = mv_brand_data['order time'].min() if not mv_brand_data.empty else None
-        end_mv   = mv_brand_data['order time'].max() if not mv_brand_data.empty else None
-        start_lm = lm_brand_data['order time'].min() if not lm_brand_data.empty else None
-        end_lm   = lm_brand_data['order time'].max() if not lm_brand_data.empty else None
-
-        possible_starts = [d for d in [start_mv, start_lm] if d]
-        possible_ends   = [d for d in [end_mv, end_lm] if d]
-        if not possible_starts or not possible_ends:
-            continue
-
-        start_date = min(possible_starts).strftime('%Y-%m-%d')
-        end_date   = max(possible_ends).strftime('%Y-%m-%d')
-        date_range = f"{start_date}_to_{end_date}"
-
-        mv_summary = mv_brand_data.agg({
-            'gross sales': 'sum',
-            'inventory cost': 'sum',
-            'discount amount': 'sum',
-            'kickback amount': 'sum'
-        }).to_frame().T
-        mv_summary['location'] = 'Misson Valley'
-
-        lm_summary = lm_brand_data.agg({
-            'gross sales': 'sum',
-            'inventory cost': 'sum',
-            'discount amount': 'sum',
-            'kickback amount': 'sum'
-        }).to_frame().T
-        lm_summary['location'] = 'La Mesa'
-
-        brand_summary = pd.concat([mv_summary, lm_summary], ignore_index=True)
-
-        if set(criteria['days']) == ALL_DAYS:
-            days_text = "Everyday"
-        else:
-            days_text = ", ".join(criteria['days'])
-
-        brand_summary.rename(columns={'location': 'Store',
-                                      'kickback amount': 'Kickback Owed'},
-                             inplace=True)
-        brand_summary['Days Active'] = days_text
-        brand_summary['Date Range']  = f"{start_date} to {end_date}"
-        brand_summary['Brand']       = brand
-
-        col_order = ['Store', 'Kickback Owed', 'Days Active', 'Date Range',
-                     'gross sales', 'inventory cost', 'discount amount', 'Brand']
-        final_cols = [c for c in col_order if c in brand_summary.columns]
-        brand_summary = brand_summary[final_cols]
-        consolidated_summary.append(brand_summary)
-
-        combined_df = pd.concat([mv_brand_data, lm_brand_data], ignore_index=True)
-        top_sellers_df = (combined_df.groupby('product name', as_index=False)
-                          .agg({'gross sales': 'sum'})
-                          .sort_values(by='gross sales', ascending=False)
-                          .head(10))
-        top_sellers_df.rename(columns={'product name': 'Product Name', 'gross sales': 'Gross Sales'}, inplace=True)
-
-        safe_brand_name = brand.replace("/", " ")
-        output_filename = os.path.join(output_dir, f"{safe_brand_name}_report_{date_range}.xlsx")
-
-        with pd.ExcelWriter(output_filename) as writer:
-            brand_summary.to_excel(writer, sheet_name='Summary', index=False, startrow=1)
-            mv_brand_data.to_excel(writer, sheet_name='MV_Sales', index=False)
-            lm_brand_data.to_excel(writer, sheet_name='LM_Sales', index=False)
-            top_sellers_df.to_excel(writer, sheet_name='Top Sellers', index=False)
-
-        wb = load_workbook(output_filename)
-        if 'Summary' in wb.sheetnames:
-            style_summary_sheet(wb['Summary'], brand)
-        if 'MV_Sales' in wb.sheetnames:
-            style_worksheet(wb['MV_Sales'])
-        if 'LM_Sales' in wb.sheetnames:
-            style_worksheet(wb['LM_Sales'])
-        if 'Top Sellers' in wb.sheetnames:
-            style_top_sellers_sheet(wb['Top Sellers'])
-        wb.save(output_filename)
-
-        total_owed = brand_summary['Kickback Owed'].sum()
-        results_for_app.append({
-            "brand": brand,
-            "owed": float(total_owed),
-            "start": start_date,
-            "end": end_date
-        })
-
-    if consolidated_summary:
-        final_df = pd.concat(consolidated_summary, ignore_index=True)
-        overall_start = final_df['Date Range'].apply(lambda x: x.split(' to ')[0]).min()
-        overall_end   = final_df['Date Range'].apply(lambda x: x.split(' to ')[1]).max()
-        overall_range = f"{overall_start}_to_{overall_end}"
-        consolidated_file = os.path.join(output_dir, f"consolidated_brand_report_{overall_range}.xlsx")
-
-        with pd.ExcelWriter(consolidated_file) as writer:
-            final_df.to_excel(writer, sheet_name='Consolidated_Summary', index=False)
-
-        wb = load_workbook(consolidated_file)
-        if 'Consolidated_Summary' in wb.sheetnames:
-            sheet = wb['Consolidated_Summary']
-            # We'll pick the last brand name for styling or pass an arbitrary string
-            style_summary_sheet(sheet, "All Brands")
-        wb.save(consolidated_file)
-
-        print("Individual brand reports + consolidated report saved to 'brand_reports/'.")
-    else:
-        print("No brand data found; no Excel files generated in deals.py.")
-
+#in deals.py
 
 ##############################################################################
 # 5) RUN BRAND_INVENTORY.PY FOR 'Hashish' ONLY
@@ -1054,7 +663,7 @@ def main():
     run_sales_report(last_monday, last_sunday)
 
     # 3) Deals
-    run_deals()
+    subprocess.run(["python", "deals.py"])
     time.sleep(2)
 
     # 4) Brand Inventory (Hashish)
@@ -1143,7 +752,7 @@ def main():
     def make_hashish_owed_table(rows):
         """
         rows should be a list of tuples: [(store, owed), (store, owed), ...]
-        where 'store' might be "Misson Valley" / "La Mesa" and 'owed' is numeric or string.
+        where 'store' might be "Mission Valley" / "La Mesa" / "Sorrento Valley" and 'owed' is numeric or string.
         
         This function:
         - Skips any row if store == "Store" or owed == "Kickback Owed" (i.e. a header).

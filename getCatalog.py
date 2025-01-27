@@ -109,7 +109,7 @@ def clickActionsAndExport(current_store):
         print("Export option clicked successfully.")
         
         export_csv_button = wait.until(EC.element_to_be_clickable(
-            (By.CSS_SELECTOR, "body > div.sc-jYnRlT.kGxwGQ.sc-heKhxA.Bgfyt.MuiDialog-root.sc-bBPnyn.hrApOB.MuiModal-root > div.sc-fhrEpP.dWiAWv.MuiDialog-container.MuiDialog-scrollPaper > div > div.sc-iyxVF.bdkceX.MuiDialogActions-root.MuiDialogActions-spacing.sc-fopvND.finsng > div.primary-actions > button:nth-child(1)")))
+             (By.CSS_SELECTOR, "[data-testid='export-table-modal-export-csv-button']")))
         export_csv_button.click()
         print("Export CSV button clicked successfully.")
 

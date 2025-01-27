@@ -27,7 +27,8 @@ INPUT_COLUMNS = ['Available', 'Product', 'Category', 'Brand']
 
 store_abbr_map = {
     "Buzz Cannabis - Mission Valley": "MV",
-    "Buzz Cannabis-La Mesa": "LM"
+    "Buzz Cannabis-La Mesa": "LM",
+    "Buzz Cannabis - SORRENTO VALLEY": "SV"
 }
 
 start_str = None

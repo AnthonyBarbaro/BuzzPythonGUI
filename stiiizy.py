@@ -180,3 +180,4 @@ def process_file(file_path, output_prefix):
 # Process both files
 process_file('files/salesLM.xlsx', 'LM')
 process_file('files/salesMV.xlsx', 'MV')
+process_file('files/salesSV.xlsx', 'SV')
