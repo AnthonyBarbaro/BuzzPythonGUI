@@ -12,7 +12,11 @@ from datetime import datetime
 CONFIG_FILE = "config.txt"
 
 INPUT_COLUMNS = ['Available', 'Product', 'Category', 'Brand']
-
+store_abbr_map = {
+    "Buzz Cannabis - Mission Valley": "MV",
+    "Buzz Cannabis-La Mesa": "LM",
+    "Buzz Cannabis - SORRENTO VALLEY": "SV"
+}
 def ensure_dir_exists(directory):
     if not os.path.exists(directory):
         os.makedirs(directory)
@@ -181,8 +185,15 @@ def process_file(file_path, output_directory, selected_brands):
         sort_cols.append('Product')
 
     available_data.sort_values(by=sort_cols, inplace=True, na_position='last')
-
+# Extract store name from file name (assumes last part before ".csv" is the store name)
     base_name = os.path.splitext(os.path.basename(file_path))[0]
+    parts = base_name.split('_')
+    store_name = parts[-1] if len(parts) > 1 else "Unknown"
+
+    # Add Store Name Column
+    available_data.insert(0, 'Store', store_name)
+    unavailable_data.insert(0, 'Store', store_name)
+
     file_subdir = os.path.join(output_directory, base_name)
     ensure_dir_exists(file_subdir)
     today_str = datetime.now().strftime("%m-%d-%Y")
@@ -190,7 +201,7 @@ def process_file(file_path, output_directory, selected_brands):
     brand_exists = 'Brand' in available_data.columns
     if brand_exists:
         if available_data.empty:
-            output_filename = os.path.join(file_subdir, f"{base_name}_{today_str}.xlsx")
+            output_filename = os.path.join(file_subdir, f"{store_name}_{base_name}_{today_str}.xlsx")
             with pd.ExcelWriter(output_filename, engine='openpyxl') as writer:
                 available_data.to_excel(writer, index=False, sheet_name='Available')
                 if not unavailable_data.empty:
@@ -199,7 +210,7 @@ def process_file(file_path, output_directory, selected_brands):
             print(f"Created {output_filename} (no brand data after filtering)")
         else:
             for brand, brand_data in available_data.groupby('Brand'):
-                output_filename = os.path.join(file_subdir, f"{brand}_{today_str}.xlsx")
+                output_filename = os.path.join(file_subdir, f"{store_name}_{brand}_{today_str}.xlsx")
                 with pd.ExcelWriter(output_filename, engine='openpyxl') as writer:
                     brand_data.to_excel(writer, index=False, sheet_name='Available')
                     if not unavailable_data.empty:
@@ -212,7 +223,7 @@ def process_file(file_path, output_directory, selected_brands):
                 format_excel_file(output_filename)
                 print(f"Created {output_filename}")
     else:
-        output_filename = os.path.join(file_subdir, f"{base_name}_{today_str}.xlsx")
+        output_filename = os.path.join(file_subdir, f"{store_name}_{base_name}_{today_str}.xlsx")
         with pd.ExcelWriter(output_filename, engine='openpyxl') as writer:
             available_data.to_excel(writer, index=False, sheet_name='Available')
             if not unavailable_data.empty:
