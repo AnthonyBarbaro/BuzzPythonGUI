@@ -103,6 +103,58 @@ def apply_discounts_and_kickbacks(data, discount, kickback):
     return data
 
 # Define brand-based criteria
+brand_criteria1 = {
+    'Monday': {
+        'vendors': ['Helios | Hypeereon Corporation'],
+        'days': ['Monday'],
+        'discount': 0.30,
+        'kickback': 0.0,
+        'brands': ['EV']
+    },
+    'Tuesday': {
+        'vendors': ['Helios | Hypeereon Corporation'],
+        'days': ['Tuesday'],
+        'discount': 0.30,
+        'kickback': 0.0,
+        'brands': ['EV']
+    },
+    'Wednesday': {
+        'vendors': ['Helios | Hypeereon Corporation'],
+        'days': ['Wednesday'],
+        'discount': 0.30,
+        'kickback': 0.0,
+        'brands': ['EV']
+    },
+    'Thursday': {
+        'vendors': ['Helios | Hypeereon Corporation'],
+        'days': ['Thursday'],
+        'discount': 0.30,
+        'kickback': 0.0,
+        'brands': ['EV']
+    },
+    'Friday': {
+        'vendors': ['Helios | Hypeereon Corporation'],
+        'days': ['Friday'],
+        'discount': 0.30,
+        'kickback': 0.0,
+        'brands': ['EV']
+    },
+    'Saturday': {
+        'vendors': ['Helios | Hypeereon Corporation'],
+        'days': ['Saturday'],
+        'discount': 0.30,
+        'kickback': 0.0,
+        'brands': ['EV']
+    },
+    'Sunday': {
+        'vendors': ['Helios | Hypeereon Corporation'],
+        'days': ['Sunday'],
+        'discount': 0.30,
+        'kickback': 0.0,
+        'brands': ['EV']
+    },
+
+}
 brand_criteria = {
     'Hashish': {
         'vendors': ['BTC Ventures', 'Zenleaf LLC', 'Garden Of Weeden Inc.'],
@@ -198,13 +250,6 @@ brand_criteria = {
         'kickback': 0.25,
         'brands': ['Punch'],
         'categories': ['Pre-Rolls','Cartridges','Chocolates','Gummies']
-    },
-    'CBX':{
-        'vendors': ['Hilife LM','Four Star Distribution and Delivery LLC'],
-        'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
-        'discount': 0.30,
-        'kickback': 0,
-        'brands': ['CBX'],
     }
 }
 
@@ -568,6 +613,7 @@ def run_deals_reports():
         with pd.ExcelWriter(output_filename) as writer:
             # Summary
             brand_summary.to_excel(writer, sheet_name='Summary', index=False, startrow=1)
+            
             # MV Sales (if not empty)
             if not mv_brand_data.empty:
                 mv_brand_data.to_excel(writer, sheet_name='MV_Sales', index=False)
@@ -625,7 +671,8 @@ def run_deals_reports():
         consolidated_file = os.path.join(output_dir, f"consolidated_brand_report_{overall_range}.xlsx")
         print(f"DEBUG: Creating consolidated summary => {consolidated_file}")
         with pd.ExcelWriter(consolidated_file) as writer:
-            final_df.to_excel(writer, sheet_name='Consolidated_Summary', index=False)
+            final_df.to_excel(writer, sheet_name='Consolidated_Summary', index=False, startrow=1)
+
 
         # Style consolidated summary
         wb = load_workbook(consolidated_file)
