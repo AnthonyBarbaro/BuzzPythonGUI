@@ -161,7 +161,7 @@ brand_criteria = {
         'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
         'discount': 0.50,
         'kickback': 0.25,
-        'categories': ['Concentrate'],
+        #'categories': ['Concentrate'],
         'brands': ['Hashish']
     },
     'Jeeter': {
@@ -175,7 +175,7 @@ brand_criteria = {
     },
     'Kiva': {
         'vendors': ['KIVA / LCISM CORP', 'Vino & Cigarro, LLC'],
-        'days': ['Monday'],
+        'days': ['Monday','Wednesday'],
         'discount': 0.50,
         'kickback': 0.25,
         'brands': ['Terra', 'Petra', 'Kiva', 'Lost Farms', 'Camino']
@@ -203,14 +203,14 @@ brand_criteria = {
     },
     'Time Machine': {
         'vendors': ['Vino & Cigarro, LLC'],
-        'days': ['Tuesday','Thursday'],
+        'days': ['Tuesday'],
         'discount': 0.50,
         'kickback': 0.25,
         'brands': ['Time Machine']
     },
     'Pacific Stone': {
         'vendors': ['Vino & Cigarro, LLC'],
-        'days': ['Friday','Monday'],
+        'days': ['Friday'],
         'discount': 0.50,
         'kickback': 0.25,
         'brands': ['Pacific Stone']
