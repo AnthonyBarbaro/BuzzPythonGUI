@@ -755,7 +755,27 @@ def run_deals_reports():
         wb = load_workbook(consolidated_file)
         if 'Consolidated_Summary' in wb.sheetnames:
             sheet = wb['Consolidated_Summary']
-            # We'll just style it with "ALL_BRANDS"
+            # The header row is row=2, so data starts at row=3
+            data_start_row = 3
+            data_end_row = data_start_row + final_df.shape[0] - 1
+
+            # We know from your column order:
+            # 1) Store
+            # 2) Kickback Owed
+            # 3) Days Active
+            # 4) Date Range
+            # 5) gross sales      (column E)
+            # 6) inventory cost   (column F)
+            # 7) discount amount  (column G)
+            # 8) Margin           (column H)
+            # 9) Brand
+            #
+            # Let's inject your formula in column H for each row:
+            for row_idx in range(data_start_row, data_end_row + 1):
+                sheet.cell(row=row_idx, column=8).value = (
+                    f"=((E{row_idx}-G{row_idx})-(F{row_idx}-B{row_idx}))/(E{row_idx}-G{row_idx})"
+                )
+            # We'll just style it with "ALL_BRANDS" 
             style_summary_sheet(sheet, "ALL_BRANDS")
         wb.save(consolidated_file)
 
