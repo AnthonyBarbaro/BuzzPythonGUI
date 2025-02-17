@@ -660,7 +660,25 @@ def run_deals_reports():
                 sv_brand_data.to_excel(writer, sheet_name='SV_Sales', index=False)
             # Top Sellers
             top_sellers_df.to_excel(writer, sheet_name='Top Sellers', index=False)
+        wb = load_workbook(output_filename)
+        summary_sheet = wb['Summary']
 
+        # The header is in row 2, data starts in row 3
+        data_start_row = 3
+        data_end_row = data_start_row + brand_summary.shape[0] - 1
+
+        # We know from col_order that:
+        #   E => "gross sales"  => column 5
+        #   F => "inventory cost" => column 6
+        #   G => "discount amount" => column 7
+        #   H => "Margin" => column 8
+        # So for each row of data, we set the formula in col 8
+        for row_idx in range(data_start_row, data_end_row + 1):
+            # Example formula: =((E3-G3)-(F3*0.75))/(E3-G3)
+            summary_sheet.cell(row=row_idx, column=8).value = (
+                f"=((E{row_idx}-G{row_idx})-(F{row_idx}-B{row_idx}))/(E{row_idx}-G{row_idx})"
+            )
+        wb.save(output_filename)
         # Style
         wb = load_workbook(output_filename)
         if 'Summary' in wb.sheetnames:
