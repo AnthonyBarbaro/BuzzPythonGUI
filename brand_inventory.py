@@ -8,6 +8,8 @@ from openpyxl import load_workbook
 from openpyxl.styles import Font, Alignment, PatternFill
 import traceback
 from datetime import datetime
+import re
+import shutil
 
 CONFIG_FILE = "config.txt"
 
@@ -17,6 +19,38 @@ store_abbr_map = {
     "Buzz Cannabis-La Mesa": "LM",
     "Buzz Cannabis - SORRENTO VALLEY": "SV"
 }
+def organize_by_brand(output_directory):
+    """
+    Goes through all XLSX files in output_directory and its subfolders.
+    If the file name matches "<Store>_<Brand>_<MM-DD-YYYY>.xlsx",
+    then move it into output_directory/Brand/ preserving the file name.
+    """
+    # Regex to match something like "StoreName_Brand_12-25-2025.xlsx"
+    pattern = re.compile(r'^(.*?)_(.*?)_(\d{2}-\d{2}-\d{4})\.xlsx$')
+
+    for root, dirs, files in os.walk(output_directory):
+        for filename in files:
+            if filename.lower().endswith(".xlsx"):
+                match = pattern.match(filename)
+                if match:
+                    # Extract brand from the second group
+                    store_name, brand_name, date_str = match.groups()
+
+                    # Skip if we are already inside the brand folder (avoid re-moving)
+                    if os.path.basename(root) == brand_name:
+                        continue
+
+                    # Create the brand folder if needed
+                    brand_folder = os.path.join(output_directory, brand_name)
+                    ensure_dir_exists(brand_folder)
+
+                    # Current full path
+                    old_path = os.path.join(root, filename)
+                    # New path inside the brand folder
+                    new_path = os.path.join(brand_folder, filename)
+
+                    print(f"Moving {old_path} → {new_path}")
+                    shutil.move(old_path, new_path)
 def ensure_dir_exists(directory):
     if not os.path.exists(directory):
         os.makedirs(directory)
@@ -282,6 +316,7 @@ def process_files(input_directory, output_directory, selected_brands):
     if os.path.exists(unavailable_file):
         os.remove(unavailable_file)
         print("Deleted unavailable.csv")
+    organize_by_brand(output_directory)
 
 def get_all_brands(input_directory):
     brands = set()
