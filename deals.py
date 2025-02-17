@@ -248,8 +248,43 @@ brand_criteria = {
         'days': ['Sunday'],
         'discount': 0.50,
         'kickback': 0.25,
-        'brands': ['Punch'],
-        'categories': ['Pre-Rolls','Cartridges','Chocolates','Gummies']
+        'brands': ['Punch','Tempo'],
+        'categories': ['Pre-Rolls','Cartridges','Chocolates','Gummies','Disposables']
+    },
+    'Smokies': {
+        'vendors': ['Garden Of Weeden Inc.'],
+        'days': ['Sunday'],
+        'discount': 0.50,
+        'kickback': 0.25,
+        'brands': ['Smokies']
+    },
+    'Preferred': {
+        'vendors': ['Garden Of Weeden Inc.'],
+        'days': ['Monday'],
+        'discount': 0.50,
+        'kickback': 0.25,
+        'brands': ['Preferred Gardens',]
+    },
+    'Kikoko': {
+        'vendors': ['Garden Of Weeden Inc.'],
+        'days': ['Wednesday'],
+        'discount': 0.50,
+        'kickback': 0.25,
+        'brands': ['Kikoko']
+    },
+    'JoshWax': {
+        'vendors': ['Garden Of Weeden Inc.'],
+        'days': ['Friday'],
+        'discount': 0.50,
+        'kickback': 0.25,
+        'brands': ['Josh Wax']
+    },
+    'Wizard-Trees': {
+        'vendors': ['Garden Of Weeden Inc.'],
+        'days': ['Friday','Saturday','Sunday'],
+        'discount': 0.50,
+        'kickback': 0.25,
+        'brands': ['Wizard Trees']
     }
 }
 
@@ -579,11 +614,11 @@ def run_deals_reports():
         brand_summary['Days Active'] = days_text
         brand_summary['Date Range'] = f"{start_date} to {end_date}"
         brand_summary['Brand'] = brand
-
+        brand_summary['Margin'] = None
         # Reorder columns
         col_order = [
             'Store', 'Kickback Owed', 'Days Active', 'Date Range',
-            'gross sales', 'inventory cost', 'discount amount', 'Brand'
+            'gross sales', 'inventory cost', 'discount amount','Margin','Brand'
         ]
         final_cols = [c for c in col_order if c in brand_summary.columns]
         brand_summary = brand_summary[final_cols]
