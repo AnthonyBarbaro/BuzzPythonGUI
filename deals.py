@@ -297,7 +297,7 @@ brand_criteria = {
         'brands': ['Kikoko']
     },
     'JoshWax': {
-        'vendors': ['Garden Of Weeden Inc.'],
+        'vendors': ['Zasp'],
         'days': ['Friday'],
         'discount': 0.50,
         'kickback': 0.25,
