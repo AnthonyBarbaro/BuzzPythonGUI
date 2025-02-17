@@ -8,6 +8,30 @@ from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 from openpyxl.utils import get_column_letter
 from pathlib import Path
 import locale
+import hashlib
+
+# Global dictionary to map real names -> pseudonyms
+NAME_MAP = {}
+GLOBAL_COUNTER = 1
+
+def pseudonymize_name(name):
+    """
+    Replace a customer's real name with a consistent pseudonym.
+    Example: "John Smith" -> "Customer_1"
+    The same name always maps to the same pseudonym during a single script run.
+    """
+    global GLOBAL_COUNTER
+    
+    if pd.isnull(name) or not isinstance(name, str):
+        return ""
+
+    name = name.strip()
+    if name not in NAME_MAP:
+        # Create a new pseudonym
+        NAME_MAP[name] = f"Customer_{GLOBAL_COUNTER}"
+        GLOBAL_COUNTER += 1
+
+    return NAME_MAP[name]
 
 locale.setlocale(locale.LC_ALL, '')  # Use '' for system's default locale (e.g., USD for the US)
 
@@ -34,7 +58,7 @@ def process_file(file_path):
     # Convert order time to datetime, then create day-of-week
     df['order time'] = pd.to_datetime(df['order time'], errors='coerce')
     df['day of week'] = df['order time'].dt.strftime('%A')
-
+    df['customer name'] = df['customer name'].apply(pseudonymize_name)
     # Debug: show shape and columns
     print(f"DEBUG: Successfully read {file_path}")
     print(f"DEBUG: {file_path} shape: {df.shape}")
