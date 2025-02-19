@@ -185,13 +185,16 @@ def process_file(file_path, output_directory, selected_brands):
         return None, None
 
     df = df[existing_cols]
+    #removes promo units 
+    if 'Product' in df.columns:
+        df = df[~df['Product'].str.contains(r'(?i)\bsample\b|\bpromo\b', na=False)]
 
     if 'Available' not in df.columns:
         print(f"'Available' column not found in {file_path}. Skipping.")
         return None, None
-
-    unavailable_data = df[df['Available'] == 0]
-    available_data = df[df['Available'] != 0]
+    #low numbers just go to unavailable
+    unavailable_data = df[df['Available'] <= 2]
+    available_data = df[df['Available'] > 2]
 
     if 'Brand' in available_data.columns and selected_brands:
         available_data = available_data[available_data['Brand'].isin(selected_brands)]
@@ -206,8 +209,8 @@ def process_file(file_path, output_directory, selected_brands):
         available_data['Product_Weight'] = ""
         available_data['Product_SubType'] = ""
 
-    if 'Product' in available_data.columns:
-        available_data = available_data[~available_data['Product'].apply(is_empty_or_numbers)]
+    #if 'Product' in available_data.columns:
+    #    available_data = available_data[~available_data['Product'].apply(is_empty_or_numbers)]
 
     sort_cols = []
     if 'Category' in available_data.columns:
