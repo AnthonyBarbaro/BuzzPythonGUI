@@ -163,13 +163,11 @@ def format_excel_file(filename: str):
                 pt_row, pt_value = pt_info
                 ws.insert_rows(pos, 1)
                 header_cell = ws.cell(row=pos, column=1)
-                header_cell.value = f"Category: {pt_value}"
+                header_cell.value = f"{pt_value}"
                 header_cell.font = category_font
                 header_cell.fill = fill
-                max_col = ws.max_column
-                ws.merge_cells(start_row=pos, start_column=1, end_row=pos, end_column=max_col)
                 header_cell.alignment = Alignment(horizontal='center', vertical='center')
-
+                
     wb.save(filename)
 
 def process_file(file_path, output_directory, selected_brands):
@@ -209,8 +207,8 @@ def process_file(file_path, output_directory, selected_brands):
         available_data['Product_Weight'] = ""
         available_data['Product_SubType'] = ""
 
-    #if 'Product' in available_data.columns:
-    #    available_data = available_data[~available_data['Product'].apply(is_empty_or_numbers)]
+    if 'Product' in available_data.columns:
+        available_data = available_data[~available_data['Product'].apply(is_empty_or_numbers)]
 
     sort_cols = []
     if 'Category' in available_data.columns:
@@ -228,8 +226,8 @@ def process_file(file_path, output_directory, selected_brands):
     store_name = parts[-1] if len(parts) > 1 else "Unknown"
 
     # Add Store Name Column
-    available_data.insert(0, 'Store', store_name)
-    unavailable_data.insert(0, 'Store', store_name)
+    #available_data.insert(0, 'Store', store_name)
+    #unavailable_data.insert(0, 'Store', store_name)
 
     file_subdir = os.path.join(output_directory, base_name)
     ensure_dir_exists(file_subdir)
