@@ -61,33 +61,45 @@ def login():
     login_button.click()
 
 def click_dropdown():
+    """ Clicks the store dropdown to open the list of options. """
     wait = WebDriverWait(driver, 10)
-    dropdown_xpath = "/html/body/div[1]/div/div[1]/div[2]/div[2]/div"
-    try:
-        wait.until(EC.invisibility_of_element_located((By.CSS_SELECTOR, "div.sc-ppyJt.jlHGrm")))
-    except TimeoutException:
-        pass
-
-    dropdown = wait.until(EC.element_to_be_clickable((By.XPATH, dropdown_xpath)))
-    driver.execute_script("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", dropdown)
-    dropdown.click()
+    dropdown_xpath = "//div[@data-testid='header_select_location']"
     
+    try:
+        # Wait for dropdown to be clickable
+        dropdown = wait.until(EC.element_to_be_clickable((By.XPATH, dropdown_xpath)))
+        driver.execute_script("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", dropdown)
+        dropdown.click()
+        time.sleep(1)  # Small delay to allow options to load
+    except TimeoutException:
+        print("Dropdown not found or not clickable")
 
 def select_dropdown_item(item_text):
+    """ Selects the given store from the dropdown menu. """
     wait = WebDriverWait(driver, 10)
+    
     try:
-        click_dropdown()
-        # Use data-testid attribute
-        xpath = f"//li[@data-testid='rebrand-header_menu-item_{item_text}']"
-        item = wait.until(EC.element_to_be_clickable((By.XPATH, xpath)))
-        item.click()
+        click_dropdown()  # Open the dropdown first
+
+        # Ensure store names match exact `data-testid` attribute
+        formatted_text = item_text.replace(" ", "-")  # Ensure matching format for testid
+        item_xpath = f"//li[@data-testid='rebrand-header_menu-item_{item_text}']"
+
+        # Wait for the store option to be visible and clickable
+        item = wait.until(EC.element_to_be_clickable((By.XPATH, item_xpath)))
+
+        # Scroll into view in case it's hidden
+        driver.execute_script("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", item)
+        time.sleep(0.5)  # Allow animation delay
+
+        # Click using JavaScript (useful if Selenium `.click()` doesn’t work)
+        driver.execute_script("arguments[0].click();", item)
         print(f"Selected store: {item_text}")
-        time.sleep(1)
-        driver.refresh()
-        time.sleep(1)
+
+        time.sleep(1)  # Give time for selection to register
         return True
     except (TimeoutException, NoSuchElementException) as e:
-        print(f"Error while trying to select '{item_text}' from the dropdown: {e}")
+        print(f"Error selecting store '{item_text}': {e}")
         return False
 
 def clickActionsAndExport(current_store):
