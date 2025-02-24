@@ -129,55 +129,61 @@ def apply_discounts_and_kickbacks(data, discount, kickback):
 # Define brand-based criteria
 brand_criteria1 = {
     'Monday': {
-        'vendors': ['Helios | Hypeereon Corporation'],
+        'vendors': ['Evergreen SR. Distribution Inc.'],
         'days': ['Monday'],
         'discount': 0.30,
         'kickback': 0.0,
-        'brands': ['EV']
+        'brands': ['Smackers']
     },
     'Tuesday': {
-        'vendors': ['Helios | Hypeereon Corporation'],
+        'vendors': ['Evergreen SR. Distribution Inc.'],
         'days': ['Tuesday'],
         'discount': 0.30,
         'kickback': 0.0,
-        'brands': ['EV']
+        'brands': ['Smackers']
     },
     'Wednesday': {
-        'vendors': ['Helios | Hypeereon Corporation'],
+        'vendors': ['Evergreen SR. Distribution Inc.'],
         'days': ['Wednesday'],
         'discount': 0.30,
         'kickback': 0.0,
-        'brands': ['EV']
+        'brands': ['Smackers']
     },
     'Thursday': {
-        'vendors': ['Helios | Hypeereon Corporation'],
+        'vendors': ['Evergreen SR. Distribution Inc.'],
         'days': ['Thursday'],
         'discount': 0.30,
         'kickback': 0.0,
-        'brands': ['EV']
+        'brands': ['Smackers']
     },
     'Friday': {
-        'vendors': ['Helios | Hypeereon Corporation'],
+        'vendors': ['Evergreen SR. Distribution Inc.'],
         'days': ['Friday'],
         'discount': 0.30,
         'kickback': 0.0,
-        'brands': ['EV']
+        'brands': ['Smackers']
     },
     'Saturday': {
-        'vendors': ['Helios | Hypeereon Corporation'],
+        'vendors': ['Evergreen SR. Distribution Inc.'],
         'days': ['Saturday'],
         'discount': 0.30,
         'kickback': 0.0,
-        'brands': ['EV']
+        'brands': ['Smackers']
     },
     'Sunday': {
-        'vendors': ['Helios | Hypeereon Corporation'],
+        'vendors': ['Evergreen SR. Distribution Inc.'],
         'days': ['Sunday'],
         'discount': 0.30,
         'kickback': 0.0,
-        'brands': ['EV']
+        'brands': ['Smackers']
     },
-
+    'Smackers': {
+        'vendors': ['Evergreen SR. Distribution Inc.'],
+        'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
+        'discount': 0.30,
+        'kickback': 0.0,
+        'brands': ['Smackers']
+    }
 }
 brand_criteria = {
     'Hashish': {
@@ -303,12 +309,12 @@ brand_criteria = {
         'kickback': 0.25,
         'brands': ['Josh Wax']
     },
-    'Wizard-Trees': {
-        'vendors': ['Garden Of Weeden Inc.'],
-        'days': ['Friday','Saturday','Sunday'],
+    'Almora': {
+        'vendors': ['Fluids Manufacturing Inc.'],
+        'days': ['Friday','Saturday'],
         'discount': 0.50,
         'kickback': 0.25,
-        'brands': ['Wizard Trees']
+        'brands': ['Almora']
     }
 }
 
