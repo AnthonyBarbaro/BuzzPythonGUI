@@ -104,7 +104,7 @@ def select_dropdown_item(item_text):
 
 def clickActionsAndExport(current_store):
     try:
-        time.sleep(12)  # Wait for the page to fully load
+        time.sleep(16)  # Wait for the page to fully load
         wait = WebDriverWait(driver, 10)
         
         # Get the current file list before clicking export
@@ -124,7 +124,7 @@ def clickActionsAndExport(current_store):
              (By.CSS_SELECTOR, "[data-testid='export-table-modal-export-csv-button']")))
         export_csv_button.click()
         print("Export CSV button clicked successfully.")
-
+    
         # Wait for the new file to appear
         new_file = wait_for_new_file(files_dir, before_files, timeout=60)
         if new_file:
