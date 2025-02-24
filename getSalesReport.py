@@ -66,7 +66,7 @@ def launchBrowser():
     d.get("https://dusk.backoffice.dutchie.com/reports/sales/sales-report")
     return d
 
-def login():
+def login(driver):
     wait = WebDriverWait(driver, 10)
     wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "input[data-testid='auth_input_username']"))).send_keys(username)
     wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "input[data-testid='auth_input_password']"))).send_keys(password)
@@ -409,7 +409,7 @@ def open_gui_and_run():
         # Launch browser, login, iterate over stores
         global driver
         driver = launchBrowser()
-        login()
+        login(driver)
 
         for store in selected_stores:
             if not select_dropdown_item(store):
@@ -423,7 +423,25 @@ def open_gui_and_run():
     tk.Button(root, text="OK", command=on_ok, font=("Arial", 12, "bold"), bg="lightblue").pack(pady=10)
 
     root.mainloop()
+def run_sales_report(start_date, end_date):
+    """Runs the full sales report process."""
+    store_names = [
+        "Buzz Cannabis - Mission Valley",
+        "Buzz Cannabis-La Mesa",
+        "Buzz Cannabis - SORRENTO VALLEY"
+    ]
+    global driver
+    driver = launchBrowser()
+    login(driver)
 
+    for store in store_names:
+            if not select_dropdown_item(store):
+                break
+            set_date_range(start_date, end_date)
+            click_run_button()
+            clickActionsAndExport(store)
+
+    driver.quit()
 # Main execution through GUI
 if __name__ == "__main__":
     open_gui_and_run()
