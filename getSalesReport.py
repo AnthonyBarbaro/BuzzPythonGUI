@@ -418,7 +418,7 @@ def open_gui_and_run():
             click_run_button()
             clickActionsAndExport(store)
 
-        #driver.quit()
+        driver.quit()
 
     tk.Button(root, text="OK", command=on_ok, font=("Arial", 12, "bold"), bg="lightblue").pack(pady=10)
 
