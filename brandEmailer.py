@@ -1,17 +1,13 @@
 #!/usr/bin/env python3
 
 import os
-import openpyxl
 import re
+import openpyxl
 
 # ---------------------------------------------
-# 1) GMAIL API SEND LOGIC (From your autoJob.py)
+# 1) GMAIL API SEND LOGIC 
 # ---------------------------------------------
 def send_email_with_gmail_html(subject, html_body, recipients, attachments=None):
-    """
-    Sends an HTML email via Gmail API with optional attachments.
-    Adjust SCOPES, token filenames, etc. to match your environment.
-    """
     import base64
     from email.mime.multipart import MIMEMultipart
     from email.mime.base import MIMEBase
@@ -24,9 +20,9 @@ def send_email_with_gmail_html(subject, html_body, recipients, attachments=None)
     from googleapiclient.discovery import build
 
     GMAIL_SCOPES = ['https://www.googleapis.com/auth/gmail.send']
-    creds = None
-    gmail_token = "token_gmail.json"  # or whichever token file you normally use
+    gmail_token = "token_gmail.json"
 
+    creds = None
     if os.path.exists(gmail_token):
         creds = Credentials.from_authorized_user_file(gmail_token, GMAIL_SCOPES)
     if not creds or not creds.valid:
@@ -43,18 +39,15 @@ def send_email_with_gmail_html(subject, html_body, recipients, attachments=None)
     if isinstance(recipients, str):
         recipients = [recipients]
 
-    # Create a MIMEMultipart message for HTML
     msg = MIMEMultipart('alternative')
-    msg['From'] = "me"  # The Gmail API ignores this 'From', but it's good practice
+    msg['From'] = "me"
     msg['To'] = ", ".join(recipients)
     msg['Date'] = formatdate(localtime=True)
     msg['Subject'] = subject
 
-    # Attach the HTML body
     part_html = MIMEText(html_body, 'html')
     msg.attach(part_html)
 
-    # Optionally attach files
     if attachments:
         for file_path in attachments:
             if not os.path.isfile(file_path):
@@ -77,29 +70,22 @@ def send_email_with_gmail_html(subject, html_body, recipients, attachments=None)
     except Exception as e:
         print(f"[ERROR] Could not send HTML email: {e}")
 
-# ---------------------------------------------
-# 2) BRAND -> EMAIL MAP
-# ---------------------------------------------
-# In production, you might store real brand-specific emails. 
-# For now, default everything to "anthony@barbaro.tech" for testing.
 
+# ---------------------------------------------
+# 2) BRAND -> EMAIL MAP (adjust for real usage)
+# ---------------------------------------------
 BRAND_EMAILS = {
-    # "Hashish": "team@hashish.com",
-    # "Jeeter": "sales@jeeterbrand.com",
-    # ...
-    # Provide a default fallback if brand not in dictionary:
+   # e.g. "Heavy Hitters": "heavyhittersteam@example.com",
+   # "WYLD GoodTide": "wyldteam@example.com",
 }
-
 DEFAULT_EMAIL = "anthony@barbaro.tech"
 
+
 # ---------------------------------------------
-# 3) HELPER: PARSE "SUMMARY" SHEET FOR (STORE, KICKBACK OWED)
+# 3) PARSE "SUMMARY" SHEET FOR (STORE, KICKBACK OWED)
 # ---------------------------------------------
 def parse_kickback_summary(brand_report_path):
-    """
-    Looks for a 'Summary' sheet in the given xlsx. 
-    Returns a list of (store, owed) floats or strings.
-    """
+    """Returns list[(store, owed)], ignoring 'Store'/'Kickback Owed' placeholders."""
     results = []
     if not os.path.isfile(brand_report_path):
         return results
@@ -110,34 +96,30 @@ def parse_kickback_summary(brand_report_path):
         return results
 
     sh = wb["Summary"]
-    # By your deals.py code, column A => "Store", B => "Kickback Owed"
-    # Data starts at row 2 onward
     for row_idx in range(2, sh.max_row + 1):
         store_val = sh.cell(row=row_idx, column=1).value
         owed_val  = sh.cell(row=row_idx, column=2).value
-
         if store_val is not None and owed_val is not None:
-            # Filter out obvious header or empty
-            # "Store" in store_val => skip, "Kickback Owed" in owed_val => skip
-            str_store = str(store_val).strip()
-            str_owed  = str(owed_val).strip().lower()
-            if (str_store.lower() not in ["store", ""] and 
-                str_owed not in ["kickback owed", ""]):
+            s_str = str(store_val).strip().lower()
+            o_str = str(owed_val).strip().lower()
+            if s_str not in ["store", ""] and o_str not in ["kickback owed", ""]:
                 results.append((store_val, owed_val))
     wb.close()
     return results
 
+
 def build_kickback_table(rows):
-    """
-    Convert list[(store, owed_value), ...] into a small HTML table.
-    """
     if not rows:
         return "<p>(No data found in summary.)</p>"
 
-    html = "<table border='1' cellpadding='5' cellspacing='0'>"
-    html += "<thead><tr><th>Store</th><th>Kickback Owed</th></tr></thead><tbody>"
+    html = """
+    <table border='1' cellpadding='5' cellspacing='0'>
+      <thead>
+        <tr><th>Store</th><th>Kickback Owed</th></tr>
+      </thead>
+      <tbody>
+    """
     for (store, owed) in rows:
-        # Format numeric if possible
         try:
             owed_float = float(owed)
             owed_str = f"${owed_float:,.2f}"
@@ -147,58 +129,79 @@ def build_kickback_table(rows):
     html += "</tbody></table>"
     return html
 
+
 # ---------------------------------------------
-# 4) OPTIONAL: PARSE links.txt FOR BRAND LINKS
+# 4) PARSE links.txt FOR BRAND LINKS
 # ---------------------------------------------
+def parse_brand_and_link(line):
+    """
+    Attempt to parse brand name from filename forms like:
+      - "Heavy Hitters_report_2025-02-21_to_2025-02-22.xlsx: <URL>"
+      - "WYLD GoodTide_report_2025-02-21_to_2025-02-22.xlsx: <URL>"
+      - "Hashish_02-24-2025_SV.xlsx: <URL>"
+    capturing everything (including spaces) up to `_report_` 
+    or up to the date pattern.
+    """
+    if ':' not in line:
+        return None, None
+    left_part, url_part = line.split(':', 1)
+    left_part = left_part.strip()
+    url_part  = url_part.strip()
+    if not url_part.startswith("http"):
+        return None, None
+
+    # Pattern A: brand up to '_report_'
+    m = re.match(r'^(.+?)_report_', left_part, re.IGNORECASE)
+    if m:
+        brand = m.group(1).strip()
+        return brand, line
+
+    # Pattern B: brand up to '_' + date
+    # e.g. "Hashish_02-24-2025_SV.xlsx"
+    # We'll capture everything before the date:
+    m2 = re.match(r'^(.+?)_[0-9]{2}-[0-9]{2}-[0-9]{4}', left_part, re.IGNORECASE)
+    if m2:
+        brand = m2.group(1).strip()
+        return brand, line
+
+    return None, None
+
+
 def load_links_map(links_file="links.txt"):
     """
-    Reads each line of links.txt: 'filename.xlsx: https://drive.google...'
-    Returns a dict:
-        {
-          "Hashish": [ (full_line_1), (full_line_2), ...],
-          "Jeeter": [...],
-          ...
-        }
-
-    We'll match brand name if the filename starts with that brand prefix, 
-    e.g. "Hashish_report..." => brand=Hashish
+    Returns { normalized_brand: [full_line_1, full_line_2, ...], ... }
     """
     brand_links_map = {}
     if not os.path.isfile(links_file):
+        print(f"[WARN] no links.txt found at {links_file}.")
         return brand_links_map
 
     with open(links_file, "r", encoding="utf-8") as f:
         lines = [ln.strip() for ln in f if ln.strip()]
 
     for line in lines:
-        # line = "Hashish_report_2025-01-01_to_2025-01-07.xlsx: https://drive.google.com/..."
-        # brand is typically the first chunk up to "_report" ...
-        # We'll do a quick approach:
-        match = re.match(r"^([^_\s]+)_report_.*:\s*(https?://\S+)$", line, re.IGNORECASE)
-        if match:
-            brand = match.group(1)
-            # Some brands might have slashes or spaces replaced. If your brand has tricky characters,
-            # you can do a more robust parse. For now, we assume brand is "Hashish", "Jeeter", etc.
-            brand = brand.replace("-", "").replace(" ", "")
-
-            if brand not in brand_links_map:
-                brand_links_map[brand] = []
-            brand_links_map[brand].append(line)
+        brand, full_line = parse_brand_and_link(line)
+        if brand:
+            # e.g. "Heavy Hitters" -> "heavyhitters"
+            normalized = brand.lower().replace(" ", "")
+            if normalized not in brand_links_map:
+                brand_links_map[normalized] = []
+            brand_links_map[normalized].append(line)
         else:
-            # Could not parse brand. Possibly the consolidated file or a different naming pattern.
+            # If we can't parse brand, we skip or store in a "misc" bucket
             pass
 
     return brand_links_map
 
+
 def make_html_link_list(lines):
     """
-    Turn lines like: 
-      "Hashish_report_2025-01-01_to_2025-01-07.xlsx: https://drive..."
-    into HTML <ul> items with clickable link
+    Convert lines like:
+      "Heavy Hitters_report_2025-02-21_to_2025-02-22.xlsx: https://..."
+    into an HTML <ul> with clickable links.
     """
     if not lines:
         return "<p>No links for this brand.</p>"
-
     html = "<ul>"
     for ln in lines:
         if ":" in ln:
@@ -211,62 +214,53 @@ def make_html_link_list(lines):
     html += "</ul>"
     return html
 
+
 # ---------------------------------------------
-# 5) MAIN “SEND BRAND EMAILS” LOGIC
+# 5) MAIN "SEND BRAND EMAILS" LOGIC
 # ---------------------------------------------
 def send_brand_emails():
-    """
-    Looks in 'brand_reports/' for each brand .xlsx file (e.g. "Hashish_report_2025-xx-xx.xlsx").
-    For each brand file:
-      - Parse brand name from filename
-      - Gather Kickback Owed data from the "Summary" sheet
-      - (Optional) gather brand's GDrive link(s) from links.txt
-      - Send an HTML email to the brand's contact (or default) with:
-          * Subject: "Weekly Kickback - [Brand]"
-          * Body: Kickback table + links
-          * Attachment: the brand .xlsx (optional)
-    Finally, optionally send a single "consolidated" email with all brand data.
-    """
     reports_dir = "brand_reports"
     if not os.path.isdir(reports_dir):
         print(f"[ERROR] The folder '{reports_dir}' does not exist. No emails sent.")
         return
-    
-    # Load brand->[lines] from links.txt if you want clickable GDrive links
+
+    # 1) Load brand->linklines from links.txt
     brand_links_map = load_links_map("links.txt")
 
-    # We'll keep track of all brand summaries so we can do a consolidated email if you want
     all_brands_info = []
 
+    # 2) Iterate brand_reports, parse brand, build email
     for filename in os.listdir(reports_dir):
         if not filename.endswith(".xlsx"):
             continue
-        # By deals.py naming, it should be "Brand_report_YYYY-mm-dd_to_YYYY-mm-dd.xlsx"
-        # Let's parse brand name up to "_report"
-        match = re.match(r"^([^_]+)_report_.*\.xlsx$", filename, re.IGNORECASE)
-        if not match:
-            continue
-        brand_name = match.group(1)
 
-        # The path to attach
+        # Pattern A: brand up to '_report_'
+        match = re.match(r'^(.+?)_report_', filename, re.IGNORECASE)
+        if match:
+            brand_name = match.group(1).strip()
+        else:
+            # Pattern B: brand up to '_dd-mm-yyyy'
+            match2 = re.match(r'^(.+?)_[0-9]{2}-[0-9]{2}-[0-9]{4}', filename, re.IGNORECASE)
+            if match2:
+                brand_name = match2.group(1).strip()
+            else:
+                brand_name = filename.rsplit('.', 1)[0]  # fallback entire base
+
         file_path = os.path.join(reports_dir, filename)
 
-        # Parse (store, owed) from summary
+        # 3) Parse Kickback summary
         summary_rows = parse_kickback_summary(file_path)
         owed_table_html = build_kickback_table(summary_rows)
 
-        # Optionally get brand's GDrive link lines from brand_links_map
-        # Normalize brand name if needed (like 'Smackers' vs 'Smackers' key).
-        # For safety, compare case-insensitive:
-        normalized_brand = brand_name.lower().replace("-", "").replace(" ", "")
-
+        # 4) Gather brand Drive links from brand_links_map
+        normalized_brand = brand_name.lower().replace(" ", "")
         brand_link_lines = brand_links_map.get(normalized_brand, [])
         link_list_html = make_html_link_list(brand_link_lines)
 
-        # Decide the recipient
+        # 5) Determine recipient
         recipient = BRAND_EMAILS.get(brand_name, DEFAULT_EMAIL)
 
-        # Build HTML body
+        # 6) Build HTML body
         html_body = f"""
         <html>
           <body>
@@ -288,10 +282,10 @@ def send_brand_emails():
             subject=subject,
             html_body=html_body,
             recipients=recipient,
-            attachments=[file_path]  # or [] if you don't want to attach
+            attachments=[file_path]
         )
 
-        # Collect info for consolidated
+        # Collect info for optional consolidated
         total_owed = 0.0
         for (_, o) in summary_rows:
             try:
@@ -305,14 +299,9 @@ def send_brand_emails():
             "total_owed": total_owed
         })
 
-    # ---------------------------------------------
-    # 6) OPTIONAL: SEND CONSOLIDATED EMAIL
-    # ---------------------------------------------
-    # If you want a single email that shows all brands in one table,
-    # plus all brand links. Just for your internal use perhaps.
+    # 7) OPTIONAL: Send consolidated email
     if all_brands_info:
         grand_total = sum(bi["total_owed"] for bi in all_brands_info)
-        # Build HTML for each brand
         brand_htmls = []
         for bi in all_brands_info:
             brand = bi["brand"]
@@ -342,16 +331,16 @@ def send_brand_emails():
         </html>
         """
 
-        # Send to yourself or whomever
         send_email_with_gmail_html(
             subject=subject,
             html_body=html_body,
-            recipients=["anthony@barbaro.tech"],  # or a distribution list
+            recipients=["anthony@barbaro.tech"],
             attachments=None
         )
 
+
 # ---------------------------------------------
-# 7) MAIN ENTRY POINT
+# 6) MAIN
 # ---------------------------------------------
 if __name__ == "__main__":
     send_brand_emails()
