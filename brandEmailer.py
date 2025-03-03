@@ -326,7 +326,8 @@ def send_brand_emails():
           <p>Hello Team,</p>
           <p>Below is a consolidated summary of all brands Kickback info:</p>
           {consolidated_html}
-          <p>Regards,<br>Anthony</p>
+          <p>Regards,<br>Donna</p>
+        <p><strong>please include/contact anthony@buzzcannabis.com & donna@buzzcannabis.com in all emails regarding these credits. </strong></p>
         </body>
         </html>
         """
@@ -334,7 +335,7 @@ def send_brand_emails():
         send_email_with_gmail_html(
             subject=subject,
             html_body=html_body,
-            recipients=["anthony@barbaro.tech"],
+            recipients=["anthony@barbaro.tech","donna@buzzcannabis.com"],
             attachments=None
         )
 
