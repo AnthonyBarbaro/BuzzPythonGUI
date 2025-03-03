@@ -125,7 +125,15 @@ def apply_discounts_and_kickbacks(data, discount, kickback):
     )
 
     return data
-
+brand_criteria2 = {
+    'Stiiizy': {
+        'vendors': ['Elevation (Stiiizy)'],
+        'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
+        'discount': 0.50,
+        'kickback': 0.25,
+        'brands': ['Stiiizy']
+    }
+}
 # Define brand-based criteria
 brand_criteria1 = {
     'Monday': {
@@ -191,7 +199,7 @@ brand_criteria = {
         'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
         'discount': 0.50,
         'kickback': 0.25,
-        #'categories': ['Concentrate'],
+        #'categories': ['Concentrate'], 
         'brands': ['Hashish']
     },
     'Jeeter': {
@@ -266,21 +274,6 @@ brand_criteria = {
         'kickback': 0.25,
         'brands': ['Jetty']
     },
-    'DrNorms': {
-        'vendors': ['Punch Media, LLC'],
-        'days': ['Thursday'],
-        'discount': 0.50,
-        'kickback': 0.25,
-        'brands': ['Dr. Norms']
-    },
-    'Punch': {
-        'vendors': ['Punch Media, LLC'],
-        'days': ['Sunday'],
-        'discount': 0.50,
-        'kickback': 0.25,
-        'brands': ['Punch','Tempo'],
-        'categories': ['Pre-Rolls','Cartridges','Chocolates','Gummies','Disposables']
-    },
     'Smokies': {
         'vendors': ['Garden Of Weeden Inc.'],
         'days': ['Sunday'],
@@ -315,6 +308,13 @@ brand_criteria = {
         'discount': 0.50,
         'kickback': 0.25,
         'brands': ['Almora']
+    },
+    'TreeSap': {
+        'vendors': ['Zenleaf LLC'],
+        'days': ['Thursday'],
+        'discount': 0.50,
+        'kickback': 0.25,
+        'brands': ['TreeSap']
     }
 }
 
@@ -668,7 +668,7 @@ def run_deals_reports():
                 combined_df.groupby('product name', as_index=False)
                 .agg({'gross sales': 'sum'})
                 .sort_values(by='gross sales', ascending=False)
-                .head(10)
+                .head(20)
             )
             top_sellers_df.rename(columns={'product name': 'Product Name', 'gross sales': 'Gross Sales'}, inplace=True)
         else:
