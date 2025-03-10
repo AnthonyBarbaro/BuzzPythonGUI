@@ -1,0 +1,386 @@
+{
+  "test_mode": true,
+  "test_email": "anthony@barbaro.tech",
+
+  "brands": [
+    {
+      "brand_synonyms": ["Pacific Stone", "Time Machine"],
+      "folder_name": "Pacific Stone / Time Machine",
+      "rep": "Nicole",
+      "emails": ["nicole.stolberg@pacstone.com"],
+      "days": ["Monday"],
+      "location": "MV/LM/SV"
+    },
+    {
+      "brand_synonyms": ["Pearl Pharma"],
+      "folder_name": "Pearl Pharma",
+      "rep": "Heidi",
+      "emails": ["heidi@kanaplya.com"],
+      "days": ["Monday"],
+      "location": "MV/LM/SV"
+    },
+    {
+      "brand_synonyms": ["Punch", "Dr. Norms", "Tempo"],
+      "folder_name": "Punch / Dr. Norms / Tempo",
+      "rep": "Esteban & Roberta",
+      "emails": ["roberta@doctornorms.com", "esteban@punchedibles.com"],
+      "days": ["Monday"],
+      "location": "MV/LM/SV"
+    },
+    {
+      "brand_synonyms": ["Sauce"],
+      "folder_name": "Sauce",
+      "rep": "Jayson",
+      "emails": ["jayson@sauceessentials.com"],
+      "days": ["Monday"],
+      "location": "MV/LM/SV"
+    },
+    {
+      "brand_synonyms": ["Turn"],
+      "folder_name": "Turn",
+      "rep": "Andrea",
+      "emails": ["adillon@turn.me"],
+      "days": ["Monday"],
+      "location": "MV/LM/SV"
+    },
+    {
+      "brand_synonyms": [
+        "Moon Valley",
+        "Park Jams",
+        "Coastal Sun",
+        "Quiet Kings",
+        "Permanent Holiday",
+        "Royal Blunts",
+        "Snowtill",
+        "Sunsmoke",
+        "High Desert Pure",
+        "Black Pearl"
+      ],
+      "folder_name": "Moon Valley / Park Jams / Coastal Sun / Quiet Kings / Permanent Holiday / Royal Blunts / Snowtill / Sunsmoke / High Desert Pure / Black Pearl",
+      "rep": "Conor",
+      "emails": ["conorjloughman@gmail.com"],
+      "days": ["Monday"],
+      "location": "MV"
+    },
+    {
+      "brand_synonyms": [
+        "Hi", "Whoa", "Holy Water", "Holy Smokes", "Lavina", "Rollers D", 
+        "Eyelle", "Bodega Boys", "Tonik", "Moods", "Top Secret", "Topshelf"
+      ],
+      "folder_name": "Hi / Whoa / Holy Water / Holy Smokes / Lavina / Rollers D / Eyelle / Bodega Boys / Tonik / Moods / Top Secret / Topshelf",
+      "rep": "Damien",
+      "emails": ["DamienD@humblecs.com"],
+      "days": ["Monday"],
+      "location": "MV/LM/SV"
+    },
+    {
+      "brand_synonyms": ["Eureka"],
+      "folder_name": "Eureka",
+      "rep": "Shannon",
+      "emails": ["shannon@eurekavapor.com"],
+      "days": ["Monday"],
+      "location": "MV/LM/SV"
+    },
+    {
+      "brand_synonyms": ["Choice Labs"],
+      "folder_name": "Choice Labs",
+      "rep": "Marlon",
+      "emails": ["marlon.choiceslab@gmail.com"],
+      "days": ["Monday"],
+      "location": "MV/LM"
+    },
+    {
+      "brand_synonyms": ["Kurvana"],
+      "folder_name": "Kurvana",
+      "rep": "Belen",
+      "emails": ["belen.tsavalas@kurvana.com"],
+      "days": ["Monday"],
+      "location": "MV"
+    },
+    {
+      "brand_synonyms": ["Jeeter"],
+      "folder_name": "Jeeter",
+      "rep": "Carlos",
+      "emails": ["cluna@jeeter.com"],
+      "days": ["Monday"],
+      "location": "MV/LM/SV"
+    },
+    {
+      "brand_synonyms": ["Maven", "Lime", "Humo", "Happy Fruit", "Ursa"],
+      "folder_name": "Maven / Lime / Humo / Happy Fruit / Ursa",
+      "rep": "Stephanie (Petalfast)",
+      "emails": ["stephanie.shemanski@petalfast.com"],
+      "days": ["Monday"],
+      "location": "MV/LM/SV"
+    },
+    {
+      "brand_synonyms": ["Boutiq", "Sherbinskies"],
+      "folder_name": "Boutiq / Sherbinskies",
+      "rep": "Stephanie (Sherbinskis)",
+      "emails": ["stephanie@sherbinskis.com"],
+      "days": ["Monday"],
+      "location": "MV/LM/SV"
+    },
+    {
+      "brand_synonyms": ["Ember Valley"],
+      "folder_name": "Ember Valley",
+      "rep": "Dakota",
+      "emails": ["dakota@ember-valley.com"],
+      "days": ["Monday"],
+      "location": "MV/LM/SV"
+    },
+    {
+      "brand_synonyms": ["Everyday"],
+      "folder_name": "Everyday",
+      "rep": "Glenn",
+      "emails": ["glenn@hummingbirdverde.co"],
+      "days": ["Monday"],
+      "location": "MV/LM"
+    },
+    {
+      "brand_synonyms": ["Farmers Cup"],
+      "folder_name": "Farmers Cup",
+      "rep": "Joshua",
+      "emails": ["josh@farmerscupofficial.com"],
+      "days": ["Monday"],
+      "location": "MV/LM"
+    },
+    {
+      "brand_synonyms": ["Ghost"],
+      "folder_name": "Ghost",
+      "rep": "Brandon",
+      "emails": ["brandon@iamghost.com"],
+      "days": ["Monday"],
+      "location": "MV/LM"
+    },
+    {
+      "brand_synonyms": ["High 90's"],
+      "folder_name": "High 90's",
+      "rep": "David",
+      "emails": ["david@high90s.com"],
+      "days": ["Monday"],
+      "location": "MV/LM/SV"
+    },
+    {
+      "brand_synonyms": ["Jetty"],
+      "folder_name": "Jetty",
+      "rep": "Daniel",
+      "emails": ["daniel@jettyextracts.com"],
+      "days": ["Monday"],
+      "location": "MV/LM"
+    },
+    {
+      "brand_synonyms": ["Just J"],
+      "folder_name": "Just J",
+      "rep": "Lisa",
+      "emails": ["lisa.m.ngo@gmail.com"],
+      "days": ["Monday"],
+      "location": "MV/LM"
+    },
+    {
+      "brand_synonyms": ["Mary Medicinals", "Dixies"],
+      "folder_name": "Mary Medicinals / Dixies",
+      "rep": "Jimmy",
+      "emails": ["jimmy.garza@bellrockbrands.com"],
+      "days": ["Monday"],
+      "location": "MV/LM/SV"
+    },
+    {
+      "brand_synonyms": ["Micro Bar"],
+      "folder_name": "Micro Bar",
+      "rep": "Carlos (Legacy)",
+      "emails": ["carlos@legacysales.co"],
+      "days": ["Monday"],
+      "location": "MV/LM"
+    },
+    {
+      "brand_synonyms": ["Moca"],
+      "folder_name": "Moca",
+      "rep": "Matt",
+      "emails": ["matt@mocahumboldt.com"],
+      "days": ["Monday"],
+      "location": "MV"
+    },
+    {
+      "brand_synonyms": ["Mr Zips", "Drops"],
+      "folder_name": "Mr Zips / Drops",
+      "rep": "Matthew (Headwaters)",
+      "emails": ["mathew@goheadwaters.com"],
+      "days": ["Monday"],
+      "location": "MV/LM"
+    },
+    {
+      "brand_synonyms": ["Plug N Play"],
+      "folder_name": "Plug N Play",
+      "rep": "Joe",
+      "emails": ["joe.ramos@plugplay.com"],
+      "days": ["Monday"],
+      "location": "MV/LM"
+    },
+    {
+      "brand_synonyms": ["Preferred Gardens"],
+      "folder_name": "Preferred Gardens",
+      "rep": "Alex",
+      "emails": ["alex@preferredgardens.com"],
+      "days": ["Monday"],
+      "location": "MV/LM"
+    },
+    {
+      "brand_synonyms": ["Presidential"],
+      "folder_name": "Presidential",
+      "rep": "Claudia & Everett",
+      "emails": ["Claudia@presidentialcannabisca.com", "Everett@presidentialcannabisca.com"],
+      "days": ["Monday"],
+      "location": "MV/LM"
+    },
+    {
+      "brand_synonyms": ["Raw Garden"],
+      "folder_name": "Raw Garden",
+      "rep": "Landon",
+      "emails": ["landons@ccagriculture.com"],
+      "days": ["Monday"],
+      "location": "MV/LM/SV"
+    },
+    {
+      "brand_synonyms": ["Smackers", "Sips"],
+      "folder_name": "Smackers / Sips",
+      "rep": "Mimi & Kevin",
+      "emails": ["mimi@enjoysmackers.com", "k@enjoysmackers.com"],
+      "days": ["Monday"],
+      "location": "MV/LM"
+    },
+    {
+      "brand_synonyms": ["Wyld", "Good Tide"],
+      "folder_name": "Wyld / Good Tide",
+      "rep": "Jonathan & Jane",
+      "emails": ["Jonathan.Schwartz@nwconfections.com", "jane.plank@nwconfections.com"],
+      "days": ["Monday"],
+      "location": "MV/LM/SV"
+    },
+    {
+      "brand_synonyms": ["The Fight", "Wav", "Huxleys"],
+      "folder_name": "The Fight / Wav / Huxleys",
+      "rep": "Lexi",
+      "emails": ["lexi@elevateholdings.com"],
+      "days": ["Monday"],
+      "location": "MV/LM/SV"
+    },
+    {
+      "brand_synonyms": ["Team Elite Genetics"],
+      "folder_name": "Team Elite Genetics",
+      "rep": "Brady",
+      "emails": ["brady@teamelitegenetics.com"],
+      "days": ["Monday"],
+      "location": "MV/LM/SV"
+    },
+    {
+      "brand_synonyms": ["Smokiez"],
+      "folder_name": "Smokiez",
+      "rep": "Richard",
+      "emails": ["californiasales@smokiez.com", "RICHARD@golddropco.com", "joseph@golddropco.com"],
+      "days": ["Monday"],
+      "location": "MV/LM/SV"
+    },
+    {
+      "brand_synonyms": ["St. Ides"],
+      "folder_name": "St. Ides",
+      "rep": "Miles",
+      "emails": ["sdcann420@gmail.com"],
+      "days": ["Monday"],
+      "location": "MV/LM/SV"
+    },
+    {
+      "brand_synonyms": ["Nameless", "Originals"],
+      "folder_name": "Nameless / Originals",
+      "rep": "Cory",
+      "emails": ["coryk@originalsca.com"],
+      "days": ["Monday"],
+      "location": "MV/LM/SV"
+    },
+    {
+      "brand_synonyms": ["Kanha"],
+      "folder_name": "Kanha",
+      "rep": "Tiffany",
+      "emails": ["tiffanys@sunderstorm.com"],
+      "days": ["Monday"],
+      "location": "MV/LM/SV"
+    },
+    {
+      "brand_synonyms": ["Decibel"],
+      "folder_name": "Decibel",
+      "rep": "Decibel Dist",
+      "emails": ["distribution@decibelgardens.com"],
+      "days": ["Monday"],
+      "location": "MV/LM"
+    },
+    {
+      "brand_synonyms": [
+        "Cream of the crop (COTC)",
+        "Wes Coast Trading Company (WCTC)"
+      ],
+      "folder_name": "Cream of the crop (COTC) / Wes Coast Trading Company (WCTC)",
+      "rep": "Curtis",
+      "emails": ["curtis@talaryabrands.com"],
+      "days": ["Monday"],
+      "location": "MV/LM/SV"
+    },
+    {
+      "brand_synonyms": ["Autumn Brands"],
+      "folder_name": "Autumn Brands",
+      "rep": "Jennifer",
+      "emails": ["jennifer@autumnbrands.com"],
+      "days": ["Monday"],
+      "location": "MV/LM/SV"
+    },
+    {
+      "brand_synonyms": [
+        "Kush Queen", 
+        "Yummy Karma", 
+        "Side Hustle", 
+        "Crave"
+      ],
+      "folder_name": "Kush Queen / Yummy Karma / Side Hustle / Crave",
+      "rep": "Chyna",
+      "emails": ["chynna@werlegends.com"],
+      "days": ["Monday"],
+      "location": "MV/LM"
+    },
+    {
+      "brand_synonyms": ["710 Labs"],
+      "folder_name": "710 Labs",
+      "rep": "Kam",
+      "emails": ["kam@710labs.com"],
+      "days": ["Monday"],
+      "location": "MV/LM/SV"
+    },
+    {
+      "brand_synonyms": ["Stiiizy"],
+      "folder_name": "Stiiizy",
+      "rep": "Chris",
+      "emails": ["chris.schweiger@stiiizy.com"],
+      "days": ["Monday"],
+      "location": "MV/LM/SV"
+    },
+    {
+      "brand_synonyms": ["La Family Farms (LAFF)"],
+      "folder_name": "La Family Farms (LAFF)",
+      "rep": "Patrick",
+      "emails": ["patbryant.laff@gmail.com"],
+      "days": ["Monday"],
+      "location": "MV/LM/SV"
+    },
+    {
+      "brand_synonyms": [
+        "Olala",
+        "Swifts",
+        "Kush Cups",
+        "Lowell"
+      ],
+      "folder_name": "Olala / Swifts / Kush Cups / Lowell",
+      "rep": "Erica",
+      "emails": ["erica@lowellfarms.com"],
+      "days": ["Monday"],
+      "location": "MV/LM"
+    }
+  ]
+}

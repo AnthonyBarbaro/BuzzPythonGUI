@@ -164,8 +164,8 @@ def find_or_create_folder(service, folder_name, parent_id=None):
     Returns the folder's ID and makes it publicly viewable.
     """
     from googleapiclient.errors import HttpError
-
-    query = f"mimeType='application/vnd.google-apps.folder' and name='{folder_name}'"
+    folder_name_escaped = folder_name.replace("'", "\\'")
+    query = f"mimeType='application/vnd.google-apps.folder' and name='{folder_name_escaped}'"
     if parent_id:
         query += f" and '{parent_id}' in parents"
 
@@ -547,39 +547,64 @@ def main():
 
     # read brand array
     brand_cfgs = config.get("brands", [])
-
-    # If brand_cfgs is empty, no schedule
     if not brand_cfgs:
         print("[INFO] No brand definitions found in brand_config.json -> 'brands' array.")
         return
 
-    # 4) Build brand->emails map, respecting test_mode
-    active_brands = []
-    brand_to_emails = {}
+    # ---------------------------------------------------------------
+    # 4) Build a dictionary of brand synonyms -> (folder_name, emails)
+    #    Also build brand_to_emails keyed by folder_name for emailing
+    # ---------------------------------------------------------------
+    synonym_to_folder = {}
+    brand_to_emails = {}   # key = folder_name, value = final_emails
 
     for item in brand_cfgs:
-        brand_name = item["brand"]
+        # brand_synonyms is a list of exact brand names from the CSV 'Brand' column
+        synonyms = item.get("brand_synonyms", [])
+        if isinstance(synonyms, str):
+            synonyms = [synonyms]
+
+        # fallback to old "brand" field if brand_synonyms is empty
+        if not synonyms and "brand" in item:
+            brand_str = item["brand"]
+            synonyms = [b.strip() for b in brand_str.split('/')]
+
+        folder_name = item.get("folder_name")
+        if not folder_name:
+            # if user didn't provide folder_name, fallback to first synonym
+            folder_name = synonyms[0] if synonyms else "Unknown"
+
         real_emails = item.get("emails", [])
         days = item.get("days", [])
-        # If today's day is in the brand's schedule
-        if today_name in days:
-            # If test_mode is ON, override emails
-            if test_mode:
-                brand_to_emails[brand_name] = [test_email]
-            else:
-                brand_to_emails[brand_name] = real_emails
+        location_str = item.get("location", "")  # optional reference
 
-            active_brands.append(brand_name)
+        # skip if not scheduled today
+        if today_name not in days:
+            continue
 
-    if not active_brands:
-        print(f"[INFO] No brands scheduled for {today_name} (or no matching days). Exiting.")
+        # if test_mode => override emails
+        final_emails = [test_email] if test_mode else real_emails
+
+        # For each synonym brand name, map to (folder_name, final_emails)
+        for syn in synonyms:
+            synonym_to_folder[syn] = (folder_name, final_emails)
+
+        # We'll store folder_name -> final_emails in brand_to_emails
+        brand_to_emails[folder_name] = final_emails
+
+    # If no folder_name is active, exit
+    if not brand_to_emails:
+        print(f"[INFO] No brands scheduled for {today_name}.")
         return
 
-    print(f"[INFO] Today is {today_name}. Processing brands: {active_brands}")
-    if test_mode:
-        print(f"[INFO] TEST MODE is ON. All emails going to {test_email}.")
+    # active_brands is the set of all "folder_name" keys from brand_to_emails
+    active_brands = set(brand_to_emails.keys())
 
-    # 5) Optionally call getCatalog.py to fetch CSV
+    print(f"[INFO] Today is {today_name}, active brand folders: {active_brands}")
+    if test_mode:
+        print(f"[INFO] TEST MODE ON => all emails go to {test_email}")
+
+    # 5) Optionally call getCatalog.py
     try:
         print("[INFO] Running getCatalog.py to fetch latest CSV files ...")
         subprocess.check_call(["python", "getCatalog.py", INPUT_DIRECTORY])
@@ -589,9 +614,13 @@ def main():
     except subprocess.CalledProcessError as e:
         print(f"[ERROR] getCatalog.py failed: {e}")
 
-    # 6) Process CSV -> XLSX
+    # ----------------------------------------------------------------
+    # 6) synonyms_for_today => process CSV
+    #    We pass ALL synonyms from synonym_to_folder
+    # ----------------------------------------------------------------
+    synonyms_for_today = list(synonym_to_folder.keys())
     safe_makedirs(LOCAL_REPORTS_FOLDER)
-    generated_files = process_files(INPUT_DIRECTORY, LOCAL_REPORTS_FOLDER, active_brands)
+    generated_files = process_files(INPUT_DIRECTORY, LOCAL_REPORTS_FOLDER, synonyms_for_today)
 
     if not generated_files:
         print("[INFO] No XLSX files were generated. Possibly no data matched.")
@@ -599,95 +628,88 @@ def main():
 
     # 7) Upload to Google Drive
     drive_service = drive_authenticate()
-
-    #   7a) Find or create parent "INVENTORY" folder
     parent_folder_id = find_or_create_folder(drive_service, DRIVE_PARENT_FOLDER_NAME, parent_id=None)
-
-    #   7b) Create a subfolder named by today's date
-    date_str = datetime.datetime.now().strftime("%Y-%m-%d")  # e.g. "2025-03-10"
+    date_str = datetime.datetime.now().strftime("%Y-%m-%d")
     date_folder_id = find_or_create_folder(drive_service, date_str, parent_id=parent_folder_id)
 
-    # --------------------------------------------------------------------------
-    #   Instead of collecting file links, each brand folder is now made public
-    #   So we only need to share the BRAND FOLDER link.
-    # --------------------------------------------------------------------------
+    # For each folder_name in active_brands, create on Drive
     brand_folder_links = {}
+    for folder_name in active_brands:
+        brand_folder_id = find_or_create_folder(drive_service, folder_name, parent_id=date_folder_id)
+        link = f"https://drive.google.com/drive/folders/{brand_folder_id}"
+        brand_folder_links[folder_name] = link
 
-    # For each brand in the "active" list, find/create that brand folder (public)
-    # and store its shareable "drive/folders/..." link.
-    for brand_name in active_brands:
-        # brand folder inside the date folder
-        brand_folder_id = find_or_create_folder(drive_service, brand_name, parent_id=date_folder_id)
-        brand_folder_link = f"https://drive.google.com/drive/folders/{brand_folder_id}"
-        brand_folder_links[brand_name] = brand_folder_link
-
-    # Now, we STILL need to upload the XLSX files to the correct brand folder
-    # We'll parse brand from each generated XLSX file name and upload it to that brand’s folder.
+    # Now, parse brand from each generated XLSX => find folder_name => upload
     brand_pattern = re.compile(r"^(.*?)_(.*?)_(\d{2}-\d{2}-\d{4})\.xlsx$", re.IGNORECASE)
 
     for file_path in generated_files:
         filename = os.path.basename(file_path)
-        match = brand_pattern.match(filename)
-        if not match:
-            print(f"[WARN] Cannot parse brand from {filename}, skipping file upload.")
+        m = brand_pattern.match(filename)
+        if not m:
+            print(f"[WARN] Cannot parse brand from {filename}, skipping.")
             continue
-        _, brand_name, _ = match.groups()
-        if brand_name not in active_brands:
-            continue  # skip if brand wasn't in today's active list
+        store_part, brand_syn, _ = m.groups()
 
-        brand_folder_id = find_or_create_folder(drive_service, brand_name, parent_id=date_folder_id)
+        # brand_syn is one of the synonyms from the CSV
+        if brand_syn not in synonym_to_folder:
+            print(f"[WARN] brand '{brand_syn}' not recognized. Skipping.")
+            continue
+
+        folder_name, _ = synonym_to_folder[brand_syn]
+        if folder_name not in active_brands:
+            # skip if not in today's schedule
+            continue
+
+        brand_folder_id = find_or_create_folder(drive_service, folder_name, parent_id=date_folder_id)
         upload_file_to_drive(drive_service, file_path, brand_folder_id)
-        # No need for `make_file_public(...)` since the folder is already public.
 
-    # 8) Email out the FOLDER link to the configured recipients
-    #    We group by unique sets of emails, so if multiple brands share the same set,
-    #    they get a single email.
-    email_groups = {}  # key = frozenset(...) of emails, value = list of brand_name
-    for brand_name, emails in brand_to_emails.items():
-        email_key = frozenset(emails)
+    # 8) Email out the folder link
+    # Group by unique sets of emails
+    email_groups = {}
+    for folder_name, email_list in brand_to_emails.items():
+        email_key = frozenset(email_list)
         if email_key not in email_groups:
             email_groups[email_key] = []
-        email_groups[email_key].append(brand_name)
+        email_groups[email_key].append(folder_name)
 
-    for email_key, brand_list in email_groups.items():
+    for email_key, folder_list in email_groups.items():
         brand_lines = []
-        for b in brand_list:
-            folder_link = brand_folder_links.get(b, None)
-            if folder_link:
-                brand_lines.append(f"<h3>Brand: {b}</h3>")
-                brand_lines.append(f"<p>Folder Link: <a href='{folder_link}'>{folder_link}</a></p>")
+        for f_name in folder_list:
+            link = brand_folder_links.get(f_name)
+            if link:
+                brand_lines.append(f"<h3>Folder: {f_name}</h3>")
+                brand_lines.append(f"<p>Link: <a href='{link}'>{link}</a></p>")
             else:
-                brand_lines.append(f"<p>Brand {b}: No folder link found.</p>")
+                brand_lines.append(f"<p>No link found for {f_name}</p>")
 
         brand_html = "\n".join(brand_lines)
-        subject = f"Brand Inventory Reports for {today_name} – {', '.join(brand_list)}"
-
-        # Build the final HTML body
+        subject = f"Brand Inventory Reports for {today_name} – {', '.join(folder_list)}"
         html_body = f"""
         <html>
-          <body>
-            <p>Hello,</p>
-            <p>Below are your brand inventory reports for <strong>{today_name}</strong>.</p>
-            {brand_html}
-            <p>All files in that Drive folder are viewable by anyone with the link.</p>
-            <p>Regards,<br>Your Automated System</p>
-          </body>
+        <body>
+          <p>Hello,</p>
+          <p>Below are your brand inventory reports for <strong>{today_name}</strong>.</p>
+          {brand_html}
+          <p>All files in that Drive folder are viewable by anyone with the link.</p>
+          <p>Regards,<br>Your Automated System</p>
+        </body>
         </html>
         """
 
-        recipients = list(email_key)  # convert frozenset to list
-        print(f"[INFO] Sending Gmail API email to {recipients} for brands {brand_list} ...")
+        recipients = list(email_key)
+        print(f"[INFO] Sending Gmail API email to {recipients} for folders {folder_list} ...")
         send_email_with_gmail_html(subject, html_body, recipients)
 
     print("[INFO] All done!")
 
-    # 9) Delete the "brand_reports_tmp" folder after processing is complete
+    # 9) Clean up
     if os.path.exists(LOCAL_REPORTS_FOLDER):
         try:
             shutil.rmtree(LOCAL_REPORTS_FOLDER)
             print(f"[INFO] Deleted temporary folder: {LOCAL_REPORTS_FOLDER}")
         except Exception as e:
             print(f"[ERROR] Could not delete {LOCAL_REPORTS_FOLDER}: {e}")
+
 
 
 # ------------------------------------------------------------------------------
