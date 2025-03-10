@@ -195,7 +195,7 @@ brand_criteria1 = {
 }
 brand_criteria = {
     'Hashish': {
-        'vendors': ['BTC Ventures', 'Zenleaf LLC', 'Garden Of Weeden Inc.'],
+        'vendors': ['Zenleaf LLC'],
         'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
         'discount': 0.50,
         'kickback': 0.25,
@@ -219,7 +219,7 @@ brand_criteria = {
         'brands': ['Terra', 'Petra', 'Kiva', 'Lost Farms', 'Camino']
     },
     'BigPetes': {
-        'vendors': ['KIVA / LCISM CORP', 'Vino & Cigarro, LLC'],
+        'vendors': ["Big Pete's | LCISM Corp","Vino & Cigarro, LLC"],
         'days': ['Tuesday'],
         'discount': 0.50,
         'kickback': 0.25,
@@ -232,8 +232,8 @@ brand_criteria = {
         'kickback': 0.25,
         'brands': ['Holy Smokes', 'Holy Water']
     },
-    'Dawoods': {
-        'vendors': ['The Clear Group Inc.'],
+    'Dabwoods': {
+        'vendors': ['The Clear Group Inc.','Decoi','Garden Of Weeden Inc.'],
         'days': ['Friday','Saturday'],
         'discount': 0.50,
         'kickback': 0.25,
@@ -274,7 +274,7 @@ brand_criteria = {
         'kickback': 0.25,
         'brands': ['Jetty']
     },
-    'Smokies': {
+    'Smokiez': {
         'vendors': ['Garden Of Weeden Inc.'],
         'days': ['Sunday'],
         'discount': 0.50,
@@ -282,8 +282,8 @@ brand_criteria = {
         'brands': ['Smokies']
     },
     'Preferred': {
-        'vendors': ['Garden Of Weeden Inc.'],
-        'days': ['Monday'],
+        'vendors': ['Garden Of Weeden Inc.','Helios | Hypeereon Corporation'],
+        'days': ['Monday','Wednesday'],
         'discount': 0.50,
         'kickback': 0.25,
         'brands': ['Preferred Gardens',]
@@ -315,6 +315,13 @@ brand_criteria = {
         'discount': 0.50,
         'kickback': 0.25,
         'brands': ['TreeSap']
+    },
+    'Dr.Norm': {
+        'vendors': ['Punch Media, LLC'],
+        'days': ['Thursday'],
+        'discount': 0.50,
+        'kickback': 0.25,
+        'brands': ['Dr. Norms']
     }
 }
 
