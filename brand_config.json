@@ -52,7 +52,7 @@
         "Permanent Holiday",
         "Royal Blunts",
         "Snowtill",
-        "Sunsmoke",
+        "SunSmoke",
         "High Desert Pure",
         "Black Pearl"
       ],
@@ -64,8 +64,8 @@
     },
     {
       "brand_synonyms": [
-        "Hi", "Whoa", "Holy Water", "Holy Smokes", "Lavina", "Rollers D", 
-        "Eyelle", "Bodega Boys", "Tonik", "Moods", "Top Secret", "Topshelf"
+        "Hi", "WHOA", "Holy Water", "Holy Smokes", "Lavinia", "Rollers Delight", 
+        "Eyeelle", "Bodega Boyz", "Tonik", "Moods", "Top Secret", "TopShelf"
       ],
       "folder_name": "Hi / Whoa / Holy Water / Holy Smokes / Lavina / Rollers D / Eyelle / Bodega Boys / Tonik / Moods / Top Secret / Topshelf",
       "rep": "Damien",
@@ -82,7 +82,7 @@
       "location": "MV/LM/SV"
     },
     {
-      "brand_synonyms": ["Choice Labs"],
+      "brand_synonyms": ["ChoicesLab"],
       "folder_name": "Choice Labs",
       "rep": "Marlon",
       "emails": ["marlon.choiceslab@gmail.com"],
@@ -106,7 +106,7 @@
       "location": "MV/LM/SV"
     },
     {
-      "brand_synonyms": ["Maven", "Lime", "Humo", "Happy Fruit", "Ursa"],
+      "brand_synonyms": ["Maven (MVN)", "LIME", "Humo", "Happy Fruit", "Ursa"],
       "folder_name": "Maven / Lime / Humo / Happy Fruit / Ursa",
       "rep": "Stephanie (Petalfast)",
       "emails": ["stephanie.shemanski@petalfast.com"],
@@ -130,7 +130,7 @@
       "location": "MV/LM/SV"
     },
     {
-      "brand_synonyms": ["Everyday"],
+      "brand_synonyms": ["Everyday Cannabis Co."],
       "folder_name": "Everyday",
       "rep": "Glenn",
       "emails": ["glenn@hummingbirdverde.co"],
@@ -178,7 +178,7 @@
       "location": "MV/LM"
     },
     {
-      "brand_synonyms": ["Mary Medicinals", "Dixies"],
+      "brand_synonyms": ["Mary's Medicinals", "Dixie"],
       "folder_name": "Mary Medicinals / Dixies",
       "rep": "Jimmy",
       "emails": ["jimmy.garza@bellrockbrands.com"],
@@ -186,7 +186,7 @@
       "location": "MV/LM/SV"
     },
     {
-      "brand_synonyms": ["Micro Bar"],
+      "brand_synonyms": ["Microbar"],
       "folder_name": "Micro Bar",
       "rep": "Carlos (Legacy)",
       "emails": ["carlos@legacysales.co"],
@@ -194,7 +194,7 @@
       "location": "MV/LM"
     },
     {
-      "brand_synonyms": ["Moca"],
+      "brand_synonyms": ["Moca Flowers"],
       "folder_name": "Moca",
       "rep": "Matt",
       "emails": ["matt@mocahumboldt.com"],
@@ -202,7 +202,7 @@
       "location": "MV"
     },
     {
-      "brand_synonyms": ["Mr Zips", "Drops"],
+      "brand_synonyms": ["Mr. Zips", "Drops"],
       "folder_name": "Mr Zips / Drops",
       "rep": "Matthew (Headwaters)",
       "emails": ["mathew@goheadwaters.com"],
@@ -242,7 +242,7 @@
       "location": "MV/LM/SV"
     },
     {
-      "brand_synonyms": ["Smackers", "Sips"],
+      "brand_synonyms": ["Smackers", "Sip Elixirs"],
       "folder_name": "Smackers / Sips",
       "rep": "Mimi & Kevin",
       "emails": ["mimi@enjoysmackers.com", "k@enjoysmackers.com"],
@@ -250,7 +250,7 @@
       "location": "MV/LM"
     },
     {
-      "brand_synonyms": ["Wyld", "Good Tide"],
+      "brand_synonyms": ["WYLD", "Good Tide"],
       "folder_name": "Wyld / Good Tide",
       "rep": "Jonathan & Jane",
       "emails": ["Jonathan.Schwartz@nwconfections.com", "jane.plank@nwconfections.com"],
@@ -298,7 +298,7 @@
       "location": "MV/LM/SV"
     },
     {
-      "brand_synonyms": ["Kanha"],
+      "brand_synonyms": ["KANHA"],
       "folder_name": "Kanha",
       "rep": "Tiffany",
       "emails": ["tiffanys@sunderstorm.com"],
@@ -306,7 +306,7 @@
       "location": "MV/LM/SV"
     },
     {
-      "brand_synonyms": ["Decibel"],
+      "brand_synonyms": ["Decibel Gardens"],
       "folder_name": "Decibel",
       "rep": "Decibel Dist",
       "emails": ["distribution@decibelgardens.com"],
@@ -315,8 +315,8 @@
     },
     {
       "brand_synonyms": [
-        "Cream of the crop (COTC)",
-        "Wes Coast Trading Company (WCTC)"
+        "Cream Of The Crop (COTC)",
+        "West Coast Trading Company (WCTC)"
       ],
       "folder_name": "Cream of the crop (COTC) / Wes Coast Trading Company (WCTC)",
       "rep": "Curtis",
@@ -362,8 +362,8 @@
       "location": "MV/LM/SV"
     },
     {
-      "brand_synonyms": ["La Family Farms (LAFF)"],
-      "folder_name": "La Family Farms (LAFF)",
+      "brand_synonyms": ["LA Family Farms"],
+      "folder_name": "La Family Farms",
       "rep": "Patrick",
       "emails": ["patbryant.laff@gmail.com"],
       "days": ["Monday"],
@@ -374,7 +374,7 @@
         "Olala",
         "Swifts",
         "Kush Cups",
-        "Lowell"
+        "Lowell Farmers"
       ],
       "folder_name": "Olala / Swifts / Kush Cups / Lowell",
       "rep": "Erica",
