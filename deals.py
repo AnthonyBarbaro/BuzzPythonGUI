@@ -125,15 +125,28 @@ def apply_discounts_and_kickbacks(data, discount, kickback):
     )
 
     return data
+#Month to month
+brand_criteria3 = { #Started March 1
+    'Made': {
+        'vendors': ['Garden Of Weeden Inc.'],
+        'days': ['Saturday'],
+        'discount': 0.50,
+        'kickback': 0.25,
+        #'categories': ['Cartridges'], 
+        'brands': ['Made']
+    }
+}
 brand_criteria2 = {
     'Stiiizy': {
         'vendors': ['Elevation (Stiiizy)'],
         'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
         'discount': 0.50,
-        'kickback': 0.25,
+        'kickback': 0.30,
         'brands': ['Stiiizy']
     }
 }
+
+
 # Define brand-based criteria
 brand_criteria1 = {
     'Monday': {
@@ -209,14 +222,14 @@ brand_criteria = {
         'kickback': 0.25,
         'categories': ['Pre-Rolls'],
         'brands': ['Jeeter'],
-        'excluded_phrases': ['(3pk)','Jeeter | SVL']
+        'excluded_phrases': ['(3pk)','SVL','LRO']
     },
     'Kiva': {
         'vendors': ['KIVA / LCISM CORP', 'Vino & Cigarro, LLC'],
         'days': ['Monday','Wednesday'],
         'discount': 0.50,
         'kickback': 0.25,
-        'brands': ['Terra', 'Petra', 'Kiva', 'Lost Farms', 'Camino']
+        'brands': ['Terra', 'Petra', 'KIVA', 'Lost Farms', 'Camino']
     },
     'BigPetes': {
         'vendors': ["Big Pete's | LCISM Corp","Vino & Cigarro, LLC"],
@@ -241,14 +254,14 @@ brand_criteria = {
     },
     'Time Machine': {
         'vendors': ['Vino & Cigarro, LLC'],
-        'days': ['Tuesday'],
+        'days': ['Tuesday','Friday'],
         'discount': 0.50,
         'kickback': 0.25,
         'brands': ['Time Machine']
     },
     'Pacific Stone': {
         'vendors': ['Vino & Cigarro, LLC'],
-        'days': ['Friday'],
+        'days': ['Monday','Friday'],
         'discount': 0.50,
         'kickback': 0.25,
         'brands': ['Pacific Stone']
@@ -259,6 +272,13 @@ brand_criteria = {
         'discount': 0.50,
         'kickback': 0.25,
         'brands': ['Heavy Hitters']
+    },
+    'Almora': {
+        'vendors': ['Fluids Manufacturing Inc.'],
+        'days': ['Sunday','Saturday'],
+        'discount': 0.50,
+        'kickback': 0.25,
+        'brands': ['Almora']
     },
     'WYLD/GoodTide': {
         'vendors': ['2020 Long Beach LLC'],
@@ -301,13 +321,6 @@ brand_criteria = {
         'discount': 0.50,
         'kickback': 0.25,
         'brands': ['Josh Wax']
-    },
-    'Almora': {
-        'vendors': ['Fluids Manufacturing Inc.'],
-        'days': ['Friday','Saturday'],
-        'discount': 0.50,
-        'kickback': 0.25,
-        'brands': ['Almora']
     },
     'TreeSap': {
         'vendors': ['Zenleaf LLC'],
