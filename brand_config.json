@@ -1,6 +1,6 @@
 {
   "test_mode": false,
-  "test_email": "anthony@barbaro.tech",
+  "test_email": "donna@buzzcannabis.com",
 
   "brands": [
     {
@@ -405,6 +405,14 @@
       "emails": ["josh@joshwax.com","donna@buzzcannabis.com"],
       "days": ["Thursday"],
       "location": "MV/LM"
+    },
+    {
+      "brand_synonyms": ["Wizard Trees"],
+      "folder_name": "Wizard Trees",
+      "rep": "Carlos",
+      "emails": ["Carlos@wizardtrees.com ","donna@buzzcannabis.com","Kevin@buzzcannabis.com"],
+      "days": ["Tuesday"],
+      "location": "MV/LM/SV"
     }
   ]
 }

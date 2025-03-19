@@ -161,9 +161,11 @@ def find_or_create_folder(service, folder_name, parent_id=None):
     """
     Find a folder named `folder_name` under `parent_id` (if given).
     If not found, create it.
-    Returns the folder's ID and makes it publicly viewable.
+    Returns the folder's ID.
+    Only makes the folder public if it was newly created.
     """
     from googleapiclient.errors import HttpError
+    
     folder_name_escaped = folder_name.replace("'", "\\'")
     query = f"mimeType='application/vnd.google-apps.folder' and name='{folder_name_escaped}'"
     if parent_id:
@@ -176,20 +178,29 @@ def find_or_create_folder(service, folder_name, parent_id=None):
         print(f"[ERROR] Drive folder lookup failed: {err}")
         return None
 
+    # If folder exists, return its ID directly (do NOT make it public again)
     if folders:
         folder_id = folders[0]["id"]
-    else:
-        folder_metadata = {
-            "name": folder_name,
-            "mimeType": "application/vnd.google-apps.folder"
-        }
-        if parent_id:
-            folder_metadata["parents"] = [parent_id]
-        new_folder = service.files().create(body=folder_metadata, fields="id").execute()
-        folder_id = new_folder.get("id")
+        return folder_id
 
-    # Make the folder public (anyone with link can read)
-    make_folder_public(service, folder_id)
+    # Otherwise, create the folder
+    folder_metadata = {
+        "name": folder_name,
+        "mimeType": "application/vnd.google-apps.folder"
+    }
+    if parent_id:
+        folder_metadata["parents"] = [parent_id]
+
+    new_folder = service.files().create(body=folder_metadata, fields="id").execute()
+    folder_id = new_folder.get("id")
+    print(f"[INFO] Created new folder '{folder_name}' (ID: {folder_id})")
+
+    # Now make it public exactly once (since it's newly created)
+    try:
+        make_folder_public(service, folder_id)
+    except Exception as e:
+        print(f"[ERROR] Unable to set public permission on new folder: {e}")
+
     return folder_id
 
 
@@ -691,7 +702,7 @@ def main():
           <p>Below are your brand inventory reports for <strong>{today_name}</strong>.</p>
           {brand_html}
           <p>All files in that Drive folder are viewable by anyone with the link.</p>
-          <p>Regards,<br>Your Automated System</p>
+          <p>Regards,<br>Buzz Cannabis</p>
         </body>
         </html>
         """

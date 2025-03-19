@@ -145,7 +145,15 @@ brand_criteria2 = {
         'brands': ['Stiiizy']
     }
 }
-
+brand_criteria4 = {
+    'Pacific Stone': {
+        'vendors': ['Vino & Cigarro, LLC'],
+        'days': ['Monday','Thursday'],
+        'discount': 0.50,
+        'kickback': 0.25,
+        'brands': ['Pacific Stone']
+    },
+}
 
 # Define brand-based criteria
 brand_criteria1 = {
@@ -261,7 +269,7 @@ brand_criteria = {
     },
     'Pacific Stone': {
         'vendors': ['Vino & Cigarro, LLC'],
-        'days': ['Monday','Friday'],
+        'days': ['Monday','Thursday'],
         'discount': 0.50,
         'kickback': 0.25,
         'brands': ['Pacific Stone']
@@ -293,6 +301,13 @@ brand_criteria = {
         'discount': 0.50,
         'kickback': 0.25,
         'brands': ['Jetty']
+    },
+    'Dr.Norm': {
+        'vendors': ['Punch Media, LLC'],
+        'days': ['Thursday'],
+        'discount': 0.50,
+        'kickback': 0.25,
+        'brands': ['Dr. Norms']
     },
     'Smokiez': {
         'vendors': ['Garden Of Weeden Inc.'],
@@ -328,13 +343,6 @@ brand_criteria = {
         'discount': 0.50,
         'kickback': 0.25,
         'brands': ['TreeSap']
-    },
-    'Dr.Norm': {
-        'vendors': ['Punch Media, LLC'],
-        'days': ['Thursday'],
-        'discount': 0.50,
-        'kickback': 0.25,
-        'brands': ['Dr. Norms']
     }
 }
 
@@ -523,7 +531,7 @@ def run_deals_reports():
     results_for_app = []
 
     # For each brand, gather data from whichever stores are not empty
-    for brand, criteria in brand_criteria.items():
+    for brand, criteria in brand_criteria4.items():
 
         # ----- Mission Valley ----- #
         mv_brand_data = pd.DataFrame()
