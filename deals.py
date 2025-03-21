@@ -146,12 +146,12 @@ brand_criteria2 = {
     }
 }
 brand_criteria4 = {
-    'Pacific Stone': {
-        'vendors': ['Vino & Cigarro, LLC'],
-        'days': ['Monday','Thursday'],
+    'Wizard Trees': {
+        'vendors': ['Garden Of Weeden Inc.'],
+        'days': ['Friday','Saturday','Sunday'],
         'discount': 0.50,
         'kickback': 0.25,
-        'brands': ['Pacific Stone']
+        'brands': ['Wizard Trees']
     },
 }
 
@@ -300,6 +300,7 @@ brand_criteria = {
         'days': ['Thursday'],
         'discount': 0.50,
         'kickback': 0.25,
+        #'excluded_phrases': ['Jetty | Cart 1g |'],
         'brands': ['Jetty']
     },
     'Dr.Norm': {
