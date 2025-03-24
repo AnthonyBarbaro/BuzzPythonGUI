@@ -52,14 +52,13 @@ def calculate_margin(cost, price, kickback_applicable):
 def target_price_for_45_margin(cost, kickback_applicable):
     kickback = cost * stiiizy_deal['kickback'] if kickback_applicable else 0
     net_cost = cost - kickback
-    # revenue = price * (1 - discount) --> price = revenue / (1 - discount)
-    # margin = (revenue - net_cost) / revenue --> set margin to 0.45
     revenue_needed = net_cost / (1 - 0.45)
     price_needed = revenue_needed / (1 - stiiizy_deal['discount'])
     return round(price_needed, 2)
 
 def process_stiiizy_margins():
     input_path = os.path.join("files", "03-21-2025_MV.csv")
+    sales_data_path = os.path.join("files", "salesMV.xlsx")
     output_directory = "done"
     ensure_dir_exists(output_directory)
 
@@ -74,22 +73,58 @@ def process_stiiizy_margins():
         print("No matching Stiiizy products found.")
         return
 
+    try:
+        sales_df = pd.read_excel(sales_data_path, header=4)
+        sales_df.columns = sales_df.columns.str.strip().str.lower()
+        sales_df.rename(columns={'product name': 'Product', 'total inventory sold': 'Units Sold'}, inplace=True)
+        sales_df['order time'] = pd.to_datetime(sales_df['order time'], errors='coerce')
+        sales_df['day of week'] = sales_df['order time'].dt.strftime('%A')
+    except Exception as e:
+        print(f"Warning: Could not load sales data: {e}")
+        sales_df = pd.DataFrame()
+
+    df = df.merge(sales_df.groupby('Product', as_index=False)['Units Sold'].sum(), on='Product', how='left')
+    df['Units Sold'] = df['Units Sold'].fillna(0)
+    df = df[df['Units Sold'] > 0]
+
     def get_margins(row):
         category = row['Category']
         cost = row['Cost']
         price = row['Price']
+        product = row['Product']
 
         wknd = category in stiiizy_deal['always_kickback_categories'] or category in stiiizy_deal['weekend_kickback_categories']
         wkdy = category in stiiizy_deal['always_kickback_categories']
 
         margin_wknd = calculate_margin(cost, price, wknd)
         margin_wkdy = calculate_margin(cost, price, wkdy)
-        target_price = target_price_for_45_margin(cost, wknd)
 
-        return pd.Series([margin_wknd, margin_wkdy, target_price])
+        # Calculate average margin from actual sales days
+        matching_sales = sales_df[sales_df['Product'] == product]
+        total_units = 0
+        weighted_margin = 0
 
-    df[['Margin_Thu-Sat_%', 'Margin_Sun-Wed_%', 'TargetPrice_45Margin']] = df.apply(get_margins, axis=1)
-    df = df[['Product', 'Category', 'Cost', 'Price', 'Margin_Thu-Sat_%', 'Margin_Sun-Wed_%', 'TargetPrice_45Margin']]
+        for _, sale in matching_sales.iterrows():
+            day = sale['day of week']
+            units = sale['Units Sold']
+            kickback = category in stiiizy_deal['always_kickback_categories'] or (day in stiiizy_deal['weekend_days'] and category in stiiizy_deal['weekend_kickback_categories'])
+            margin = calculate_margin(cost, price, kickback)
+            weighted_margin += margin * units
+            total_units += units
+
+        avg_margin = weighted_margin / total_units if total_units > 0 else 0
+
+        # Calculate target price using avg_margin
+        margin_rate = avg_margin / 100
+        revenue_needed = cost / (1 - stiiizy_deal['kickback']) / (1 - margin_rate) if margin_rate < 1 else 0
+        target_price = revenue_needed / (1 - stiiizy_deal['discount']) if revenue_needed else 0
+
+        return pd.Series([margin_wknd, margin_wkdy, round(avg_margin, 2), round(target_price, 2)])
+
+    df[['Margin_Thu-Sat_%', 'Margin_Sun-Wed_%', 'Avg Margin From Sales Days (%)', 'TargetPrice_45Margin']] = df.apply(get_margins, axis=1)
+
+    columns = ['Product', 'Category', 'Cost', 'Price', 'Margin_Thu-Sat_%', 'Margin_Sun-Wed_%', 'Avg Margin From Sales Days (%)', 'TargetPrice_45Margin', 'Units Sold']
+    df = df[columns]
     df.sort_values(by=['Price', 'Product'], inplace=True)
 
     today_str = datetime.now().strftime("%m-%d-%Y")

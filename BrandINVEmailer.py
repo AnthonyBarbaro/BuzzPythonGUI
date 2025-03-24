@@ -653,26 +653,38 @@ def main():
     # Now, parse brand from each generated XLSX => find folder_name => upload
     brand_pattern = re.compile(r"^(.*?)_(.*?)_(\d{2}-\d{2}-\d{4})\.xlsx$", re.IGNORECASE)
 
+    import time
+
     for file_path in generated_files:
         filename = os.path.basename(file_path)
         m = brand_pattern.match(filename)
         if not m:
             print(f"[WARN] Cannot parse brand from {filename}, skipping.")
             continue
+
         store_part, brand_syn, _ = m.groups()
 
-        # brand_syn is one of the synonyms from the CSV
         if brand_syn not in synonym_to_folder:
             print(f"[WARN] brand '{brand_syn}' not recognized. Skipping.")
             continue
 
         folder_name, _ = synonym_to_folder[brand_syn]
         if folder_name not in active_brands:
-            # skip if not in today's schedule
             continue
 
-        brand_folder_id = find_or_create_folder(drive_service, folder_name, parent_id=date_folder_id)
-        upload_file_to_drive(drive_service, file_path, brand_folder_id)
+        # ✅ Reuse folder ID from earlier lookup
+        if folder_name in brand_folder_links:
+            brand_folder_id = brand_folder_links[folder_name].split("/")[-1]
+        else:
+            print(f"[ERROR] Missing folder ID for {folder_name}, skipping upload.")
+            continue
+
+        try:
+            upload_file_to_drive(drive_service, file_path, brand_folder_id)
+            print(f"[UPLOAD ✅] {filename} uploaded to {folder_name}")
+            time.sleep(0.2)  # Google API throttle protection
+        except Exception as e:
+            print(f"[ERROR] Failed to upload {filename} → {folder_name}: {e}")
 
     # 8) Email out the folder link
     # Group by unique sets of emails
