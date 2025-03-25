@@ -7,7 +7,7 @@ from openpyxl.styles import Font, Alignment, PatternFill
 stiiizy_deal = {
     'vendors': ['Elevation (Stiiizy)'],
     'brands': ['Stiiizy'],
-    'discount': 0.50,
+    'discount': 0.40,
     'kickback': 0.30,
     'weekend_days': ['Thursday', 'Friday', 'Saturday'],
     'weekend_kickback_categories': ["Eighths", "Pre-Rolls", "Flower", "Halves", "Quarters", "Ounces", "Concentrate", "Accessories"],
@@ -57,7 +57,7 @@ def target_price_for_45_margin(cost, kickback_applicable):
     return round(price_needed, 2)
 
 def process_stiiizy_margins():
-    input_path = os.path.join("files", "03-21-2025_MV.csv")
+    input_path = os.path.join("files", "03-24-2025_MV.csv")
     sales_data_path = os.path.join("files", "salesMV.xlsx")
     output_directory = "done"
     ensure_dir_exists(output_directory)

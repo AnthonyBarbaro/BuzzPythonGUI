@@ -146,12 +146,12 @@ brand_criteria2 = {
     }
 }
 brand_criteria4 = {
-    'Wizard Trees': {
+    'PV': {
         'vendors': ['Garden Of Weeden Inc.'],
-        'days': ['Friday','Saturday','Sunday'],
-        'discount': 0.50,
-        'kickback': 0.25,
-        'brands': ['Wizard Trees']
+        'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
+        'discount': 0.30,
+        'kickback': 0.0,
+        'brands': ['PV |']
     },
 }
 
@@ -532,7 +532,7 @@ def run_deals_reports():
     results_for_app = []
 
     # For each brand, gather data from whichever stores are not empty
-    for brand, criteria in brand_criteria4.items():
+    for brand, criteria in brand_criteria.items():
 
         # ----- Mission Valley ----- #
         mv_brand_data = pd.DataFrame()

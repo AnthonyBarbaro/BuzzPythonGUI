@@ -194,8 +194,8 @@
       "location": "MV/LM"
     },
     {
-      "brand_synonyms": ["Moca Flowers"],
-      "folder_name": "Moca",
+      "brand_synonyms": ["Moca Flowers","Basic Buds"],
+      "folder_name": "Moca/Basic Buds",
       "rep": "Matt",
       "emails": ["matt@mocahumboldt.com","donna@buzzcannabis.com"],
       "days": ["Monday"],
@@ -253,7 +253,7 @@
       "brand_synonyms": ["WYLD", "Good Tide"],
       "folder_name": "Wyld / Good Tide",
       "rep": "Jonathan & Jane",
-      "emails": ["Jonathan.Schwartz@nwconfections.com", "jane.plank@nwconfections.com","donna@buzzcannabis.com"],
+      "emails": ["jane.plank@nwconfections.com","donna@buzzcannabis.com"],
       "days": ["Monday"],
       "location": "MV/LM/SV"
     },
