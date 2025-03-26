@@ -177,29 +177,34 @@ def process_file(file_path, output_directory, selected_brands):
         print(f"Error reading {file_path}: {e}")
         return None, None
 
-    existing_cols = [c for c in INPUT_COLUMNS if c in df.columns]
+    required_cols = INPUT_COLUMNS + ['Cost']
+    existing_cols = [c for c in required_cols if c in df.columns]
     if not existing_cols:
         print(f"No required columns found in {file_path}. Skipping.")
         return None, None
 
     df = df[existing_cols]
-    #removes promo units 
+    
+    # Remove promo/sample products
     if 'Product' in df.columns:
         df = df[~df['Product'].str.contains(r'(?i)\bsample\b|\bpromo\b', na=False)]
 
     if 'Available' not in df.columns:
         print(f"'Available' column not found in {file_path}. Skipping.")
         return None, None
-    #low numbers just go to unavailable
+
+    # Separate rows: low numbers go to unavailable, high numbers go to available
     unavailable_data = df[df['Available'] <= 2]
     available_data = df[df['Available'] > 2]
 
+    # Filter by selected brands if provided
     if 'Brand' in available_data.columns and selected_brands:
         available_data = available_data[available_data['Brand'].isin(selected_brands)]
 
+    # Extract additional product details
     if 'Product' in available_data.columns:
         available_data['Strain_Type'] = available_data['Product'].apply(extract_strain_type)
-        available_data[['Product_Weight','Product_SubType']] = available_data['Product'].apply(
+        available_data[['Product_Weight', 'Product_SubType']] = available_data['Product'].apply(
             lambda x: pd.Series(extract_product_details(x))
         )
     else:
@@ -210,24 +215,31 @@ def process_file(file_path, output_directory, selected_brands):
     if 'Product' in available_data.columns:
         available_data = available_data[~available_data['Product'].apply(is_empty_or_numbers)]
 
+    # Ensure Cost is numeric
+    if 'Cost' in available_data.columns:
+        available_data['Cost'] = pd.to_numeric(available_data['Cost'], errors='coerce')
+    else:
+        available_data['Cost'] = float('nan')
+
+    # Sort by Category, then Cost, then Product
     sort_cols = []
     if 'Category' in available_data.columns:
         sort_cols.append('Category')
-    sort_cols.append('Strain_Type')
-    sort_cols.append('Product_Weight')
-    sort_cols.append('Product_SubType')
+    if 'Cost' in available_data.columns:
+        sort_cols.append('Cost')
     if 'Product' in available_data.columns:
         sort_cols.append('Product')
-
+    
     available_data.sort_values(by=sort_cols, inplace=True, na_position='last')
-# Extract store name from file name (assumes last part before ".csv" is the store name)
+     # Delete the 'Cost' column before exporting the final Excel file
+    if 'Cost' in available_data.columns:
+        available_data = available_data.drop(columns=['Cost'])
+    if 'Cost' in unavailable_data.columns:
+        unavailable_data = unavailable_data.drop(columns=['Cost'])
+    # Extract store name from the file name (assumes last part before ".csv" is the store name)
     base_name = os.path.splitext(os.path.basename(file_path))[0]
     parts = base_name.split('_')
     store_name = parts[-1] if len(parts) > 1 else "Unknown"
-
-    # Add Store Name Column
-    #available_data.insert(0, 'Store', store_name)
-    #unavailable_data.insert(0, 'Store', store_name)
 
     file_subdir = os.path.join(output_directory, base_name)
     ensure_dir_exists(file_subdir)
@@ -267,6 +279,7 @@ def process_file(file_path, output_directory, selected_brands):
         print(f"Created {output_filename}")
 
     return unavailable_data, os.path.basename(file_path)
+
 
 def process_files(input_directory, output_directory, selected_brands):
     ensure_dir_exists(output_directory)

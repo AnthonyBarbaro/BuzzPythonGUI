@@ -380,7 +380,7 @@ def process_file(file_path, output_directory, selected_brands):
         print(f"Error reading {file_path}: {e}")
         return None, None
 
-    existing_cols = [c for c in INPUT_COLUMNS if c in df.columns]
+    existing_cols = [c for c in INPUT_COLUMNS + ['Cost'] if c in df.columns]
     if not existing_cols:
         print(f"[WARN] {file_path} is missing required columns. Skipped.")
         return None, None
@@ -415,17 +415,22 @@ def process_file(file_path, output_directory, selected_brands):
         available_data['Product_Weight'] = ""
         available_data['Product_SubType'] = ""
 
-    # Sort final data
     sort_cols = []
     if 'Category' in available_data.columns:
         sort_cols.append('Category')
-    sort_cols.append('Strain_Type')
-    sort_cols.append('Product_Weight')
-    sort_cols.append('Product_SubType')
+    if 'Cost' in available_data.columns:
+        sort_cols.append('Cost')
     if 'Product' in available_data.columns:
         sort_cols.append('Product')
 
     available_data.sort_values(by=sort_cols, inplace=True, na_position='last')
+
+    # Drop Cost column after sorting
+    if 'Cost' in available_data.columns:
+        available_data = available_data.drop(columns=['Cost'])
+    if 'Cost' in unavailable_data.columns:
+        unavailable_data = unavailable_data.drop(columns=['Cost'])
+
 
     base_name = os.path.splitext(os.path.basename(file_path))[0]
     parts = base_name.split('_')

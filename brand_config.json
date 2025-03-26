@@ -1,6 +1,6 @@
 {
-  "test_mode": false,
-  "test_email": "donna@buzzcannabis.com",
+  "test_mode": true,
+  "test_email": "anthony@barbaro.tech",
 
   "brands": [
     {
