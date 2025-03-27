@@ -464,7 +464,6 @@ def main():
     print(f"Processing for last week range: {date_range_str}")
 
     # 1) Catalog
-    run_get_catalog()
 
     # 2) Sales
     run_sales_report(last_monday, last_sunday)
@@ -473,17 +472,13 @@ def main():
     subprocess.run(["python", "deals.py"])
     time.sleep(2)
 
-    # 4) Brand Inventory (Hashish)
-    run_brand_inventory_hashish()
-    time.sleep(2)
-
     # 5) Drive Upload (both brand_reports + done/Hashish)
     run_drive_upload()
 
-    # 6) TWO EMAILS
 
     # 6a) Parse links.txt to separate "Hashish" lines from "non-Hashish" lines,
     #     and build HTML bullet lists for each group.
+   
 
     links_file = "links.txt"
     hashish_links = []
@@ -500,161 +495,17 @@ def main():
             else:
                 non_hashish_links.append(line)
 
-    # Convert lines to HTML bullet points
-    def make_html_list(link_lines):
-        """
-        Each line is 'filename.xlsx: https://...'
-        We'll parse into <li><b>filename.xlsx</b>: <a href='url'>url</a></li>
-        """
-        if not link_lines:
-            return "<p>No links found.</p>"
-        html_list = "<ul>\n"
-        for line in link_lines:
-            if ":" in line:
-                filename, url = line.split(":", 1)
-                filename = filename.strip()
-                url = url.strip()
-                # Make an HTML bullet with clickable link
-                html_list += f"<li><strong>{filename}</strong>: <a href='{url}'>{url}</a></li>\n"
-            else:
-                html_list += f"<li>{line}</li>\n"
-        html_list += "</ul>\n"
-        return html_list
-
-    non_hashish_html = make_html_list(non_hashish_links)
-    hashish_html = make_html_list(hashish_links)
-
-    # 6b) For the second email, we want to also parse the "Hashish" brand report summary
-    #     to get Store + Kickback Owed. We'll load whichever "Hashish_*.xlsx" brand report
-    #     was uploaded. If you have multiple, you may need additional logic.
-
-    import openpyxl
-
-    hashish_summary_rows = []
-    brand_reports_dir = "brand_reports"
-    hashish_report_path = None
-
-    if os.path.isdir(brand_reports_dir):
-        # We pick the first Hashish_ file. If you have multiple, adjust logic.
-        for f in os.listdir(brand_reports_dir):
-            if f.startswith("Hashish_") and f.endswith(".xlsx"):
-                hashish_report_path = os.path.join(brand_reports_dir, f)
-                break
-
-    if hashish_report_path and os.path.isfile(hashish_report_path):
-        # Open "Summary" sheet and read columns A (Store) & B (Kickback Owed)
-        wb = openpyxl.load_workbook(hashish_report_path, data_only=True)
-        if "Summary" in wb.sheetnames:
-            sh = wb["Summary"]
-            # We'll gather (Store, Kickback Owed) from row 2 downward
-            # (row 1 is typically headers: "Store", "Kickback Owed", etc.)
-            for row_idx in range(2, sh.max_row + 1):
-                store_val = sh.cell(row=row_idx, column=1).value  # Column A
-                owed_val  = sh.cell(row=row_idx, column=2).value  # Column B
-                if store_val is not None and owed_val is not None:
-                    hashish_summary_rows.append((store_val, owed_val))
-        wb.close()
-
-    # Build an HTML table for the Store / Kickback Owed data
-    def make_hashish_owed_table(rows):
-        """
-        rows should be a list of tuples: [(store, owed), (store, owed), ...]
-        where 'store' might be "Mission Valley" / "La Mesa" / "Sorrento Valley" and 'owed' is numeric or string.
-        
-        This function:
-        - Skips any row if store == "Store" or owed == "Kickback Owed" (i.e. a header).
-        - Converts owed to a currency string with 2 decimals.
-        - Builds an HTML table of <Store, Kickback Owed>.
-        """
-        if not rows:
-            return "<p>No store / owed data found.</p>"
-        
-        # Filter out any row that looks like the header or empty data
-        filtered_data = []
-        for (store, owed) in rows:
-            # If store or owed is literally "Store", "Kickback Owed", or empty, skip
-            if not store or not owed:
-                continue
-            if str(store).lower() in ["store", "kickback owed"]:
-                continue
-            if str(owed).lower() in ["store", "kickback owed"]:
-                continue
-
-            # Attempt to format owed as currency
+    subprocess.run(["python", "brandDEALSEmailer.py"])
+        # 7) Clean up files directory
+    files_dir = Path("files")
+    if files_dir.exists() and files_dir.is_dir():
+        for file in files_dir.iterdir():
             try:
-                owed_float = float(owed)
-                owed_str = f"${owed_float:,.2f}"  # e.g. $876.92
-            except (ValueError, TypeError):
-                # fallback if it's not numeric
-                owed_str = str(owed)
-
-            filtered_data.append((str(store), owed_str))
-
-        if not filtered_data:
-            return "<p>No store / owed data after removing headers/empties.</p>"
-
-        html = """
-        <table border='1' cellpadding='5' cellspacing='0'>
-        <thead>
-            <tr><th>Store</th><th>Kickback Owed</th></tr>
-        </thead>
-        <tbody>
-        """
-
-        for (store_val, owed_val) in filtered_data:
-            html += f"<tr><td>{store_val}</td><td>{owed_val}</td></tr>\n"
-
-        html += "</tbody></table>\n"
-        return html
-
-
-    hashish_owed_table_html = make_hashish_owed_table(hashish_summary_rows)
-
-    # ============= EMAIL #1 => "Hello Donna" (Non-Hashish links in body) =============
-    # We'll embed non-hashish links in the email body (HTML).
-    email1_subject = f"Weekly Kickback Links (Donna) ({date_range_str})"
-    email1_body_html = f"""
-    <html>
-    <body>
-    <p>Hello Donna,</p>
-    <p>Please find below the Google Drive links for the week {date_range_str}:</p>
-    {non_hashish_html}
-    <p><strong>please include/contact anthony@buzzcannabis.com in all emails regarding these credits. </strong></p>
-    <p>Regards,<br>Anthony</p>
-    </body>
-    </html>
-    """
-
-    # We'll send an HTML email so the <a href='...'> is clickable
-    send_email_with_gmail_html(
-        subject=email1_subject,
-        html_body=email1_body_html,
-        recipients=["anthony@barbaro.tech"],
-        attachments=None  # or pass a list of attachments if you want any files
-    )
-
-    # ============= EMAIL #2 => "Hello Ryan" (Hashish links + owed data) =============
-    # We'll embed hashish links and the store/owed table in the email body (HTML).
-    email2_subject = f"Weekly Kickback (Ryan) (Hashish) ({date_range_str})"
-    email2_body_html = f"""
-    <html>
-    <body>
-    <p>Hello Ryan,</p>
-    <p>Here are the <strong>Hashish brand</strong> links for {date_range_str}:</p>
-    {hashish_html}
-    <p>Additionally, the store / Kickback Owed data is:</p>
-    {hashish_owed_table_html}
-    <p>Regards,<br>Anthony</p>
-    </body>
-    </html>
-    """
-
-    send_email_with_gmail_html(
-        subject=email2_subject,
-        html_body=email2_body_html,
-        recipients=["anthony@barbaro.tech"],
-        attachments=None
-    )
+                if file.is_file():
+                    file.unlink()
+                    print(f"[CLEANUP] Deleted {file}")
+            except Exception as e:
+                print(f"[ERROR] Could not delete {file}: {e}")
 
     print("\n===== autoJob.py completed successfully. =====")
 

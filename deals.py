@@ -8,7 +8,7 @@ from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 from openpyxl.utils import get_column_letter
 from pathlib import Path
 import locale
-import hashlib
+import shutil
 
 # Global dictionary to map real names -> pseudonyms
 NAME_MAP = {}
@@ -146,12 +146,18 @@ brand_criteria2 = {
     }
 }
 brand_criteria4 = {
-    'PV': {
-        'vendors': ['Garden Of Weeden Inc.'],
+    'Wyld-FEB': {
+        'vendors': ['2020 Long Beach LLC'],
         'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
         'discount': 0.30,
         'kickback': 0.0,
-        'brands': ['PV |']
+        'brands': ['Wyld', 'Good Tide']
+    },'GoodTide-FEB': {
+        'vendors': ['2020 Long Beach LLC'],
+        'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
+        'discount': 0.30,
+        'kickback': 0.0,
+        'brands': ['Good Tide']
     },
 }
 
@@ -223,14 +229,15 @@ brand_criteria = {
         #'categories': ['Concentrate'], 
         'brands': ['Hashish']
     },
-    'Jeeter': {
+    'Jeeter50': {
         'vendors': ['Med For America Inc.'],
         'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
         'discount': 0.50,
         'kickback': 0.25,
         'categories': ['Pre-Rolls'],
         'brands': ['Jeeter'],
-        'excluded_phrases': ['(3pk)','SVL','LRO']
+        'include_phrases': ['LRO','2G','5pk','1G'],
+        #'excluded_phrases': ['(3pk)','SVL']
     },
     'Kiva': {
         'vendors': ['KIVA / LCISM CORP', 'Vino & Cigarro, LLC'],
@@ -301,6 +308,7 @@ brand_criteria = {
         'discount': 0.50,
         'kickback': 0.25,
         #'excluded_phrases': ['Jetty | Cart 1g |'],
+        'include_phrases': ['SVL'],
         'brands': ['Jetty']
     },
     'Dr.Norm': {
@@ -328,7 +336,7 @@ brand_criteria = {
         'vendors': ['Garden Of Weeden Inc.'],
         'days': ['Wednesday'],
         'discount': 0.50,
-        'kickback': 0.25,
+        'kickback': 0.30,
         'brands': ['Kikoko']
     },
     'JoshWax': {
@@ -508,8 +516,19 @@ def run_deals_reports():
       - Consolidated summary across all brands if any data is found
     Returns a list of dict: [{"brand":..., "owed":..., "start":..., "end":...}, ...]
     """
+    # Archive old reports before generating new ones
     output_dir = 'brand_reports'
-    Path(output_dir).mkdir(exist_ok=True)
+    old_dir = os.path.join('old')
+    Path(old_dir).mkdir(exist_ok=True)
+
+    for file in os.listdir(output_dir):
+        full_path = os.path.join(output_dir, file)
+        if file.endswith(".xlsx") and os.path.isfile(full_path):
+            dest_path = os.path.join(old_dir, file)
+            if os.path.exists(dest_path):
+                os.remove(dest_path)  # ✅ Remove existing file first
+            shutil.move(full_path, dest_path)  # ✅ Safe move
+
 
     # Debug: Attempt to read each file
     mv_data = process_file('files/salesMV.xlsx')
@@ -585,6 +604,19 @@ def run_deals_reports():
                 sv_brand_data = sv_brand_data[sv_brand_data['product name'].apply(
                     lambda x: any(b in x for b in brand_list if isinstance(x, str))
                 )]
+        # Include phrases filter (if provided, these take priority)
+        if 'include_phrases' in criteria:
+            include_patterns = [re.escape(p) for p in criteria['include_phrases']]
+
+            def matches_include(x):
+                return any(re.search(pat, x, re.IGNORECASE) for pat in include_patterns if isinstance(x, str))
+
+            if not mv_brand_data.empty:
+                mv_brand_data = mv_brand_data[mv_brand_data['product name'].apply(matches_include)]
+            if not lm_brand_data.empty:
+                lm_brand_data = lm_brand_data[lm_brand_data['product name'].apply(matches_include)]
+            if not sv_brand_data.empty:
+                sv_brand_data = sv_brand_data[sv_brand_data['product name'].apply(matches_include)]
 
         # Excluded phrases
         if 'excluded_phrases' in criteria:
