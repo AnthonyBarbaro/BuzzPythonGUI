@@ -229,11 +229,11 @@ brand_criteria = {
         #'categories': ['Concentrate'], 
         'brands': ['Hashish']
     },
-    'Jeeter50': {
+    'Jeeter': {
         'vendors': ['Med For America Inc.'],
         'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
-        'discount': 0.50,
-        'kickback': 0.25,
+        'discount': 0.40,
+        'kickback': 0.23,
         'categories': ['Pre-Rolls'],
         'brands': ['Jeeter'],
         'include_phrases': ['LRO','2G','5pk','1G'],
@@ -519,7 +519,7 @@ def run_deals_reports():
     # Archive old reports before generating new ones
     output_dir = 'brand_reports'
     old_dir = os.path.join('old')
-    Path(old_dir).mkdir(exist_ok=True)
+    Path(output_dir).mkdir(parents=True, exist_ok=True)  # <-- Ensures folder exists
 
     for file in os.listdir(output_dir):
         full_path = os.path.join(output_dir, file)

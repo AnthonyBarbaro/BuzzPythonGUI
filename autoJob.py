@@ -463,8 +463,16 @@ def main():
     date_range_str = f"{last_monday} to {last_sunday}"
     print(f"Processing for last week range: {date_range_str}")
 
-    # 1) Catalog
-
+    # 1) Clean up files directory
+    files_dir = Path("files")
+    if files_dir.exists() and files_dir.is_dir():
+        for file in files_dir.iterdir():
+            try:
+                if file.is_file():
+                    file.unlink()
+                    print(f"[CLEANUP] Deleted {file}")
+            except Exception as e:
+                print(f"[ERROR] Could not delete {file}: {e}")
     # 2) Sales
     run_sales_report(last_monday, last_sunday)
 
@@ -496,16 +504,7 @@ def main():
                 non_hashish_links.append(line)
 
     subprocess.run(["python", "brandDEALSEmailer.py"])
-        # 7) Clean up files directory
-    files_dir = Path("files")
-    if files_dir.exists() and files_dir.is_dir():
-        for file in files_dir.iterdir():
-            try:
-                if file.is_file():
-                    file.unlink()
-                    print(f"[CLEANUP] Deleted {file}")
-            except Exception as e:
-                print(f"[ERROR] Could not delete {file}: {e}")
+
 
     print("\n===== autoJob.py completed successfully. =====")
 
