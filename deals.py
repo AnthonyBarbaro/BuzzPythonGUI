@@ -137,29 +137,45 @@ brand_criteria3 = { #Started March 1
     }
 }
 brand_criteria2 = {
-    'Stiiizy': {
+    'Stiiizy(THURS-SAT)': {
         'vendors': ['Elevation (Stiiizy)'],
-        'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
+        'days': ['Thursday','Friday','Saturday'],
         'discount': 0.50,
         'kickback': 0.30,
         'brands': ['Stiiizy']
+    },
+    'Stiiizy(SUN-WED)': {
+        'vendors': ['Elevation (Stiiizy)'],
+        'days': ['Monday','Tuesday','Wednesday','Sunday'],
+        'discount': 0.50,
+        'kickback': 0.30,
+        'categories': ['Disposables', 'Cartridges', 'Gummies', 'Edibles'],
+        'brands': ['Stiiizy']
+    },
+    'WYLD/GoodTide': {
+        'vendors': ['2020 Long Beach LLC'],
+        'days': ['Friday','Saturday'],
+        'discount': 0.50,
+        'kickback': 0.25,
+        'brands': ['Wyld', 'Good Tide']
+    }, 'Made': {
+        'vendors': ['Garden Of Weeden Inc.'],
+        'days': ['Saturday'],
+        'discount': 0.50,
+        'kickback': 0.25,
+        #'categories': [''], 
+        'brands': ['Made']
     }
 }
 brand_criteria4 = {
-    'Wyld-FEB': {
-        'vendors': ['2020 Long Beach LLC'],
+    'Raw Garden- Jan': {
+        'vendors': ['Garden Of Weeden Inc.'],
         'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
         'discount': 0.30,
         'kickback': 0.0,
-        'brands': ['Wyld', 'Good Tide']
-    },'GoodTide-FEB': {
-        'vendors': ['2020 Long Beach LLC'],
-        'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
-        'discount': 0.30,
-        'kickback': 0.0,
-        'brands': ['Good Tide']
-    },
-}
+        'brands': ['Raw Garden']
+    }
+    }
 
 # Define brand-based criteria
 brand_criteria1 = {
@@ -551,7 +567,7 @@ def run_deals_reports():
     results_for_app = []
 
     # For each brand, gather data from whichever stores are not empty
-    for brand, criteria in brand_criteria.items():
+    for brand, criteria in brand_criteria4.items():
 
         # ----- Mission Valley ----- #
         mv_brand_data = pd.DataFrame()

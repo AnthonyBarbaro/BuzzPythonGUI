@@ -1,5 +1,5 @@
 {
-  "test_mode": true,
+  "test_mode": false,
   "test_email": "donna@buzzcannabis.com",
 
   "brands": [
@@ -246,7 +246,7 @@
       "folder_name": "Smackers / Sips",
       "rep": "Mimi & Kevin",
       "emails": ["mimi@enjoysmackers.com", "k@enjoysmackers.com","donna@buzzcannabis.com"],
-      "days": ["Monday"],
+      "days": ["Monday","Wednesday"],
       "location": "MV/LM"
     },
     {
@@ -294,7 +294,7 @@
       "folder_name": "Nameless / Originals",
       "rep": "Cory",
       "emails": ["coryk@originalsca.com","donna@buzzcannabis.com"],
-      "days": ["Monday","Friday"],
+      "days": ["Monday","Friday","Wednesday"],
       "location": "MV/LM/SV"
     },
     {
@@ -412,6 +412,22 @@
       "rep": "Carlos",
       "emails": ["Carlos@wizardtrees.com ","donna@buzzcannabis.com","Kevin@buzzcannabis.com"],
       "days": ["Tuesday"],
+      "location": "MV/LM/SV"
+    },
+    {
+      "brand_synonyms": ["Half Oz House","Fresh  Farms"],
+      "folder_name": "HOH/FreshFarms",
+      "rep": "Carlos",
+      "emails": ["peter_katta@yahoo.com ","donna@buzzcannabis.com"],
+      "days": ["Tuesday"],
+      "location": "MV/LM/SV"
+    },
+    {
+      "brand_synonyms": ["Cake"],
+      "folder_name": "Cake",
+      "rep": "Damien",
+      "emails": ["damian@shehitsdifferent.com","donna@buzzcannabis.com"],
+      "days": ["Wednesday"],
       "location": "MV/LM/SV"
     }
   ]

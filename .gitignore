@@ -26,6 +26,7 @@ deals.db
 .DS_Store
 Thumbs.db
 # Ignore generated brand reports
+scrapingWeedmaps
 brand_reports_LM/
 brand_reports_MV/
 links.txt
