@@ -28,7 +28,8 @@ INPUT_COLUMNS = ['Available', 'Product', 'Category', 'Brand']
 store_abbr_map = {
     "Buzz Cannabis - Mission Valley": "MV",
     "Buzz Cannabis-La Mesa": "LM",
-    "Buzz Cannabis - SORRENTO VALLEY": "SV"
+    "Buzz Cannabis - SORRENTO VALLEY" : "SV",
+    "Buzz Cannabis - Lemon Grove" : "LG"
 }
 
 start_str = None
@@ -237,6 +238,8 @@ def clickActionsAndExport(current_store):
                     new_filename = f"salesLM.xlsx"
                 elif current_store == "Buzz Cannabis - SORRENTO VALLEY":
                     new_filename = f"salesSV.xlsx"
+                elif current_store == "Buzz Cannabis - Lemon Grove":
+                    new_filename = f"salesLG.xlsx"
                 else:
                     new_filename = f"sales_{current_store}_{timestamp}.xlsx"
 
@@ -310,7 +313,12 @@ def create_store_checkboxes(frame):
     cbSV = tk.Checkbutton(frame, text="Buzz Cannabis - SORRENTO VALLEY", variable=varSV)
     cbSV.pack(anchor='w')
     store_vars["Buzz Cannabis - SORRENTO VALLEY"] = varSV
-
+    
+    # Lemon Grove
+    varLG = tk.IntVar(value=1)
+    cbLG = tk.Checkbutton(frame, text="Buzz Cannabis - Lemon Grove", variable=varLG)
+    cbLG.pack(anchor='w')
+    store_vars["Buzz Cannabis - Lemon Grove"] = varLG
     return store_vars
 
 def open_gui_and_run():
@@ -400,7 +408,8 @@ def open_gui_and_run():
             selected_stores = [
                 "Buzz Cannabis - Mission Valley",
                 "Buzz Cannabis-La Mesa",
-                "Buzz Cannabis - SORRENTO VALLEY"
+                "Buzz Cannabis - SORRENTO VALLEY",
+                "Buzz Cannabis - Lemon Grove"
             ]
 
         # Close GUI
@@ -428,7 +437,8 @@ def run_sales_report(start_date, end_date):
     store_names = [
         "Buzz Cannabis - Mission Valley",
         "Buzz Cannabis-La Mesa",
-        "Buzz Cannabis - SORRENTO VALLEY"
+        "Buzz Cannabis - SORRENTO VALLEY",
+        "Buzz Cannabis - Lemon Grove"
     ]
     global driver
     driver = launchBrowser()
