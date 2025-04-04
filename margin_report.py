@@ -15,9 +15,10 @@ CONFIG_FILE = "config.txt"
 
 INPUT_COLUMNS = ['Available', 'Product', 'Category', 'Brand', 'Price', 'Cost']
 store_abbr_map = {
-    "Buzz Cannabis - Mission Valley": "MV",
-    "Buzz Cannabis-La Mesa": "LM",
-    "Buzz Cannabis - SORRENTO VALLEY": "SV"
+        "Buzz Cannabis - Mission Valley",
+        "Buzz Cannabis-La Mesa",
+        "Buzz Cannabis - SORRENTO VALLEY",
+        "Buzz Cannabis - Lemon Grove"
 }
 
 def ensure_dir_exists(directory):

@@ -158,13 +158,21 @@ brand_criteria2 = {
         'discount': 0.50,
         'kickback': 0.25,
         'brands': ['Wyld', 'Good Tide']
-    }, 'Made': {
+    },
+      'Made': { #TURN AND MADE MONTH OF APRIL 50 off 50% kickback
         'vendors': ['Garden Of Weeden Inc.'],
-        'days': ['Saturday'],
+        'days': ['Friday','Saturday','Sunday'],
         'discount': 0.50,
-        'kickback': 0.25,
+        'kickback': 0.50,
         #'categories': [''], 
         'brands': ['Made']
+    }, 
+    'Turn': { #TURN AND MADE MONTH OF APRIL 50 off 50% kickback
+        'vendors': ['Garden Of Weeden Inc.'],
+        'days': ['Friday','Saturday','Sunday'],
+        'discount': 0.50,
+        'kickback': 0.50,
+        'brands': ['Turn']
     }
 }
 brand_criteria4 = {
@@ -550,7 +558,7 @@ def run_deals_reports():
     mv_data = process_file('files/salesMV.xlsx')
     lm_data = process_file('files/salesLM.xlsx')
     sv_data = process_file('files/salesSV.xlsx')  # NEW - If missing, returns None
-
+    lg_data = process_file('files/salesLG.xlsx') 
     # If a store file is None, we skip that store
     if mv_data is None:
         print("DEBUG: MV data not found or empty. Skipping Mission Valley.")
@@ -561,13 +569,16 @@ def run_deals_reports():
     if sv_data is None:
         print("DEBUG: SV data not found or empty. Skipping Sorrento Valley.")
         sv_data = pd.DataFrame()
+    if lg_data is None:
+        print("DEBUG: LG data not found or empty. Skipping Sorrento Valley.")
+        lg_data = pd.DataFrame()
 
     ALL_DAYS = {"Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"}
     consolidated_summary = []
     results_for_app = []
 
     # For each brand, gather data from whichever stores are not empty
-    for brand, criteria in brand_criteria4.items():
+    for brand, criteria in brand_criteria.items():
 
         # ----- Mission Valley ----- #
         mv_brand_data = pd.DataFrame()
@@ -592,9 +603,16 @@ def run_deals_reports():
                 (sv_data['vendor name'].isin(criteria['vendors'])) &
                 (sv_data['day of week'].isin(criteria['days']))
             ].copy()
+        # ----- Lemon Grove ----- #
+        lg_brand_data = pd.DataFrame()
+        if not lg_data.empty:
+            lg_brand_data = lg_data[
+                (lg_data['vendor name'].isin(criteria['vendors'])) &
+                (lg_data['day of week'].isin(criteria['days']))
+            ].copy()
 
         # Debug: shapes before further filtering
-        print(f"\nDEBUG: {brand} - Initial shapes => MV: {mv_brand_data.shape}, LM: {lm_brand_data.shape}, SV: {sv_brand_data.shape}")
+        print(f"\nDEBUG: {brand} - Initial shapes => MV: {mv_brand_data.shape}, LM: {lm_brand_data.shape}, SV: {sv_brand_data.shape}, LG: {lg_brand_data.shape}")
 
         # Filter categories
         if 'categories' in criteria:
@@ -604,6 +622,8 @@ def run_deals_reports():
                 lm_brand_data = lm_brand_data[lm_brand_data['category'].isin(criteria['categories'])]
             if not sv_brand_data.empty:
                 sv_brand_data = sv_brand_data[sv_brand_data['category'].isin(criteria['categories'])]
+            if not lg_brand_data.empty:
+                lg_brand_data = lg_brand_data[lg_brand_data['category'].isin(criteria['categories'])]
 
         # Filter brand names
         if 'brands' in criteria:
@@ -620,6 +640,10 @@ def run_deals_reports():
                 sv_brand_data = sv_brand_data[sv_brand_data['product name'].apply(
                     lambda x: any(b in x for b in brand_list if isinstance(x, str))
                 )]
+            if not lg_brand_data.empty:
+                lg_brand_data = lg_brand_data[lg_brand_data['product name'].apply(
+                    lambda x: any(b in x for b in brand_list if isinstance(x, str))
+                )]
         # Include phrases filter (if provided, these take priority)
         if 'include_phrases' in criteria:
             include_patterns = [re.escape(p) for p in criteria['include_phrases']]
@@ -633,6 +657,8 @@ def run_deals_reports():
                 lm_brand_data = lm_brand_data[lm_brand_data['product name'].apply(matches_include)]
             if not sv_brand_data.empty:
                 sv_brand_data = sv_brand_data[sv_brand_data['product name'].apply(matches_include)]
+            if not lg_brand_data.empty:
+                lg_brand_data = lg_brand_data[lg_brand_data['product name'].apply(matches_include)]
 
         # Excluded phrases
         if 'excluded_phrases' in criteria:
@@ -645,12 +671,14 @@ def run_deals_reports():
                     lm_brand_data = lm_brand_data[~lm_brand_data['product name'].str.contains(pat, na=False)]
                 if not sv_brand_data.empty:
                     sv_brand_data = sv_brand_data[~sv_brand_data['product name'].str.contains(pat, na=False)]
+                if not lg_brand_data.empty:
+                    lg_brand_data = lg_brand_data[~lg_brand_data['product name'].str.contains(pat, na=False)]
 
         # Debug: shapes after filtering
-        print(f"DEBUG: {brand} - After filtering => MV: {mv_brand_data.shape}, LM: {lm_brand_data.shape}, SV: {sv_brand_data.shape}")
+        print(f"DEBUG: {brand} - After filtering => MV: {mv_brand_data.shape}, LM: {lm_brand_data.shape}, SV: {sv_brand_data.shape}, LG: {lg_brand_data.shape}")
 
         # Skip brand if all stores are empty
-        if mv_brand_data.empty and lm_brand_data.empty and sv_brand_data.empty:
+        if mv_brand_data.empty and lm_brand_data.empty and sv_brand_data.empty and lg_brand_data.empty:
             print(f"DEBUG: No data remains for brand '{brand}'. Skipping.")
             continue
 
@@ -662,6 +690,8 @@ def run_deals_reports():
             lm_brand_data = apply_discounts_and_kickbacks(lm_brand_data, criteria['discount'], criteria['kickback'])
         if not sv_brand_data.empty and required_cols.issubset(sv_brand_data.columns):
             sv_brand_data = apply_discounts_and_kickbacks(sv_brand_data, criteria['discount'], criteria['kickback'])
+        if not lg_brand_data.empty and required_cols.issubset(lg_brand_data.columns):
+            lg_brand_data = apply_discounts_and_kickbacks(lg_brand_data, criteria['discount'], criteria['kickback'])
 
         # Determine date ranges
         def get_date_range(df):
@@ -672,9 +702,10 @@ def run_deals_reports():
         start_mv, end_mv = get_date_range(mv_brand_data)
         start_lm, end_lm = get_date_range(lm_brand_data)
         start_sv, end_sv = get_date_range(sv_brand_data)
+        start_lg, end_lg = get_date_range(lg_brand_data)
 
-        possible_starts = [d for d in [start_mv, start_lm, start_sv] if d]
-        possible_ends = [d for d in [end_mv, end_lm, end_sv] if d]
+        possible_starts = [d for d in [start_mv, start_lm, start_sv,start_lg] if d]
+        possible_ends = [d for d in [end_mv, end_lm, end_sv,end_lg] if d]
         if not possible_starts or not possible_ends:
             print(f"DEBUG: Brand '{brand}' had data, but no valid date range. Skipping.")
             continue
@@ -702,9 +733,9 @@ def run_deals_reports():
         mv_summary = build_summary(mv_brand_data, 'Mission Valley')
         lm_summary = build_summary(lm_brand_data, 'La Mesa')
         sv_summary = build_summary(sv_brand_data, 'Sorrento Valley')
-
+        lg_summary = build_summary(lg_brand_data, 'Lemon Grove')
         # Combine them
-        brand_summary = pd.concat([mv_summary, lm_summary, sv_summary], ignore_index=True)
+        brand_summary = pd.concat([mv_summary, lm_summary, sv_summary,lg_summary], ignore_index=True)
 
         # If the brand runs all days, show 'Everyday'
         if set(criteria['days']) == ALL_DAYS:
@@ -739,7 +770,7 @@ def run_deals_reports():
         print(f"DEBUG: Creating {output_filename} for brand '{brand}'...")
 
         # Build "Top Sellers" with combined data from MV + LM + SV
-        combined_df = pd.concat([mv_brand_data, lm_brand_data, sv_brand_data], ignore_index=True)
+        combined_df = pd.concat([mv_brand_data, lm_brand_data, sv_brand_data,lg_brand_data], ignore_index=True)
         if not combined_df.empty and 'gross sales' in combined_df.columns:
             top_sellers_df = (
                 combined_df.groupby('product name', as_index=False)
@@ -765,6 +796,9 @@ def run_deals_reports():
             # SV Sales (if not empty)
             if not sv_brand_data.empty:
                 sv_brand_data.to_excel(writer, sheet_name='SV_Sales', index=False)
+            # SV Sales (if not empty)
+            if not lg_brand_data.empty:
+                lg_brand_data.to_excel(writer, sheet_name='LG_Sales', index=False)
             # Top Sellers
             top_sellers_df.to_excel(writer, sheet_name='Top Sellers', index=False)
         wb = load_workbook(output_filename)
@@ -796,6 +830,8 @@ def run_deals_reports():
             style_worksheet(wb['LM_Sales'])
         if 'SV_Sales' in wb.sheetnames:
             style_worksheet(wb['SV_Sales'])
+        if 'LG_Sales' in wb.sheetnames:
+            style_worksheet(wb['LG_Sales'])
         if 'Top Sellers' in wb.sheetnames:
             style_top_sellers_sheet(wb['Top Sellers'])
         wb.save(output_filename)

@@ -14,6 +14,16 @@ stiiizy_deal = {
     'always_kickback_categories': ["Disposables", "Cartridges", "Gummies", "Edibles"]
 }
 
+stiiizy_deal = {
+    'vendors': ['Varavo'],
+    'brands': ['Kushy Punch'],
+    'discount': 0.30,
+    'kickback': 0.0,
+    'weekend_days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
+    'weekend_kickback_categories': ["Disposables", "Gummies", "Edibles"],
+    'always_kickback_categories': ["Disposables", "Gummies", "Edibles"]
+}
+
 def ensure_dir_exists(directory):
     if not os.path.exists(directory):
         os.makedirs(directory)
@@ -57,7 +67,7 @@ def target_price_for_45_margin(cost, kickback_applicable):
     return round(price_needed, 2)
 
 def process_stiiizy_margins():
-    input_path = os.path.join("files", "03-24-2025_MV.csv")
+    input_path = os.path.join("files", "04-03-2025_MV.csv")
     sales_data_path = os.path.join("files", "salesMV.xlsx")
     output_directory = "done"
     ensure_dir_exists(output_directory)
