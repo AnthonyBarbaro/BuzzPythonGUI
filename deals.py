@@ -173,7 +173,17 @@ brand_criteria2 = {
         'discount': 0.50,
         'kickback': 0.50,
         'brands': ['Turn']
-    }
+    }, 
+    'Jeeter': {
+        'vendors': ['Med For America Inc.'],
+        'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
+        'discount': 0.50,
+        'kickback': 0.25,
+        'categories': ['Pre-Rolls'],
+        'brands': ['Jeeter'],
+        'include_phrases': ['Jeeter | BC LR Pre-Roll 1.3g','Jeeter | IN Pre-Roll 1g','Jeeter | IN Pre-Roll 2g','Jeeter | IN Pre-Rolls (5pk)','Jeeter | LE Pre-Roll 1g','Jeeter | IN Pre-Rolls 0.5g (5pk)'],
+        #'excluded_phrases': ['(3pk)','SVL']
+    },
 }
 brand_criteria4 = {
     'Raw Garden- Jan': {
@@ -246,7 +256,7 @@ brand_criteria1 = {
 }
 brand_criteria = {
     'Hashish': {
-        'vendors': ['Zenleaf LLC'],
+        'vendors': ['Zenleaf LLC','Center Street Investments Inc.'],
         'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
         'discount': 0.50,
         'kickback': 0.25,
@@ -332,7 +342,7 @@ brand_criteria = {
         'discount': 0.50,
         'kickback': 0.25,
         #'excluded_phrases': ['Jetty | Cart 1g |'],
-        'include_phrases': ['SVL'],
+        'include_phrases': ['SVL','ULR',],
         'brands': ['Jetty']
     },
     'Dr.Norm': {
@@ -371,7 +381,7 @@ brand_criteria = {
         'brands': ['Josh Wax']
     },
     'TreeSap': {
-        'vendors': ['Zenleaf LLC'],
+        'vendors': ['Zenleaf LLC','Center Street Investments Inc.'],
         'days': ['Thursday'],
         'discount': 0.50,
         'kickback': 0.25,
@@ -578,7 +588,7 @@ def run_deals_reports():
     results_for_app = []
 
     # For each brand, gather data from whichever stores are not empty
-    for brand, criteria in brand_criteria.items():
+    for brand, criteria in brand_criteria2.items():
 
         # ----- Mission Valley ----- #
         mv_brand_data = pd.DataFrame()
