@@ -375,9 +375,9 @@ brand_criteria = {
     },
     'JoshWax': {
         'vendors': ['Zasp'],
-        'days': ['Friday'],
-        'discount': 0.50,
-        'kickback': 0.25,
+        'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
+        'discount': 0.40,
+        'kickback': 0.20,
         'brands': ['Josh Wax']
     },
     'TreeSap': {

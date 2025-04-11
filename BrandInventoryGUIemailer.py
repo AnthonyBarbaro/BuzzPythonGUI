@@ -464,7 +464,7 @@ class BrandInventoryGUI:
         self.input_dir_var = tk.StringVar(value=init_in if init_in else "")
         self.output_dir_var = tk.StringVar(value=init_out if init_out else "")
         self.emails_var = tk.StringVar()
-
+        
         # Row 1: input folder
         row1 = tk.Frame(self.frame)
         row1.pack(pady=5, fill="x")
@@ -482,7 +482,7 @@ class BrandInventoryGUI:
         # Row 3: Buttons => get files, load brands
         row3 = tk.Frame(self.frame)
         row3.pack(pady=5, fill="x")
-        tk.Button(row3, text="Get Files (getCatalog.py)", command=self.get_files).pack(side="left", padx=5)
+        tk.Button(row3, text="Update Files", command=self.get_files).pack(side="left", padx=5)
         tk.Button(row3, text="Load Brands", command=self.load_brands).pack(side="left", padx=5)
 
         # Row 4: brand listbox
@@ -494,6 +494,7 @@ class BrandInventoryGUI:
         scroll = tk.Scrollbar(row4, command=self.brand_listbox.yview)
         scroll.pack(side="right", fill="y")
         self.brand_listbox.config(yscrollcommand=scroll.set)
+        self.brand_listbox.bind("<Key>", self.on_listbox_keypress)
 
         # Row 5: emails
         row5 = tk.Frame(self.frame)
@@ -505,6 +506,19 @@ class BrandInventoryGUI:
         row6 = tk.Frame(self.frame)
         row6.pack(pady=10)
         tk.Button(row6, text="Generate & Upload & Email", command=self.run_process).pack()
+    def on_listbox_keypress(self, event):
+        typed_char = event.char.lower()
+        if not typed_char.isalpha():
+            return
+
+        # Loop through listbox items
+        for i in range(self.brand_listbox.size()):
+            item = self.brand_listbox.get(i)
+            if item.lower().startswith(typed_char):
+                self.brand_listbox.selection_clear(0, tk.END)
+                self.brand_listbox.selection_set(i)
+                self.brand_listbox.see(i)
+                break
 
     def browse_input(self):
         folder = filedialog.askdirectory()
@@ -518,9 +532,10 @@ class BrandInventoryGUI:
 
     def get_files(self):
         """
-        Optionally call getCatalog.py to fetch CSVs into input folder (and maybe clear old ones).
+        Clears the input folder and calls getCatalog.py to fetch new CSVs.
         """
         in_dir = self.input_dir_var.get().strip()
+
         if not in_dir or not os.path.isdir(in_dir):
             messagebox.showerror("Error", "Please choose a valid input folder first.")
             return
@@ -528,13 +543,20 @@ class BrandInventoryGUI:
             messagebox.showwarning("Warning", "No getCatalog.py found in this directory.")
             return
         try:
+            # ✅ Clear the input folder before fetching new files
+            for file in os.listdir(in_dir):
+                file_path = os.path.join(in_dir, file)
+                if os.path.isfile(file_path):
+                    os.remove(file_path)
+            print(f"[INFO] Cleared files in input folder: {in_dir}")
+
+            # ✅ Now run getCatalog
             subprocess.check_call(["python", "getCatalog.py", in_dir])
-            messagebox.showinfo("Success", "CSV files fetched from getCatalog.py.")
+            messagebox.showinfo("Success", "CSV files fetched from getCatalog.py (after clearing input folder).")
         except subprocess.CalledProcessError as e:
             messagebox.showerror("Error", f"getCatalog.py failed:\n{e}")
         except Exception as e:
             messagebox.showerror("Error", str(e))
-
     def load_brands(self):
         """
         Scans CSVs in input folder for a 'Brand' column, collects unique brand names,
