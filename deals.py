@@ -186,12 +186,12 @@ brand_criteria2 = {
     },
 }
 brand_criteria4 = {
-    'Raw Garden- Jan': {
-        'vendors': ['Garden Of Weeden Inc.'],
+    'DabDaddy': {
+        'vendors': ['Valley of The Sun LLC'],
         'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
         'discount': 0.30,
         'kickback': 0.0,
-        'brands': ['Raw Garden']
+        'brands': ['Dab Daddy']
     }
     }
 
@@ -302,7 +302,7 @@ brand_criteria = {
         'brands': ['Dabwoods']
     },
     'Time Machine': {
-        'vendors': ['Vino & Cigarro, LLC'],
+        'vendors': ['Vino & Cigarro, LLC','Garden Of Weeden Inc.'],
         'days': ['Tuesday','Friday'],
         'discount': 0.50,
         'kickback': 0.25,
@@ -353,7 +353,7 @@ brand_criteria = {
         'brands': ['Dr. Norms']
     },
     'Smokiez': {
-        'vendors': ['Garden Of Weeden Inc.'],
+        'vendors': ['Garden Of Weeden Inc.','Garden Of Weeden'],
         'days': ['Sunday'],
         'discount': 0.50,
         'kickback': 0.25,
@@ -588,7 +588,7 @@ def run_deals_reports():
     results_for_app = []
 
     # For each brand, gather data from whichever stores are not empty
-    for brand, criteria in brand_criteria2.items():
+    for brand, criteria in brand_criteria.items():
 
         # ----- Mission Valley ----- #
         mv_brand_data = pd.DataFrame()
@@ -620,9 +620,37 @@ def run_deals_reports():
                 (lg_data['vendor name'].isin(criteria['vendors'])) &
                 (lg_data['day of week'].isin(criteria['days']))
             ].copy()
+        # 🧠 Smart unknown vendor check: Only flag vendors that sold products with this brand
+        brand_keywords = set(criteria.get('brands', []))
+        expected_vendors = set(criteria.get('vendors', []))
+
+        # Gather raw day-matched data before vendor filtering
+        day_match_df = pd.concat([
+            mv_data[mv_data['day of week'].isin(criteria['days'])],
+            lm_data[lm_data['day of week'].isin(criteria['days'])],
+            sv_data[sv_data['day of week'].isin(criteria['days'])],
+            lg_data[lg_data['day of week'].isin(criteria['days'])]
+        ], ignore_index=True)
+
+        # Filter rows where product name includes brand keywords
+        def matches_brand(product_name):
+            return any(b.lower() in str(product_name).lower() for b in brand_keywords)
+
+        matched_rows = day_match_df[day_match_df['product name'].apply(matches_brand)]
+
+        # Find vendors who sold those products
+        vendors_in_matched_products = set(matched_rows['vendor name'].dropna().unique())
+
+        # Subtract vendors that are already in the criteria
+        unknown_vendors = vendors_in_matched_products - expected_vendors
+
+        if unknown_vendors:
+            print()
+            print(f"⚠️⚠️⚠️⚠️⚠️ Brand '{brand}' has unknown vendor(s): {unknown_vendors}")
+            print(f"👉 Consider adding to brand_criteria['{brand}']['vendors']")
 
         # Debug: shapes before further filtering
-        print(f"\nDEBUG: {brand} - Initial shapes => MV: {mv_brand_data.shape}, LM: {lm_brand_data.shape}, SV: {sv_brand_data.shape}, LG: {lg_brand_data.shape}")
+        #print(f"\nDEBUG: {brand} - Initial shapes => MV: {mv_brand_data.shape}, LM: {lm_brand_data.shape}, SV: {sv_brand_data.shape}, LG: {lg_brand_data.shape}")
 
         # Filter categories
         if 'categories' in criteria:
