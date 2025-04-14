@@ -488,6 +488,12 @@ class BrandInventoryGUI:
         # Row 4: brand listbox
         row4 = tk.Frame(self.frame)
         row4.pack(pady=5, fill="both")
+        alpha_sidebar = tk.Frame(row4)
+        alpha_sidebar.pack(side="right", padx=5, fill="y")
+
+        for letter in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
+            btn = tk.Button(alpha_sidebar, text=letter, width=2, command=lambda l=letter: self.scroll_to_letter(l))
+            btn.pack()
         tk.Label(row4, text="Select brand(s):").pack(anchor="w")
         self.brand_listbox = tk.Listbox(row4, selectmode=tk.MULTIPLE, height=8, width=50)
         self.brand_listbox.pack(side="left", fill="both", expand=True)
@@ -506,20 +512,42 @@ class BrandInventoryGUI:
         row6 = tk.Frame(self.frame)
         row6.pack(pady=10)
         tk.Button(row6, text="Generate & Upload & Email", command=self.run_process).pack()
+    def scroll_to_letter(self, letter):
+        for i in range(self.brand_listbox.size()):
+            item = self.brand_listbox.get(i)
+            if item.lower().startswith(letter.lower()):
+                self._flash_listbox_item(i)
+                break
+
     def on_listbox_keypress(self, event):
         typed_char = event.char.lower()
         if not typed_char.isalpha():
             return
 
-        # Loop through listbox items
+        # Don't deselect current selection
         for i in range(self.brand_listbox.size()):
             item = self.brand_listbox.get(i)
             if item.lower().startswith(typed_char):
-                self.brand_listbox.selection_clear(0, tk.END)
-                self.brand_listbox.selection_set(i)
-                self.brand_listbox.see(i)
+                self._flash_listbox_item(i)
                 break
+    def _flash_listbox_item(self, index):
+        # Save current selection
+        current_selection = self.brand_listbox.curselection()
 
+        # Highlight item visually
+        self.brand_listbox.selection_clear(0, tk.END)
+        self.brand_listbox.selection_set(index)
+        self.brand_listbox.activate(index)
+        self.brand_listbox.see(index)
+
+        # Delay to restore previous selection
+        def restore_selection():
+            self.brand_listbox.selection_clear(0, tk.END)
+            for idx in current_selection:
+                self.brand_listbox.selection_set(idx)
+
+        self.master.after(700, restore_selection)  # 700ms flash
+    
     def browse_input(self):
         folder = filedialog.askdirectory()
         if folder:
