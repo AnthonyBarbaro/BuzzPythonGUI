@@ -258,7 +258,7 @@ def send_brand_emails():
         link_list_html = make_html_link_list(brand_link_lines)
 
         # 5) Determine recipient
-        recipient = [BRAND_EMAILS.get(brand_name, DEFAULT_EMAIL), "donna@buzzcannabis.com"]
+        recipient = [BRAND_EMAILS.get(brand_name, DEFAULT_EMAIL)]
         #recipient = [BRAND_EMAILS.get(brand_name, DEFAULT_EMAIL)]
 
 

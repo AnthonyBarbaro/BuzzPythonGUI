@@ -417,17 +417,37 @@
     {
       "brand_synonyms": ["Half Oz House","Fresh  Farms"],
       "folder_name": "HOH/FreshFarms",
-      "rep": "Carlos",
+      "rep": "Peter",
       "emails": ["peter_katta@yahoo.com ","donna@buzzcannabis.com"],
-      "days": ["Tuesday"],
+      "days": ["Monday","Tuesday"],
       "location": "MV/LM/SV"
     },
     {
-      "brand_synonyms": ["Cake"],
-      "folder_name": "Cake",
-      "rep": "Damien",
+      "brand_synonyms": ["CANN","Camino","CLSICS","Big Pete's","KIVA","Pax","Uncle Arnie's","Petra","Lost Farms"],
+      "folder_name": "KIVA BRANDS",
+      "emails": ["donna@buzzcannabis.com"],
+      "days": ["Monday","Wednesday"],
+      "location": "MV/LM/SV"
+    },   
+    {
+      "brand_synonyms": ["Almora Farm","Heavy Hitters","Papa & Barkley (P&B)"],
+      "folder_name": "Heavy/Almora/P&B",
+      "emails": ["donna@buzzcannabis.com"],
+      "days": ["Monday"],
+      "location": "MV/LM/SV"
+    },   
+    {
+      "brand_synonyms": ["Green Dawg","Mountain Man","Turtle Pie Co."],
+      "folder_name": "GreenDawg Brands",
       "emails": ["damian@shehitsdifferent.com","donna@buzzcannabis.com"],
-      "days": ["Wednesday"],
+      "days": ["Monday","Wednesday"],
+      "location": "MV/LM/SV"
+    },   
+    {
+      "brand_synonyms": ["Yada Yada"],
+      "folder_name": "YADA YADA",
+      "emails": ["donna@buzzcannabis.com"],
+      "days": ["Monday"],
       "location": "MV/LM/SV"
     }
   ]

@@ -159,7 +159,7 @@ brand_criteria2 = {
         'kickback': 0.25,
         'brands': ['Wyld', 'Good Tide']
     },
-      'Made': { #TURN AND MADE MONTH OF APRIL 50 off 50% kickback
+      'Made': { #TURN AND MADE MONTH OF APRIL 50 off 50% kickback - already off invoice
         'vendors': ['Garden Of Weeden Inc.'],
         'days': ['Friday','Saturday','Sunday'],
         'discount': 0.50,
@@ -167,8 +167,8 @@ brand_criteria2 = {
         #'categories': [''], 
         'brands': ['Made']
     }, 
-    'Turn': { #TURN AND MADE MONTH OF APRIL 50 off 50% kickback
-        'vendors': ['Garden Of Weeden Inc.'],
+    'Turn': { #TURN AND MADE MONTH OF APRIL 50 off 50% kickback- already off invoice
+        'vendors': ['Fluids Manufacturing Inc.', 'Garden Of Weeden'],
         'days': ['Friday','Saturday','Sunday'],
         'discount': 0.50,
         'kickback': 0.50,
@@ -185,13 +185,103 @@ brand_criteria2 = {
         #'excluded_phrases': ['(3pk)','SVL']
     },
 }
-brand_criteria4 = {
-    'DabDaddy': {
-        'vendors': ['Valley of The Sun LLC'],
+brand_criteria420 = {
+    'TeamEliteGenetics': {
+        'vendors': ['Broadway Alliance, LLC'],
+        'days': ['Friday','Saturday','Sunday'],
+        'discount': 0.40,
+        'kickback': 0.20,
+        'brands': ['Team Elite G |']
+    }, 
+    'Cake': { 
+        'vendors': ['ThirtyOne Labs, LLC'],
+        'days': ['Friday','Saturday','Sunday'],
+        'discount': 0.40,
+        'kickback': 0.20,
+        'brands': ['Cake |']
+    },
+    'Cam - OFF INVOICE': { #OFF INVOICE
+        'vendors': ['California Artisanal Medicine (CAM)'],
+        'days': ['Friday','Saturday','Sunday'],
+        'discount': 0.40,
+        'kickback': 0.20,
+        'brands': ['CAM |']
+
+    }, 
+    'Raw Garden': {
+        'vendors': ['Garden Of Weeden Inc.'],
+        'days': ['Friday','Saturday','Sunday'],
+        'discount': 0.40,
+        'kickback': 0.20,
+        'brands': ['Raw Garden']
+
+    },'Jeeter': {
+        'vendors': ['Med For America Inc.'],
+        'days': ['Friday','Saturday','Sunday'],
+        'discount': 0.50,
+        'kickback': 0.25,
+        'brands': ['Jeeter'],
+
+    },'Stiiizy420-40back': {
+        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC'],
+        'days': ['Thursday','Friday','Saturday','Sunday'],
+        'discount': 0.50,
+        'kickback': 0.40,
+        'brands': ['Stiiizy |'],
+        'categories': ["Eighths", "Pre-Rolls", "Flower", "Halves", "Quarters", "Ounces", "Accessories"],
+        'excluded_phrases': ['Stiiizy | Pre-Roll 1g','Stiiizy | Pre-roll 1g',"Stiiizy | 40's Blunt 2G",'Naked'],
+
+    },'Stiiizy420-30back': {
+        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC'],
+        'days': ['Thursday','Friday','Saturday','Sunday'],
+        'discount': 0.50,
+        'kickback': 0.30,
+        'brands': ['Stiiizy |'],
+        'categories': ["Eighths", "Pre-Rolls", "Flower", "Halves", "Quarters", "Ounces", "Accessories",'Concentrate'],
+        'include_phrases': ['Stiiizy | Pre-Roll 1g','Stiiizy | Pre-roll 1g',"Stiiizy | 40's Blunt 2G",'Naked','Stiiizy | LRO','Stiiizy | LR','Stiiizy | CLR','Stiiizy | LRJ'],
+
+    },
+      'Made': { #TURN AND MADE MONTH OF APRIL 50 off 50% kickback 
+        'vendors': ['Garden Of Weeden Inc.'],
+        'days': ['Friday','Saturday','Sunday'],
+        'discount': 0.50,
+        'kickback': 0.50,
+        #'categories': [''], 
+        'brands': ['Made |']
+    }, 
+    'Turn': { #TURN AND MADE MONTH OF APRIL 50 off 50% kickback
+        'vendors': ['Fluids Manufacturing Inc.', 'Garden Of Weeden', 'Garden Of Weeden Inc.'],
+        'days': ['Friday','Saturday','Sunday'],
+        'discount': 0.50,
+        'kickback': 0.50,
+        'brands': ['Turn |']
+    },'Master Makers': {
+        'vendors': ['Broadway Alliance, LLC'],
         'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
-        'discount': 0.30,
-        'kickback': 0.0,
-        'brands': ['Dab Daddy']
+        'discount': 0.50,
+        'kickback': 0.20,
+        'brands': ['Master Makers |']
+
+    },'Fresh Farms': {
+        'vendors': ['Vert Lake Elsinore, LLC'],
+        'days': ['Friday','Saturday','Sunday'],
+        'discount': 0.50,
+        'kickback': 0.25,
+        'brands': ['Fresh Farms |']
+
+    },'Half Oz House': {
+        'vendors': ['Vert Lake Elsinore, LLC'],
+        'days': ['Friday','Saturday','Sunday'],
+        'discount': 0.50,
+        'kickback': 0.25,
+        'brands': ['HOH |']
+
+    },'CBX_Brands': {
+        'vendors': ['Higherstar Distribution', 'Hilife LM', 'Four Star Distribution and Delivery LLC','Hilife Group MV , LLC'],
+        'days': ['Friday','Saturday','Sunday'],
+        'discount': 0.50,
+        'kickback': 0.25,
+        'brands': ['CBX |','HB |','Highatus |']
     }
     }
 
@@ -588,7 +678,7 @@ def run_deals_reports():
     results_for_app = []
 
     # For each brand, gather data from whichever stores are not empty
-    for brand, criteria in brand_criteria.items():
+    for brand, criteria in brand_criteria2.items():
 
         # ----- Mission Valley ----- #
         mv_brand_data = pd.DataFrame()
@@ -635,11 +725,16 @@ def run_deals_reports():
         # Filter rows where product name includes brand keywords
         def matches_brand(product_name):
             return any(b.lower() in str(product_name).lower() for b in brand_keywords)
-
+        
         matched_rows = day_match_df[day_match_df['product name'].apply(matches_brand)]
 
         # Find vendors who sold those products
-        vendors_in_matched_products = set(matched_rows['vendor name'].dropna().unique())
+        if 'vendor name' not in matched_rows.columns:
+            print(f"⚠️ Skipping unknown vendor check for brand '{brand}' (no 'vendor name' column in matched_rows)")
+            vendors_in_matched_products = set()
+        else:
+            vendors_in_matched_products = set(matched_rows['vendor name'].dropna().unique())
+
 
         # Subtract vendors that are already in the criteria
         unknown_vendors = vendors_in_matched_products - expected_vendors
