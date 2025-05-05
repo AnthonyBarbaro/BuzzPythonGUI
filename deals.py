@@ -40,7 +40,15 @@ def process_file(file_path):
     standardizes columns, and adds a 'day of week' column."""
     if not os.path.exists(file_path):
         print(f"Error: The file at path {file_path} does not exist.")
-        return None
+        # Return empty DataFrame with expected structure
+        return pd.DataFrame(columns=[
+            "order id", "order time", "budtender name", "customer name", "customer type",
+            "vendor name", "product name", "category", "package id", "batch id",
+            "external package id", "total inventory sold", "unit weight sold", "total weight sold",
+            "gross sales", "inventory cost", "discounted amount", "loyalty as discount",
+            "net sales", "return date", "upc gtin (canada)", "provincial sku (canada)",
+            "producer", "order profit", "day of week"
+        ])
 
     df = pd.read_excel(file_path, header=4)
     df.columns = df.columns.str.strip().str.lower()
@@ -126,14 +134,14 @@ def apply_discounts_and_kickbacks(data, discount, kickback):
 
     return data
 #Month to month
-brand_criteria3 = { #Started March 1
-    'Made': {
-        'vendors': ['Garden Of Weeden Inc.'],
-        'days': ['Saturday'],
+brand_criteria3 = {
+'Stiiizy420-40back': {
+        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC'],
+        'days': ['Thursday','Friday','Saturday','Sunday'],
         'discount': 0.50,
-        'kickback': 0.25,
-        #'categories': ['Cartridges'], 
-        'brands': ['Made']
+        'kickback': 0.40,
+        'brands': ['Stiiizy |'],
+        'categories':["Disposables", "Cartridges", "Gummies", "Edibles"]
     }
 }
 brand_criteria2 = {
@@ -179,9 +187,9 @@ brand_criteria2 = {
         'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
         'discount': 0.50,
         'kickback': 0.25,
-        'categories': ['Pre-Rolls'],
+        #'categories': ['Pre-Rolls'],
         'brands': ['Jeeter'],
-        'include_phrases': ['Jeeter | BC LR Pre-Roll 1.3g','Jeeter | IN Pre-Roll 1g','Jeeter | IN Pre-Roll 2g','Jeeter | IN Pre-Rolls (5pk)','Jeeter | LE Pre-Roll 1g','Jeeter | IN Pre-Rolls 0.5g (5pk)'],
+        #'include_phrases': ['Jeeter | BC LR Pre-Roll 1.3g','Jeeter | IN Pre-Roll 1g','Jeeter | IN Pre-Roll 2g','Jeeter | IN Pre-Rolls (5pk)','Jeeter | LE Pre-Roll 1g','Jeeter | IN Pre-Rolls 0.5g (5pk)'],
         #'excluded_phrases': ['(3pk)','SVL']
     },
 }
@@ -285,63 +293,120 @@ brand_criteria420 = {
     }
     }
 
-# Define brand-based criteria
-brand_criteria1 = {
-    'Monday': {
-        'vendors': ['Evergreen SR. Distribution Inc.'],
+brand_criteria4 = {
+     'Monday': {
+        'vendors': ['Vino & Cigarro, LLC','Garden Of Weeden Inc.'],
         'days': ['Monday'],
-        'discount': 0.30,
-        'kickback': 0.0,
-        'brands': ['Smackers']
+        'discount': 0.50,
+        'kickback': 0.25,
+        'brands': ['Pacific Stone']
     },
     'Tuesday': {
-        'vendors': ['Evergreen SR. Distribution Inc.'],
+        'vendors': ['Vino & Cigarro, LLC','Garden Of Weeden Inc.'],
         'days': ['Tuesday'],
-        'discount': 0.30,
-        'kickback': 0.0,
-        'brands': ['Smackers']
+        'discount': 0.50,
+        'kickback': 0.25,
+        'brands': ['Pacific Stone']
     },
     'Wednesday': {
-        'vendors': ['Evergreen SR. Distribution Inc.'],
+        'vendors': ['Vino & Cigarro, LLC','Garden Of Weeden Inc.'],
         'days': ['Wednesday'],
         'discount': 0.30,
         'kickback': 0.0,
-        'brands': ['Smackers']
+        'brands': ['Pacific Stone']
     },
     'Thursday': {
-        'vendors': ['Evergreen SR. Distribution Inc.'],
+        'vendors': ['Vino & Cigarro, LLC','Garden Of Weeden Inc.'],
         'days': ['Thursday'],
-        'discount': 0.30,
-        'kickback': 0.0,
-        'brands': ['Smackers']
+        'discount': 0.50,
+        'kickback': 0.25,
+        'brands': ['Pacific Stone']
     },
     'Friday': {
-        'vendors': ['Evergreen SR. Distribution Inc.'],
+        'vendors': ['Vino & Cigarro, LLC','Garden Of Weeden Inc.'],
         'days': ['Friday'],
         'discount': 0.30,
         'kickback': 0.0,
-        'brands': ['Smackers']
+        'brands': ['Pacific Stone']
     },
     'Saturday': {
-        'vendors': ['Evergreen SR. Distribution Inc.'],
+        'vendors': ['Vino & Cigarro, LLC','Garden Of Weeden Inc.'],
         'days': ['Saturday'],
         'discount': 0.30,
         'kickback': 0.0,
-        'brands': ['Smackers']
+        'brands': ['Pacific Stone']
     },
     'Sunday': {
-        'vendors': ['Evergreen SR. Distribution Inc.'],
+        'vendors': ['Vino & Cigarro, LLC','Garden Of Weeden Inc.'],
         'days': ['Sunday'],
         'discount': 0.30,
         'kickback': 0.0,
-        'brands': ['Smackers']
+        'brands': ['Pacific Stone']
     },
-    'Smackers': {
-        'vendors': ['Evergreen SR. Distribution Inc.'],
-        'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
+    'Pacific Stone': {
+        'vendors': ['Vino & Cigarro, LLC'],
+        'days': ['Monday','Thursday'],
+        'discount': 0.50,
+        'kickback': 0.25,
+        'brands': ['Pacific Stone']
+    }
+}
+brand_criteria1 = {
+    'Monday': {
+        'vendors': ['Vino & Cigarro, LLC','Garden Of Weeden Inc.'],
+        'days': ['Monday'],
         'discount': 0.30,
         'kickback': 0.0,
-        'brands': ['Smackers']
+        'brands': ['Time Machine']
+    },
+    'Tuesday': {
+        'vendors': ['Vino & Cigarro, LLC','Garden Of Weeden Inc.'],
+        'days': ['Tuesday'],
+        'discount': 0.50,
+        'kickback': 0.25,
+        'brands': ['Time Machine']
+    },
+    'Wednesday': {
+        'vendors': ['Vino & Cigarro, LLC','Garden Of Weeden Inc.'],
+        'days': ['Wednesday'],
+        'discount': 0.30,
+        'kickback': 0.0,
+        'brands': ['Time Machine']
+    },
+    'Thursday': {
+        'vendors': ['Vino & Cigarro, LLC','Garden Of Weeden Inc.'],
+        'days': ['Thursday'],
+        'discount': 0.30,
+        'kickback': 0.0,
+        'brands': ['Time Machine']
+    },
+    'Friday': {
+        'vendors': ['Vino & Cigarro, LLC','Garden Of Weeden Inc.'],
+        'days': ['Friday'],
+        'discount': 0.50,
+        'kickback': 0.25,
+        'brands': ['Time Machine']
+    },
+    'Saturday': {
+        'vendors': ['Vino & Cigarro, LLC','Garden Of Weeden Inc.'],
+        'days': ['Saturday'],
+        'discount': 0.30,
+        'kickback': 0.0,
+        'brands': ['Time Machine']
+    },
+    'Sunday': {
+        'vendors': ['Vino & Cigarro, LLC','Garden Of Weeden Inc.'],
+        'days': ['Sunday'],
+        'discount': 0.30,
+        'kickback': 0.0,
+        'brands': ['Time Machine']
+    },
+    'Time Machine': {
+        'vendors': ['Vino & Cigarro, LLC','Garden Of Weeden Inc.'],
+        'days': ['Tuesday','Friday'],
+        'discount': 0.50,
+        'kickback': 0.25,
+        'brands': ['Time Machine']
     }
 }
 brand_criteria = {
@@ -391,19 +456,19 @@ brand_criteria = {
         'kickback': 0.25,
         'brands': ['Dabwoods']
     },
-    'Time Machine': {
-        'vendors': ['Vino & Cigarro, LLC','Garden Of Weeden Inc.'],
-        'days': ['Tuesday','Friday'],
-        'discount': 0.50,
-        'kickback': 0.25,
-        'brands': ['Time Machine']
-    },
-    'Pacific Stone': {
-        'vendors': ['Vino & Cigarro, LLC'],
-        'days': ['Monday','Thursday'],
-        'discount': 0.50,
-        'kickback': 0.25,
-        'brands': ['Pacific Stone']
+     'Time Machine': {
+         'vendors': ['Vino & Cigarro, LLC','Garden Of Weeden Inc.'],
+         'days': ['Tuesday','Friday'],
+         'discount': 0.50,
+         'kickback': 0.25,
+         'brands': ['Time Machine']
+     },
+     'Pacific Stone': {
+         'vendors': ['Vino & Cigarro, LLC'],
+         'days': ['Monday','Thursday'],
+         'discount': 0.50,
+         'kickback': 0.25,
+         'brands': ['Pacific Stone']
     },
     'Heavy Hitters': {
         'vendors': ['Fluids Manufacturing Inc.'],
@@ -467,7 +532,7 @@ brand_criteria = {
         'vendors': ['Zasp'],
         'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
         'discount': 0.40,
-        'kickback': 0.20,
+        'kickback': 0.0,
         'brands': ['Josh Wax']
     },
     'TreeSap': {
@@ -476,7 +541,15 @@ brand_criteria = {
         'discount': 0.50,
         'kickback': 0.25,
         'brands': ['TreeSap']
-    }
+    },
+      'Made': { 
+        'vendors': ['Garden Of Weeden Inc.'],
+        'days': ['Friday'],
+        'discount': 0.50,
+        'kickback': 0.50,
+        #'categories': [''], 
+        'brands': ['Made']
+    }, 
 }
 
 def style_summary_sheet(sheet, brand_name):
@@ -716,11 +789,7 @@ def run_deals_reports():
 
         # Gather raw day-matched data before vendor filtering
         day_match_df = pd.concat([
-            mv_data[mv_data['day of week'].isin(criteria['days'])],
-            lm_data[lm_data['day of week'].isin(criteria['days'])],
-            sv_data[sv_data['day of week'].isin(criteria['days'])],
-            lg_data[lg_data['day of week'].isin(criteria['days'])]
-        ], ignore_index=True)
+            df[df['day of week'].isin(criteria['days'])] for df in [mv_data, lm_data, sv_data, lg_data] if not df.empty and 'day of week' in df.columns], ignore_index=True)
 
         # Filter rows where product name includes brand keywords
         def matches_brand(product_name):
