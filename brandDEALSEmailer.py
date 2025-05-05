@@ -219,6 +219,7 @@ def make_html_link_list(lines):
 # 5) MAIN "SEND BRAND EMAILS" LOGIC
 # ---------------------------------------------
 def send_brand_emails():
+    SEND_INDIVIDUAL = False
     reports_dir = "brand_reports"
     if not os.path.isdir(reports_dir):
         print(f"[ERROR] The folder '{reports_dir}' does not exist. No emails sent.")
@@ -280,13 +281,14 @@ def send_brand_emails():
         """
 
         subject = f"Weekly Kickback - {brand_name}"
-        print(f"[INFO] Sending email for brand '{brand_name}' to '{recipient}' ...")
-        send_email_with_gmail_html(
-            subject=subject,
-            html_body=html_body,
-            recipients=recipient,
-            attachments=[file_path]
-        )
+        if SEND_INDIVIDUAL:           # ← suppress individual brand emails
+                    print(f"[INFO] Sending email for brand '{brand_name}' to '{recipient}' ...")
+                    send_email_with_gmail_html(
+                        subject=subject,
+                        html_body=html_body,
+                        recipients=recipient,
+                        attachments=[file_path],
+                    )
 
         # Collect info for optional consolidated
         total_owed = 0.0
