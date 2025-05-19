@@ -135,14 +135,14 @@ def apply_discounts_and_kickbacks(data, discount, kickback):
     return data
 #Month to month
 brand_criteria3 = {
-'Stiiizy420-40back': {
-        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC'],
-        'days': ['Thursday','Friday','Saturday','Sunday'],
-        'discount': 0.50,
-        'kickback': 0.40,
-        'brands': ['Stiiizy |'],
-        'categories':["Disposables", "Cartridges", "Gummies", "Edibles"]
-    }
+    'Raw Garden': {
+        'vendors': ['Garden Of Weeden Inc.'],
+        'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
+        'discount': 0.30,
+        'kickback': 0.00,
+        'brands': ['Raw Garden']
+
+    },
 }
 brand_criteria2 = {
     'Stiiizy(THURS-SAT)': {
@@ -167,22 +167,7 @@ brand_criteria2 = {
         'kickback': 0.25,
         'brands': ['Wyld', 'Good Tide']
     },
-      'Made': { #TURN AND MADE MONTH OF APRIL 50 off 50% kickback - already off invoice
-        'vendors': ['Garden Of Weeden Inc.'],
-        'days': ['Friday','Saturday','Sunday'],
-        'discount': 0.50,
-        'kickback': 0.50,
-        #'categories': [''], 
-        'brands': ['Made']
-    }, 
-    'Turn': { #TURN AND MADE MONTH OF APRIL 50 off 50% kickback- already off invoice
-        'vendors': ['Fluids Manufacturing Inc.', 'Garden Of Weeden'],
-        'days': ['Friday','Saturday','Sunday'],
-        'discount': 0.50,
-        'kickback': 0.50,
-        'brands': ['Turn']
-    }, 
-    'Jeeter': {
+    'JeeterSV': {
         'vendors': ['Med For America Inc.'],
         'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
         'discount': 0.50,
@@ -190,6 +175,16 @@ brand_criteria2 = {
         #'categories': ['Pre-Rolls'],
         'brands': ['Jeeter'],
         #'include_phrases': ['Jeeter | BC LR Pre-Roll 1.3g','Jeeter | IN Pre-Roll 1g','Jeeter | IN Pre-Roll 2g','Jeeter | IN Pre-Rolls (5pk)','Jeeter | LE Pre-Roll 1g','Jeeter | IN Pre-Rolls 0.5g (5pk)'],
+        #'excluded_phrases': ['(3pk)','SVL']
+    },    
+    'Jeeter': {
+        'vendors': ['Med For America Inc.'],
+        'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
+        'discount': 0.40,
+        'kickback': 0.23,
+        'categories': ['Pre-Rolls'],
+        'brands': ['Jeeter'],
+        'include_phrases': ['LRO','2G','5pk','1G'],
         #'excluded_phrases': ['(3pk)','SVL']
     },
 }
@@ -418,16 +413,16 @@ brand_criteria = {
         #'categories': ['Concentrate'], 
         'brands': ['Hashish']
     },
-    'Jeeter': {
-        'vendors': ['Med For America Inc.'],
-        'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
-        'discount': 0.40,
-        'kickback': 0.23,
-        'categories': ['Pre-Rolls'],
-        'brands': ['Jeeter'],
-        'include_phrases': ['LRO','2G','5pk','1G'],
-        #'excluded_phrases': ['(3pk)','SVL']
-    },
+    # 'Jeeter': {
+    #     'vendors': ['Med For America Inc.'],
+    #     'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
+    #     'discount': 0.40,
+    #     'kickback': 0.23,
+    #     'categories': ['Pre-Rolls'],
+    #     'brands': ['Jeeter'],
+    #     'include_phrases': ['LRO','2G','5pk','1G'],
+    #     #'excluded_phrases': ['(3pk)','SVL']
+    # },
     'Kiva': {
         'vendors': ['KIVA / LCISM CORP', 'Vino & Cigarro, LLC'],
         'days': ['Monday','Wednesday'],
@@ -751,7 +746,7 @@ def run_deals_reports():
     results_for_app = []
 
     # For each brand, gather data from whichever stores are not empty
-    for brand, criteria in brand_criteria2.items():
+    for brand, criteria in brand_criteria.items():
 
         # ----- Mission Valley ----- #
         mv_brand_data = pd.DataFrame()
