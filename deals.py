@@ -406,23 +406,35 @@ brand_criteria1 = {
 }
 brand_criteria = {
     'Hashish': {
-        'vendors': ['Zenleaf LLC','Center Street Investments Inc.'],
+        'vendors': ['Zenleaf LLC','Center Street Investments Inc.','Garden Of Weeden Inc.'],
         'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
         'discount': 0.50,
         'kickback': 0.25,
         #'categories': ['Concentrate'], 
         'brands': ['Hashish']
     },
-    # 'Jeeter': {
-    #     'vendors': ['Med For America Inc.'],
-    #     'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
-    #     'discount': 0.40,
-    #     'kickback': 0.23,
-    #     'categories': ['Pre-Rolls'],
-    #     'brands': ['Jeeter'],
-    #     'include_phrases': ['LRO','2G','5pk','1G'],
-    #     #'excluded_phrases': ['(3pk)','SVL']
-    # },
+    'Jeeter': {
+        'vendors': ['Med For America Inc.'],
+        'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
+        'discount': 0.40,
+        'kickback': 0.23,
+        'categories': ['Pre-Rolls'],
+        'brands': ['Jeeter'],
+        'include_phrases': ['LRO','2G','5pk','1G'],
+        #'excluded_phrases': ['(3pk)','SVL']
+        'stores': ['MV','LM','LG']
+    }, 
+    'JeeterSV': {
+        'vendors': ['Med For America Inc.'],
+        'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
+        'discount': 0.50,
+        'kickback': 0.25,
+        #'categories': ['Pre-Rolls'],
+        'brands': ['Jeeter'],
+        #'include_phrases': ['Jeeter | BC LR Pre-Roll 1.3g','Jeeter | IN Pre-Roll 1g','Jeeter | IN Pre-Roll 2g','Jeeter | IN Pre-Rolls (5pk)','Jeeter | LE Pre-Roll 1g','Jeeter | IN Pre-Rolls 0.5g (5pk)'],
+        #'excluded_phrases': ['(3pk)','SVL']
+        'stores': ['SV']
+    },    
     'Kiva': {
         'vendors': ['KIVA / LCISM CORP', 'Vino & Cigarro, LLC'],
         'days': ['Monday','Wednesday'],
@@ -438,7 +450,7 @@ brand_criteria = {
         'brands': ['Big Pete']
     },
     'HolySmoke/Water': {
-        'vendors': ['Heritage Holding of Califonia, Inc.', 'Barlow Printing LLC'],
+        'vendors': ['Heritage Holding of Califonia, Inc.', 'Barlow Printing LLC','Hilife LM'],
         'days': ['Sunday'],
         'discount': 0.50,
         'kickback': 0.25,
@@ -466,14 +478,14 @@ brand_criteria = {
          'brands': ['Pacific Stone']
     },
     'Heavy Hitters': {
-        'vendors': ['Fluids Manufacturing Inc.'],
+        'vendors': ['Fluids Manufacturing Inc.','Garden Of Weeden Inc.'],
         'days': ['Friday','Saturday'],
         'discount': 0.50,
         'kickback': 0.25,
         'brands': ['Heavy Hitters']
     },
     'Almora': {
-        'vendors': ['Fluids Manufacturing Inc.'],
+        'vendors': ['Fluids Manufacturing Inc.','Garden Of Weeden Inc.'],
         'days': ['Sunday','Saturday'],
         'discount': 0.50,
         'kickback': 0.25,
@@ -747,36 +759,36 @@ def run_deals_reports():
 
     # For each brand, gather data from whichever stores are not empty
     for brand, criteria in brand_criteria.items():
+        # 1) Decide which stores are active for this brand
+        desired_stores = criteria.get('stores', ['MV', 'LM', 'SV', 'LG'])
 
-        # ----- Mission Valley ----- #
+        # 2) For each store, filter only if the brand criteria says so
         mv_brand_data = pd.DataFrame()
-        if not mv_data.empty:
+        if 'MV' in desired_stores and not mv_data.empty:
             mv_brand_data = mv_data[
-                (mv_data['vendor name'].isin(criteria['vendors'])) &
-                (mv_data['day of week'].isin(criteria['days']))
+                mv_data['vendor name'].isin(criteria['vendors']) &
+                mv_data['day of week'].isin(criteria['days'])
             ].copy()
 
-        # ----- La Mesa ----- #
         lm_brand_data = pd.DataFrame()
-        if not lm_data.empty:
+        if 'LM' in desired_stores and not lm_data.empty:
             lm_brand_data = lm_data[
-                (lm_data['vendor name'].isin(criteria['vendors'])) &
-                (lm_data['day of week'].isin(criteria['days']))
+                lm_data['vendor name'].isin(criteria['vendors']) &
+                lm_data['day of week'].isin(criteria['days'])
             ].copy()
 
-        # ----- Sorrento Valley ----- #
         sv_brand_data = pd.DataFrame()
-        if not sv_data.empty:
+        if 'SV' in desired_stores and not sv_data.empty:
             sv_brand_data = sv_data[
-                (sv_data['vendor name'].isin(criteria['vendors'])) &
-                (sv_data['day of week'].isin(criteria['days']))
+                sv_data['vendor name'].isin(criteria['vendors']) &
+                sv_data['day of week'].isin(criteria['days'])
             ].copy()
-        # ----- Lemon Grove ----- #
+
         lg_brand_data = pd.DataFrame()
-        if not lg_data.empty:
+        if 'LG' in desired_stores and not lg_data.empty:
             lg_brand_data = lg_data[
-                (lg_data['vendor name'].isin(criteria['vendors'])) &
-                (lg_data['day of week'].isin(criteria['days']))
+                lg_data['vendor name'].isin(criteria['vendors']) &
+                lg_data['day of week'].isin(criteria['days'])
             ].copy()
         # 🧠 Smart unknown vendor check: Only flag vendors that sold products with this brand
         brand_keywords = set(criteria.get('brands', []))
