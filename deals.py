@@ -422,18 +422,7 @@ brand_criteria = {
         'brands': ['Jeeter'],
         'include_phrases': ['LRO','2G','5pk','1G'],
         #'excluded_phrases': ['(3pk)','SVL']
-        'stores': ['MV','LM','LG']
-    }, 
-    'JeeterSV': {
-        'vendors': ['Med For America Inc.'],
-        'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
-        'discount': 0.50,
-        'kickback': 0.25,
-        #'categories': ['Pre-Rolls'],
-        'brands': ['Jeeter'],
-        #'include_phrases': ['Jeeter | BC LR Pre-Roll 1.3g','Jeeter | IN Pre-Roll 1g','Jeeter | IN Pre-Roll 2g','Jeeter | IN Pre-Rolls (5pk)','Jeeter | LE Pre-Roll 1g','Jeeter | IN Pre-Rolls 0.5g (5pk)'],
-        #'excluded_phrases': ['(3pk)','SVL']
-        'stores': ['SV']
+        #'stores': ['MV','LM','LG']
     },    
     'Kiva': {
         'vendors': ['KIVA / LCISM CORP', 'Vino & Cigarro, LLC'],
@@ -465,14 +454,14 @@ brand_criteria = {
     },
      'Time Machine': {
          'vendors': ['Vino & Cigarro, LLC','Garden Of Weeden Inc.'],
-         'days': ['Tuesday','Friday'],
+         'days': ['Friday'],
          'discount': 0.50,
          'kickback': 0.25,
          'brands': ['Time Machine']
      },
      'Pacific Stone': {
-         'vendors': ['Vino & Cigarro, LLC'],
-         'days': ['Monday','Thursday'],
+         'vendors': ['Vino & Cigarro, LLC','KIVA / LCISM CORP', 'Garden Of Weeden Inc.'],
+         'days': ['Thursday'],
          'discount': 0.50,
          'kickback': 0.25,
          'brands': ['Pacific Stone']
@@ -543,7 +532,7 @@ brand_criteria = {
         'brands': ['Josh Wax']
     },
     'TreeSap': {
-        'vendors': ['Zenleaf LLC','Center Street Investments Inc.'],
+        'vendors': ['Zenleaf LLC','Center Street Investments Inc.','Fluids Manufacturing Inc.'],
         'days': ['Thursday'],
         'discount': 0.50,
         'kickback': 0.25,
@@ -551,11 +540,27 @@ brand_criteria = {
     },
       'Made': { 
         'vendors': ['Garden Of Weeden Inc.'],
-        'days': ['Friday'],
+        'days': ['Friday','Saturday'],
         'discount': 0.50,
-        'kickback': 0.50,
+        'kickback': 0.25,
         #'categories': [''], 
         'brands': ['Made']
+    }, 
+      'Turn': { 
+        'vendors': ['Garden Of Weeden Inc.'],
+        'days': ['Friday','Saturday'],
+        'discount': 0.50,
+        'kickback': 0.25,
+        #'categories': [''], 
+        'brands': ['Turn |']
+    }, 
+      'Eureka': { 
+        'vendors': ['Light Box Leasing Corp.'],
+        'days': ['Monday','Tuesday'],
+        'discount': 0.50,
+        'kickback': 0.25,
+        #'categories': [''], 
+        'brands': ['Eureka |']
     }, 
 }
 
