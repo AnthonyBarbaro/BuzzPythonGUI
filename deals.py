@@ -146,47 +146,48 @@ brand_criteria3 = {
 }
 brand_criteria2 = {
     'Stiiizy(THURS-SAT)': {
-        'vendors': ['Elevation (Stiiizy)'],
+        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC'],
         'days': ['Thursday','Friday','Saturday'],
-        'discount': 0.50,
+        'discount': 0.40,
         'kickback': 0.30,
         'brands': ['Stiiizy']
     },
     'Stiiizy(SUN-WED)': {
-        'vendors': ['Elevation (Stiiizy)'],
+        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC'],
         'days': ['Monday','Tuesday','Wednesday','Sunday'],
-        'discount': 0.50,
+        'discount': 0.40,
         'kickback': 0.30,
         'categories': ['Disposables', 'Cartridges', 'Gummies', 'Edibles'],
         'brands': ['Stiiizy']
-    },
-    'WYLD/GoodTide': {
-        'vendors': ['2020 Long Beach LLC'],
-        'days': ['Friday','Saturday'],
-        'discount': 0.50,
-        'kickback': 0.25,
-        'brands': ['Wyld', 'Good Tide']
-    },
-    'JeeterSV': {
-        'vendors': ['Med For America Inc.'],
-        'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
-        'discount': 0.50,
-        'kickback': 0.25,
-        #'categories': ['Pre-Rolls'],
-        'brands': ['Jeeter'],
-        #'include_phrases': ['Jeeter | BC LR Pre-Roll 1.3g','Jeeter | IN Pre-Roll 1g','Jeeter | IN Pre-Roll 2g','Jeeter | IN Pre-Rolls (5pk)','Jeeter | LE Pre-Roll 1g','Jeeter | IN Pre-Rolls 0.5g (5pk)'],
-        #'excluded_phrases': ['(3pk)','SVL']
+    # },
+    # 'WYLD/GoodTide': {
+    #     'vendors': ['2020 Long Beach LLC'],
+    #     'days': ['Friday','Saturday'],
+    #     'discount': 0.50,
+    #     'kickback': 0.25,
+    #     'brands': ['Wyld', 'Good Tide']
+    # },
+    # 'JeeterSV': {
+    #     'vendors': ['Med For America Inc.'],
+    #     'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
+    #     'discount': 0.50,
+    #     'kickback': 0.25,
+    #     #'categories': ['Pre-Rolls'],
+    #     'brands': ['Jeeter'],
+    #     #'include_phrases': ['Jeeter | BC LR Pre-Roll 1.3g','Jeeter | IN Pre-Roll 1g','Jeeter | IN Pre-Roll 2g','Jeeter | IN Pre-Rolls (5pk)','Jeeter | LE Pre-Roll 1g','Jeeter | IN Pre-Rolls 0.5g (5pk)'],
+    #     #'excluded_phrases': ['(3pk)','SVL']
     },    
     'Jeeter': {
         'vendors': ['Med For America Inc.'],
         'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
-        'discount': 0.40,
-        'kickback': 0.23,
-        'categories': ['Pre-Rolls'],
+        'discount': 0.0,
+        'kickback': 0.0,
+        #'categories': ['Pre-Rolls'],
         'brands': ['Jeeter'],
-        'include_phrases': ['LRO','2G','5pk','1G'],
+        #'include_phrases': ['LRO','2G','5pk','1G'],
         #'excluded_phrases': ['(3pk)','SVL']
-    },
+    
+    }
 }
 brand_criteria420 = {
     'TeamEliteGenetics': {
@@ -542,15 +543,15 @@ brand_criteria = {
         'vendors': ['Garden Of Weeden Inc.'],
         'days': ['Friday','Saturday'],
         'discount': 0.50,
-        'kickback': 0.25,
+        'kickback': 0.30,
         #'categories': [''], 
-        'brands': ['Made']
+        'brands': ['Made |']
     }, 
       'Turn': { 
         'vendors': ['Garden Of Weeden Inc.'],
         'days': ['Friday','Saturday'],
         'discount': 0.50,
-        'kickback': 0.25,
+        'kickback': 0.30,
         #'categories': [''], 
         'brands': ['Turn |']
     }, 
@@ -558,9 +559,41 @@ brand_criteria = {
         'vendors': ['Light Box Leasing Corp.'],
         'days': ['Monday','Tuesday'],
         'discount': 0.50,
-        'kickback': 0.25,
+        'kickback': 0.30,
         #'categories': [''], 
         'brands': ['Eureka |']
+    }, 
+    'Ember Valley': { 
+        'vendors': ['LB Atlantis LLC', 'Garden Of Weeden Inc.', 'Courtney Lang', 'Hilife Group MV , LLC', 'Ember Valley', 'Helios    s | Hypeereon Corporation'],
+        'days': ['Thursday','Tuesday'],
+        'discount': 0.50,
+        'kickback': 0.30,
+        #'categories': [''], 
+        'brands': ['Ember Valley |','EV |']
+    }, 
+    'Cake': { 
+        'vendors': ['ThirtyOne Labs, LLC'],
+        'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
+        'discount': 0.40,
+        'kickback': 0.0,
+        #'categories': [''], 
+        'brands': ['Cake |']
+    }, 
+    'Green Dawg': { 
+        'vendors': ['Artisan Canna Cigars LLC'],
+        'days': ['Wednesday'],
+        'discount': 0.50,
+        'kickback': 0.30,
+        #'categories': [''], 
+        'brands': ['Green Dawg |']
+    }, 
+    'Mary Medical': { 
+        'vendors': ["Mary's Tech CA, Inc.",'BRB California LLC', 'Garden Of Weeden Inc.', 'Broadway Alliance, LLC'],
+        'days': ['Monday','Tuesday'],
+        'discount': 0.50,
+        'kickback': 0.30,
+        #'categories': [''], 
+        'brands': ["Mary's Medicinals |"]
     }, 
 }
 
@@ -608,12 +641,16 @@ def style_summary_sheet(sheet, brand_name):
         for col_idx in range(1, max_col + 1):
             cell = sheet.cell(row=row_idx, column=col_idx)
             cell.border = thin_border
-
             hdr_val = sheet.cell(row=header_row_idx, column=col_idx).value
-            if hdr_val and ("owed" in str(hdr_val).lower()):
+            if hdr_val:
+                    lower_hdr = str(hdr_val).lower()
+            if "owed" in lower_hdr:
                 # Format as currency
                 cell.number_format = '"$"#,##0.00'
                 cell.alignment = Alignment(horizontal="right", vertical="center")
+            elif "gross sales" in lower_hdr or "discount amount" in lower_hdr:
+                    cell.number_format = '"$"#,##0.00'
+                    cell.alignment = Alignment(horizontal="right", vertical="center")
             elif hdr_val and ("date" in str(hdr_val).lower()):
                 # Format as date
                 cell.number_format = "YYYY-MM-DD"
