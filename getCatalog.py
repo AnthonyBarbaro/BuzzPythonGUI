@@ -16,8 +16,10 @@ store_abbr_map = {
     "Buzz Cannabis - Mission Valley": "MV",
     "Buzz Cannabis-La Mesa": "LM",
     "Buzz Cannabis - SORRENTO VALLEY" : "SV",
-    "Buzz Cannabis - Lemon Grove" : "LG"
+    "Buzz Cannabis - Lemon Grove" : "LG",
+    "Buzz Cannabis (National City)" : "NC"  # ✅ Add this line
 }
+
 
 def wait_for_new_file(download_directory, before_files, timeout=30):
     """
@@ -153,7 +155,7 @@ def clickActionsAndExport(current_store):
 driver = launchBrowser()
 login()
 
-store_names = ["Buzz Cannabis - Mission Valley", "Buzz Cannabis-La Mesa","Buzz Cannabis - SORRENTO VALLEY","Buzz Cannabis - Lemon Grove"]
+store_names = ["Buzz Cannabis - Mission Valley", "Buzz Cannabis-La Mesa","Buzz Cannabis - SORRENTO VALLEY","Buzz Cannabis - Lemon Grove","Buzz Cannabis (National City)"]
 for store in store_names:
     if not select_dropdown_item(store):
         break

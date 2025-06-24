@@ -29,7 +29,8 @@ store_abbr_map = {
     "Buzz Cannabis - Mission Valley": "MV",
     "Buzz Cannabis-La Mesa": "LM",
     "Buzz Cannabis - SORRENTO VALLEY" : "SV",
-    "Buzz Cannabis - Lemon Grove" : "LG"
+    "Buzz Cannabis - Lemon Grove" : "LG",
+    "Buzz Cannabis (National City)" : "NC"  # ✅ Add this line
 }
 
 start_str = None
@@ -240,6 +241,9 @@ def clickActionsAndExport(current_store):
                     new_filename = f"salesSV.xlsx"
                 elif current_store == "Buzz Cannabis - Lemon Grove":
                     new_filename = f"salesLG.xlsx"
+                elif current_store == "Buzz Cannabis (National City)":
+                    new_filename = f"salesNC.xlsx"  # ✅ Add this line
+
                 else:
                     new_filename = f"sales_{current_store}_{timestamp}.xlsx"
 
@@ -319,6 +323,13 @@ def create_store_checkboxes(frame):
     cbLG = tk.Checkbutton(frame, text="Buzz Cannabis - Lemon Grove", variable=varLG)
     cbLG.pack(anchor='w')
     store_vars["Buzz Cannabis - Lemon Grove"] = varLG
+    
+    # National City
+
+    varNC = tk.IntVar(value=1)
+    cbNC = tk.Checkbutton(frame, text="Buzz Cannabis (National City)", variable=varNC)
+    cbNC.pack(anchor='w')
+    store_vars["Buzz Cannabis (National City)"] = varNC  # ✅ Add this line
     return store_vars
 
 def open_gui_and_run():
@@ -409,7 +420,8 @@ def open_gui_and_run():
                 "Buzz Cannabis - Mission Valley",
                 "Buzz Cannabis-La Mesa",
                 "Buzz Cannabis - SORRENTO VALLEY",
-                "Buzz Cannabis - Lemon Grove"
+                "Buzz Cannabis - Lemon Grove",
+                "Buzz Cannabis (National City)"  # ✅ Add this line
             ]
 
         # Close GUI
@@ -438,7 +450,8 @@ def run_sales_report(start_date, end_date):
         "Buzz Cannabis - Mission Valley",
         "Buzz Cannabis-La Mesa",
         "Buzz Cannabis - SORRENTO VALLEY",
-        "Buzz Cannabis - Lemon Grove"
+        "Buzz Cannabis - Lemon Grove",
+        "Buzz Cannabis (National City)"
     ]
     global driver
     driver = launchBrowser()

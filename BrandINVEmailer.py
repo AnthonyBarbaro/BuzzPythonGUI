@@ -26,6 +26,7 @@ import traceback
 import shutil
 import re
 import pandas as pd
+import time
 
 from openpyxl import load_workbook
 from openpyxl.styles import Font, Alignment, PatternFill
@@ -58,6 +59,16 @@ GMAIL_SCOPES = ["https://www.googleapis.com/auth/gmail.send"]
 # --------------------- GMAIL API SEND HTML HELPER -----------------------------
 # ------------------------------------------------------------------------------
 
+def safe_move(src, dst, retries=3, delay=1):
+    for _ in range(retries):
+        try:
+            shutil.move(src, dst)
+            return True
+        except PermissionError:
+            print(f"[WARN] File in use: {src}. Retrying in {delay}s...")
+            time.sleep(delay)
+    print(f"[ERROR] Could not move {src} to {dst} after {retries} attempts.")
+    return False
 def gmail_authenticate():
     """
     Authenticate with Gmail API using OAUTH and return a service object.
@@ -498,7 +509,7 @@ def organize_by_brand(output_directory):
                     old_path = os.path.join(root, f)
                     new_path = os.path.join(brand_folder, f)
                     print(f"Moving {old_path} → {new_path}")
-                    shutil.move(old_path, new_path)
+                    safe_move(old_path, new_path)
 
 def process_files(input_directory, output_directory, selected_brands):
     """
