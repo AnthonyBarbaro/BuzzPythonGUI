@@ -454,7 +454,8 @@ class BrandInventoryGUI:
     def __init__(self, master):
         self.master = master
         master.title("Brand Inventory to Google Drive (Advanced) - with config.txt")
-
+        master.geometry("800x600")  # Default window size
+        master.resizable(True, True)  # Allow resizing
         self.frame = tk.Frame(master)
         self.frame.pack(padx=10, pady=10)
 
@@ -484,25 +485,7 @@ class BrandInventoryGUI:
         row3.pack(pady=5, fill="x")
         tk.Button(row3, text="Update Files", command=self.get_files).pack(side="left", padx=5)
         tk.Button(row3, text="Load Brands", command=self.load_brands).pack(side="left", padx=5)
-
-        # Row 4: brand listbox
-        row4 = tk.Frame(self.frame)
-        row4.pack(pady=5, fill="both")
-        alpha_sidebar = tk.Frame(row4)
-        alpha_sidebar.pack(side="right", padx=5, fill="y")
-
-        for letter in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
-            btn = tk.Button(alpha_sidebar, text=letter, width=2, command=lambda l=letter: self.scroll_to_letter(l))
-            btn.pack()
-        tk.Label(row4, text="Select brand(s):").pack(anchor="w")
-        self.brand_listbox = tk.Listbox(row4, selectmode=tk.MULTIPLE, height=8, width=50)
-        self.brand_listbox.pack(side="left", fill="both", expand=True)
-        scroll = tk.Scrollbar(row4, command=self.brand_listbox.yview)
-        scroll.pack(side="right", fill="y")
-        self.brand_listbox.config(yscrollcommand=scroll.set)
-        self.brand_listbox.bind("<Key>", self.on_listbox_keypress)
-
-        # Row 5: emails
+                # Row 5: emails
         row5 = tk.Frame(self.frame)
         row5.pack(pady=5, fill="x")
         tk.Label(row5, text="Email(s) (comma-separated):").pack(anchor="w")
@@ -511,7 +494,28 @@ class BrandInventoryGUI:
         # Row 6: final run
         row6 = tk.Frame(self.frame)
         row6.pack(pady=10)
-        tk.Button(row6, text="Generate & Upload & Email", command=self.run_process).pack()
+        tk.Button(row6, text="Generate & Upload & Email", command=self.run_process).pack(padx=5, pady=5)
+        # Row 4: brand listbox
+        row4 = tk.Frame(self.frame)
+        row4.pack(pady=5, fill="both")
+        alpha_sidebar = tk.Frame(row4)
+        alpha_sidebar.pack(side="right", padx=5, pady=5)
+
+        letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        cols = 4
+        for i, letter in enumerate(letters):
+            btn = tk.Button(alpha_sidebar, text=letter, width=3, command=lambda l=letter: self.scroll_to_letter(l))
+            btn.grid(row=i % 7, column=i // 7, padx=1, pady=1)  # 7 rows max
+
+        tk.Label(row4, text="Select brand(s):").pack(anchor="w")
+        self.brand_listbox = tk.Listbox(row4, selectmode=tk.MULTIPLE, height=8, width=50)
+        self.brand_listbox.pack(side="left", fill="both", expand=True)
+        scroll = tk.Scrollbar(row4, command=self.brand_listbox.yview)
+        scroll.pack(side="right", fill="y")
+        self.brand_listbox.config(yscrollcommand=scroll.set)
+        self.brand_listbox.bind("<Key>", self.on_listbox_keypress)
+
+
     def scroll_to_letter(self, letter):
         for i in range(self.brand_listbox.size()):
             item = self.brand_listbox.get(i)

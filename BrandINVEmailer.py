@@ -168,15 +168,9 @@ def make_folder_public(service, folder_id):
         print(f"[ERROR] Could not make folder public: {e}")
 
 
-def find_or_create_folder(service, folder_name, parent_id=None):
-    """
-    Find a folder named `folder_name` under `parent_id` (if given).
-    If not found, create it.
-    Returns the folder's ID.
-    Only makes the folder public if it was newly created.
-    """
-    from googleapiclient.errors import HttpError
-    
+from googleapiclient.errors import HttpError
+
+def find_or_create_folder(service, folder_name, parent_id=None, retries=5, delay=3):
     folder_name_escaped = folder_name.replace("'", "\\'")
     query = f"mimeType='application/vnd.google-apps.folder' and name='{folder_name_escaped}'"
     if parent_id:
@@ -189,31 +183,34 @@ def find_or_create_folder(service, folder_name, parent_id=None):
         print(f"[ERROR] Drive folder lookup failed: {err}")
         return None
 
-    # If folder exists, return its ID directly (do NOT make it public again)
     if folders:
-        folder_id = folders[0]["id"]
-        return folder_id
+        return folders[0]["id"]
 
-    # Otherwise, create the folder
-    folder_metadata = {
-        "name": folder_name,
-        "mimeType": "application/vnd.google-apps.folder"
-    }
-    if parent_id:
-        folder_metadata["parents"] = [parent_id]
+    # Retry on timeout for folder creation
+    for attempt in range(retries):
+        try:
+            folder_metadata = {
+                "name": folder_name,
+                "mimeType": "application/vnd.google-apps.folder"
+            }
+            if parent_id:
+                folder_metadata["parents"] = [parent_id]
 
-    new_folder = service.files().create(body=folder_metadata, fields="id").execute()
-    folder_id = new_folder.get("id")
-    print(f"[INFO] Created new folder '{folder_name}' (ID: {folder_id})")
+            new_folder = service.files().create(body=folder_metadata, fields="id").execute()
+            folder_id = new_folder.get("id")
+            print(f"[INFO] Created new folder '{folder_name}' (ID: {folder_id})")
+            make_folder_public(service, folder_id)
+            return folder_id
 
-    # Now make it public exactly once (since it's newly created)
-    try:
-        make_folder_public(service, folder_id)
-    except Exception as e:
-        print(f"[ERROR] Unable to set public permission on new folder: {e}")
+        except TimeoutError as e:
+            print(f"[WARN] Timeout while creating folder '{folder_name}', attempt {attempt + 1}/{retries}")
+            time.sleep(delay)
+        except HttpError as e:
+            print(f"[ERROR] Google API error while creating folder '{folder_name}': {e}")
+            return None
 
-    return folder_id
-
+    print(f"[ERROR] Failed to create folder '{folder_name}' after {retries} attempts.")
+    return None
 
 def upload_file_to_drive(service, file_path, folder_id):
     """

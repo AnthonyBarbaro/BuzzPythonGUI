@@ -433,7 +433,7 @@ brand_criteria = {
         'brands': ['Terra', 'Petra', 'KIVA', 'Lost Farms', 'Camino']
     },
     'BigPetes': {
-        'vendors': ["Big Pete's | LCISM Corp","Vino & Cigarro, LLC"],
+        'vendors': ["Big Pete's | LCISM Corp","Vino & Cigarro, LLC",'Garden Of Weeden Inc.'],
         'days': ['Tuesday'],
         'discount': 0.50,
         'kickback': 0.25,
@@ -454,7 +454,7 @@ brand_criteria = {
         'brands': ['Dabwoods']
     },
      'Time Machine': {
-         'vendors': ['Vino & Cigarro, LLC','Garden Of Weeden Inc.'],
+         'vendors': ['Vino & Cigarro, LLC','Garden Of Weeden Inc.','KIVA / LCISM CORP'],
          'days': ['Friday'],
          'discount': 0.50,
          'kickback': 0.25,
@@ -594,6 +594,14 @@ brand_criteria = {
         'kickback': 0.30,
         #'categories': [''], 
         'brands': ["Mary's Medicinals |"]
+    }, 
+    'LA FARMS': { 
+        'vendors': ["LA Family Farms LLC"],
+        'days': ['Friday','Sunday'],
+        'discount': 0.50,
+        'kickback': 0.30,
+        #'categories': [''], 
+        'brands': ["L.A.FF |"]
     }, 
 }
 
@@ -990,7 +998,7 @@ def run_deals_reports():
 
         # Summaries for each store
         # Create an aggregator function only if the DataFrame is not empty
-        def build_summary(df, store_name):
+        def build_summary(df, store_name,include_units=False):
             if df.empty:
                 # Return an empty summary with the same columns
                 return pd.DataFrame(columns=['gross sales','inventory cost','discount amount','kickback amount','location'])
@@ -1000,14 +1008,18 @@ def run_deals_reports():
                 'discount amount': 'sum',
                 'kickback amount': 'sum'
             }).to_frame().T
+            if include_units:
+                summary['total inventory sold'] = 'sum'
             summary['location'] = store_name
             return summary
+        
+        want_units = criteria.get('include_units', False)
 
-        mv_summary = build_summary(mv_brand_data, 'Mission Valley')
-        lm_summary = build_summary(lm_brand_data, 'La Mesa')
-        sv_summary = build_summary(sv_brand_data, 'Sorrento Valley')
-        lg_summary = build_summary(lg_brand_data, 'Lemon Grove')
-        nc_summary = build_summary(nc_brand_data, 'National City')
+        mv_summary = build_summary(mv_brand_data, 'Mission Valley',  include_units=want_units)
+        lm_summary = build_summary(lm_brand_data, 'La Mesa',  include_units=want_units)
+        sv_summary = build_summary(sv_brand_data, 'Sorrento Valley',  include_units=want_units)
+        lg_summary = build_summary(lg_brand_data, 'Lemon Grove',  include_units=want_units)
+        nc_summary = build_summary(nc_brand_data, 'National City',  include_units=want_units)
 
         # Combine them
         brand_summary = pd.concat([mv_summary, lm_summary, sv_summary,lg_summary,nc_summary], ignore_index=True)
@@ -1028,11 +1040,14 @@ def run_deals_reports():
         brand_summary['Date Range'] = f"{start_date} to {end_date}"
         brand_summary['Brand'] = brand
         brand_summary['Margin'] = None
+
         # Reorder columns
         col_order = [
             'Store', 'Kickback Owed', 'Days Active', 'Date Range',
             'gross sales', 'inventory cost', 'discount amount','Margin','Brand'
         ]
+        if want_units:
+            col_order.append('Units Sold')
         final_cols = [c for c in col_order if c in brand_summary.columns]
         brand_summary = brand_summary[final_cols]
 
