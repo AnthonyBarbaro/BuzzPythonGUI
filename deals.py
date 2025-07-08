@@ -407,7 +407,7 @@ brand_criteria1 = {
 }
 brand_criteria = {
     'Hashish': {
-        'vendors': ['Zenleaf LLC','Center Street Investments Inc.','Garden Of Weeden Inc.'],
+        'vendors': ['Zenleaf LLC','Center Street Investments Inc.','Garden Of Weeden Inc.','BTC Ventures'],
         'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
         'discount': 0.50,
         'kickback': 0.25,

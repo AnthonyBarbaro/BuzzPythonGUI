@@ -374,11 +374,11 @@ def generate_brand_reports(csv_path, out_dir, selected_brands):
     if "Cost" in available_df.columns:
         available_df.drop(columns=["Cost"], inplace=True)
     if "Cost" in unavailable_df.columns:
-        unavailable_df.drop(columns=["Cost"], inplace=True)
+        unavailable_df = unavailable_df.drop(columns=["Cost"])
 
     # Also normalize brand in the unavailable set
     if "Brand" in unavailable_df.columns and not unavailable_df.empty:
-        unavailable_df["Brand"] = unavailable_df["Brand"].astype(str).str.strip().str.lower()
+        unavailable_df.loc[:, "Brand"] = unavailable_df["Brand"].astype(str).str.strip().str.lower()
 
     os.makedirs(out_dir, exist_ok=True)
     base_csv_name = os.path.splitext(os.path.basename(csv_path))[0]
@@ -453,6 +453,7 @@ def upload_brand_reports_to_drive(brand_reports_map):
 class BrandInventoryGUI:
     def __init__(self, master):
         self.master = master
+        
         master.title("Brand Inventory to Google Drive (Advanced) - with config.txt")
         master.geometry("800x600")  # Default window size
         master.resizable(True, True)  # Allow resizing
@@ -515,7 +516,26 @@ class BrandInventoryGUI:
         self.brand_listbox.config(yscrollcommand=scroll.set)
         self.brand_listbox.bind("<Key>", self.on_listbox_keypress)
 
+    def show_loading(self, message="Processing..."):
+        if hasattr(self, "loading_overlay") and self.loading_overlay.winfo_exists():
+            return  # Already shown
 
+        self.loading_overlay = tk.Frame(self.master, bg="#ffffff", bd=0)
+        self.loading_overlay.place(relx=0, rely=0, relwidth=1, relheight=1)
+
+        self.loading_label = tk.Label(
+            self.loading_overlay,
+            text=message,
+            font=("Helvetica", 16),
+            bg="#ffffff"
+        )
+        self.loading_label.place(relx=0.5, rely=0.5, anchor="center")
+
+        self.master.update()  # Force GUI redraw
+
+    def hide_loading(self):
+        if hasattr(self, "loading_overlay") and self.loading_overlay.winfo_exists():
+            self.loading_overlay.destroy()
     def scroll_to_letter(self, letter):
         for i in range(self.brand_listbox.size()):
             item = self.brand_listbox.get(i)
@@ -565,6 +585,7 @@ class BrandInventoryGUI:
     def get_files(self):
         """
         Clears the input folder and calls getCatalog.py to fetch new CSVs.
+        Shows a loading screen while running.
         """
         in_dir = self.input_dir_var.get().strip()
 
@@ -574,21 +595,29 @@ class BrandInventoryGUI:
         if not os.path.exists("getCatalog.py"):
             messagebox.showwarning("Warning", "No getCatalog.py found in this directory.")
             return
+
+        # ✅ Show loading screen
+        self.show_loading("Updating files...")
+
         try:
-            # ✅ Clear the input folder before fetching new files
+            # Clear the input folder
             for file in os.listdir(in_dir):
                 file_path = os.path.join(in_dir, file)
                 if os.path.isfile(file_path):
                     os.remove(file_path)
             print(f"[INFO] Cleared files in input folder: {in_dir}")
 
-            # ✅ Now run getCatalog
+            # Run getCatalog
             subprocess.check_call(["python", "getCatalog.py", in_dir])
+            self.hide_loading()
             messagebox.showinfo("Success", "CSV files fetched from getCatalog.py (after clearing input folder).")
         except subprocess.CalledProcessError as e:
+            self.hide_loading()
             messagebox.showerror("Error", f"getCatalog.py failed:\n{e}")
         except Exception as e:
+            self.hide_loading()
             messagebox.showerror("Error", str(e))
+
     def load_brands(self):
         """
         Scans CSVs in input folder for a 'Brand' column, collects unique brand names,

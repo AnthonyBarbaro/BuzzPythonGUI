@@ -438,7 +438,7 @@
     },   
     {
       "brand_synonyms": ["Green Dawg","Mountain Man","Turtle Pie Co."],
-      "folder_name": "GreenDawg Brands",
+      "folder_name": "GreenDawg/Mountain Man/Turtle Pie Co.",
       "emails": ["damian@shehitsdifferent.com","donna@buzzcannabis.com"],
       "days": ["Monday","Wednesday"],
       "location": "MV/LM/SV"
@@ -446,6 +446,48 @@
     {
       "brand_synonyms": ["Yada Yada"],
       "folder_name": "YADA YADA",
+      "emails": ["donna@buzzcannabis.com"],
+      "days": ["Monday"],
+      "location": "MV/LM/SV"
+    },   
+    {
+      "brand_synonyms": ["Cake","CAM"],
+      "folder_name": "Cake/CAM",
+      "emails": ["donna@buzzcannabis.com"],
+      "days": ["Monday"],
+      "location": "MV/LM/SV"
+    },   
+    {
+      "brand_synonyms": ["Keef"],
+      "folder_name": "Keef",
+      "emails": ["donna@buzzcannabis.com"],
+      "days": ["Monday"],
+      "location": "MV/LM/SV"
+    },   
+    {
+      "brand_synonyms": ["Level"],
+      "folder_name": "Level",
+      "emails": ["donna@buzzcannabis.com"],
+      "days": ["Monday"],
+      "location": "MV/LM/SV"
+    },   
+    {
+      "brand_synonyms": ["Emerald Bay Extracts"],
+      "folder_name": "Emerald Bay Extracts",
+      "emails": ["donna@buzzcannabis.com"],
+      "days": ["Monday"],
+      "location": "MV/LM/SV"
+    },   
+    {
+      "brand_synonyms": ["ColdFire"],
+      "folder_name": "ColdFire",
+      "emails": ["donna@buzzcannabis.com"],
+      "days": ["Monday"],
+      "location": "MV/LM/SV"
+    },   
+    {
+      "brand_synonyms": ["The Tablet"],
+      "folder_name": "The Tablet",
       "emails": ["donna@buzzcannabis.com"],
       "days": ["Monday"],
       "location": "MV/LM/SV"

@@ -52,30 +52,40 @@ def click_dropdown(driver):
         dropdown = wait.until(EC.element_to_be_clickable((By.XPATH, dropdown_xpath)))
         driver.execute_script("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", dropdown)
         dropdown.click()
-        time.sleep(1)  # small delay for options to load
+        wait.until(EC.presence_of_all_elements_located((By.XPATH, "//li[contains(text(), 'Buzz')]")))  # small delay for options to load
     except TimeoutException:
         print("Dropdown not found or not clickable")
 
 def select_store(driver, store_name):
-    """
-    Select the given store from the dropdown menu. 
-    store_name should match exactly how it appears in the site’s dropdown.
-    """
     wait = WebDriverWait(driver, 10)
+
     try:
-        # 1) Click the dropdown:
         click_dropdown(driver)
 
-        # 2) Locate the store option by text:
-        #    Adjust XPATH if needed to match how your site represents store names
         xpath = f"//li[contains(text(), '{store_name}')]"
-        item = wait.until(EC.visibility_of_element_located((By.XPATH, xpath)))
-        driver.execute_script("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", item)
-        item.click()
-        time.sleep(1)
+        item = wait.until(EC.presence_of_element_located((By.XPATH, xpath)))
+
+        # Scroll into view
+        driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", item)
+        time.sleep(0.2)
+
+        # Wait until any overlay disappears
+        try:
+            WebDriverWait(driver, 5).until(
+                EC.invisibility_of_element_located((By.CLASS_NAME, "sc-crXKpg"))
+            )
+        except TimeoutException:
+            print("[WARNING] Overlay still visible after timeout. Proceeding anyway...")
+
+        # Now click safely
+        driver.execute_script("arguments[0].click();", item)
+
+        # Wait to confirm store was selected
+        wait.until(EC.presence_of_all_elements_located((By.XPATH, "//li[contains(text(), 'Buzz')]")))
         return True
-    except (TimeoutException, NoSuchElementException) as e:
-        print(f"Error while trying to select '{store_name}' from the dropdown: {e}")
+
+    except (TimeoutException, NoSuchElementException, ElementClickInterceptedException) as e:
+        print(f"[ERROR] Could not select store '{store_name}': {e}")
         return False
 
 def click_date_input_field(driver):
@@ -143,6 +153,64 @@ def extract_monetary_values(driver):
         except ValueError:
             print(f"Could not convert '{value_text}' to float.")
     return monetary_values
+def change_month_if_needed(driver, target_date):
+    import sys
+
+    wait = WebDriverWait(driver, 10)
+
+    try:
+        wait.until(EC.visibility_of_element_located((By.CLASS_NAME, "MuiPopover-paper")))
+
+        header = wait.until(EC.presence_of_element_located((By.XPATH, "//div[@data-testid='date-picker-header']")))
+
+        # Convert month name to number
+        month_str_to_num = {month: i for i, month in enumerate(calendar.month_name) if month}
+
+        def get_displayed_date():
+            month_str = header.find_element(By.TAG_NAME, "span").text.strip()
+            year_val = int(header.find_element(By.TAG_NAME, "input").get_attribute("value"))
+            month_val = month_str_to_num.get(month_str, 0)
+            return year_val, month_val
+
+        # Get current and target dates
+        current_year, current_month = get_displayed_date()
+        target_year, target_month = target_date.year, target_date.month
+        delta_months = (target_year - current_year) * 12 + (target_month - current_month)
+
+
+        # ✅ EARLY EXIT if already correct
+        if delta_months == 0:
+            return
+
+        # Locate the arrow buttons directly
+        left_arrow = wait.until(EC.element_to_be_clickable((
+            By.XPATH, "//div[@data-testid='date-picker-header']/div[1]"
+        )))
+        right_arrow = wait.until(EC.element_to_be_clickable((
+            By.XPATH, "//div[@data-testid='date-picker-header']/div[3]"
+        )))
+
+        # Click as needed
+        for i in range(abs(delta_months)):
+            if delta_months > 0:
+                driver.execute_script("arguments[0].click();", right_arrow)
+            else:
+                driver.execute_script("arguments[0].click();", left_arrow)
+
+            time.sleep(0.4)
+            current_year, current_month = get_displayed_date()
+
+            if current_year == target_year and current_month == target_month:
+                break
+        else:
+            print(f"[ERROR] Failed to reach target date: {target_month}/{target_year}")
+            driver.quit()
+            sys.exit(1)
+
+    except Exception as e:
+        print(f"[!] Failed to switch to correct month/year: {e}")
+        driver.quit()
+        sys.exit(1)
 
 def process_single_day(driver, date_to_run):
     """
@@ -154,9 +222,9 @@ def process_single_day(driver, date_to_run):
     """
     # Convert day of month to a string (for the datepicker)
     day_str = str(date_to_run.day)
-
     # Click date input, then click the day in the datepicker
     click_date_input_field(driver)
+    change_month_if_needed(driver, date_to_run)
     click_dates_in_calendar(driver, day_str)
 
     # Extract values
@@ -193,7 +261,8 @@ def create_store_checkboxes(frame):
         "Buzz Cannabis - Mission Valley",
         "Buzz Cannabis-La Mesa",
         "Buzz Cannabis - SORRENTO VALLEY",
-        "Buzz Cannabis - Lemon Grove"
+        "Buzz Cannabis - Lemon Grove",
+        "Buzz Cannabis (National City)"
     ]
 
     for store_name in store_map:
