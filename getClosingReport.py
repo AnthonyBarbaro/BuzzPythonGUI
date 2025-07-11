@@ -67,7 +67,7 @@ def select_store(driver, store_name):
 
         # Scroll into view
         driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", item)
-        time.sleep(0.2)
+        time.sleep(0.5)
 
         # Wait until any overlay disappears
         try:
@@ -89,11 +89,22 @@ def select_store(driver, store_name):
         return False
 
 def click_date_input_field(driver):
-    """ Click on the date input field to open the date-picker. """
-    wait = WebDriverWait(driver, 7)
+    """ Click on the date input field to open the date-picker safely. """
+    wait = WebDriverWait(driver, 10)
     date_input_id = "input-input_"
-    date_input = wait.until(EC.element_to_be_clickable((By.ID, date_input_id)))
-    date_input.click()
+
+    try:
+        # Wait for the backdrop to disappear first (avoids click interception)
+        wait.until(EC.invisibility_of_element_located((By.CLASS_NAME, "MuiBackdrop-root")))
+
+        # Now try clicking the field
+        date_input = wait.until(EC.element_to_be_clickable((By.ID, date_input_id)))
+        driver.execute_script("arguments[0].scrollIntoView(true);", date_input)
+        driver.execute_script("arguments[0].click();", date_input)
+
+    except Exception as e:
+        print("[ERROR] Clicking date input field failed:", e)
+
 
 def click_dates_in_calendar(driver, day_of_month):
     """
@@ -135,7 +146,7 @@ def extract_monetary_values(driver):
     Extract the first 3 right-aligned table cells and parse them as float. 
     """
     css_selector = "[class$='table-cell-right-']"
-    time.sleep(3)
+    time.sleep(4)
     elements = WebDriverWait(driver, 35).until(
         EC.presence_of_all_elements_located((By.CSS_SELECTOR, css_selector))
     )
@@ -197,7 +208,7 @@ def change_month_if_needed(driver, target_date):
             else:
                 driver.execute_script("arguments[0].click();", left_arrow)
 
-            time.sleep(0.4)
+            time.sleep(1)
             current_year, current_month = get_displayed_date()
 
             if current_year == target_year and current_month == target_month:
@@ -421,7 +432,7 @@ def open_gui_and_run():
             # 7) For each date in the range, run your daily logic
             for date_to_run in date_list:
                 # short delay between days (optional)
-                time.sleep(2)
+                time.sleep(3)
                 process_single_day(driver, date_to_run)
 
         # 8) Done

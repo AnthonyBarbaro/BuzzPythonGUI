@@ -454,12 +454,20 @@ class BrandInventoryGUI:
     def __init__(self, master):
         self.master = master
         
-        master.title("Brand Inventory to Google Drive (Advanced) - with config.txt")
+        master.title("Brand Inventory Uploader")
         master.geometry("800x600")  # Default window size
         master.resizable(True, True)  # Allow resizing
         self.frame = tk.Frame(master)
         self.frame.pack(padx=10, pady=10)
+        self.master.configure(bg="#f5f5f5")
+        self.frame.configure(bg="#f5f5f5")
 
+        default_font = ("Segoe UI", 11)
+        self.master.option_add("*Font", default_font)
+        self.master.option_add("*Background", "#f5f5f5")
+        self.master.option_add("*Button.Background", "#4CAF50")
+        self.master.option_add("*Button.Foreground", "white")
+        self.master.option_add("*Button.Font", ("Segoe UI", 10, "bold"))
         # Load config, if present
         init_in, init_out = load_config()
 
@@ -471,34 +479,34 @@ class BrandInventoryGUI:
         row1 = tk.Frame(self.frame)
         row1.pack(pady=5, fill="x")
         tk.Label(row1, text="Input Folder:").pack(side="left")
-        tk.Entry(row1, textvariable=self.input_dir_var, width=50).pack(side="left", padx=5)
+        tk.Entry(row1, textvariable=self.input_dir_var, width=50, relief="solid", bd=1).pack(side="left", padx=5)
         tk.Button(row1, text="Browse", command=self.browse_input).pack(side="left")
 
         # Row 2: output folder
         row2 = tk.Frame(self.frame)
         row2.pack(pady=5, fill="x")
         tk.Label(row2, text="Output Folder:").pack(side="left")
-        tk.Entry(row2, textvariable=self.output_dir_var, width=50).pack(side="left", padx=5)
+        tk.Entry(row2, textvariable=self.output_dir_var, width=50, relief="solid", bd=1).pack(side="left", padx=5)
         tk.Button(row2, text="Browse", command=self.browse_output).pack(side="left")
 
         # Row 3: Buttons => get files, load brands
         row3 = tk.Frame(self.frame)
         row3.pack(pady=5, fill="x")
-        tk.Button(row3, text="Update Files", command=self.get_files).pack(side="left", padx=5)
-        tk.Button(row3, text="Load Brands", command=self.load_brands).pack(side="left", padx=5)
+        tk.Button(row3, text="Update Files", command=self.get_files, width=15).pack(side="left", padx=10)
+        tk.Button(row3, text="Load Brands", command=self.load_brands, width=15).pack(side="left", padx=10)
                 # Row 5: emails
         row5 = tk.Frame(self.frame)
         row5.pack(pady=5, fill="x")
         tk.Label(row5, text="Email(s) (comma-separated):").pack(anchor="w")
-        tk.Entry(row5, textvariable=self.emails_var, width=60).pack()
+        tk.Entry(row5, textvariable=self.emails_var, width=60, relief="solid", bd=1).pack()
 
         # Row 6: final run
         row6 = tk.Frame(self.frame)
-        row6.pack(pady=10)
-        tk.Button(row6, text="Generate & Upload & Email", command=self.run_process).pack(padx=5, pady=5)
+        row6.pack(pady=1)
+        tk.Button(row6, text="Generate & Upload & Email", command=self.run_process, width=30).pack(padx=3, pady=5)
         # Row 4: brand listbox
         row4 = tk.Frame(self.frame)
-        row4.pack(pady=5, fill="both")
+        row4.pack(pady=0, fill="both")
         alpha_sidebar = tk.Frame(row4)
         alpha_sidebar.pack(side="right", padx=5, pady=5)
 
@@ -509,25 +517,27 @@ class BrandInventoryGUI:
             btn.grid(row=i % 7, column=i // 7, padx=1, pady=1)  # 7 rows max
 
         tk.Label(row4, text="Select brand(s):").pack(anchor="w")
-        self.brand_listbox = tk.Listbox(row4, selectmode=tk.MULTIPLE, height=8, width=50)
+        self.brand_listbox = tk.Listbox(row4, selectmode=tk.MULTIPLE, height=18, width=50)
         self.brand_listbox.pack(side="left", fill="both", expand=True)
         scroll = tk.Scrollbar(row4, command=self.brand_listbox.yview)
         scroll.pack(side="right", fill="y")
-        self.brand_listbox.config(yscrollcommand=scroll.set)
+        self.brand_listbox.config(borderwidth=1, relief="solid", highlightthickness=0, bg="white", selectbackground="#4CAF50", selectforeground="white")
+        scroll.config(bg="#f5f5f5", troughcolor="#e0e0e0", borderwidth=0)
         self.brand_listbox.bind("<Key>", self.on_listbox_keypress)
 
     def show_loading(self, message="Processing..."):
         if hasattr(self, "loading_overlay") and self.loading_overlay.winfo_exists():
             return  # Already shown
 
-        self.loading_overlay = tk.Frame(self.master, bg="#ffffff", bd=0)
-        self.loading_overlay.place(relx=0, rely=0, relwidth=1, relheight=1)
+        self.loading_overlay = tk.Frame(self.master, bg="#ffffff", bd=2, relief="ridge")
+        self.loading_overlay.place(relx=0.25, rely=0.4, relwidth=0.5, relheight=0.2)
 
         self.loading_label = tk.Label(
             self.loading_overlay,
             text=message,
-            font=("Helvetica", 16),
-            bg="#ffffff"
+            font=("Segoe UI", 14, "bold"),
+            bg="#ffffff",
+            fg="#333333"
         )
         self.loading_label.place(relx=0.5, rely=0.5, anchor="center")
 

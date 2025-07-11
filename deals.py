@@ -145,19 +145,21 @@ brand_criteria3 = {
     },
 }
 brand_criteria2 = {
-    'Stiiizy(THURS-SAT)': {
+    'NC-Stiiizy(THURS-SAT)': {
         'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC'],
         'days': ['Thursday','Friday','Saturday'],
         'discount': 0.40,
         'kickback': 0.30,
+        'stores': ['NC'],
         'brands': ['Stiiizy']
     },
-    'Stiiizy(SUN-WED)': {
+    'NC-Stiiizy(SUN-WED)': {
         'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC'],
         'days': ['Monday','Tuesday','Wednesday','Sunday'],
         'discount': 0.40,
         'kickback': 0.30,
         'categories': ['Disposables', 'Cartridges', 'Gummies', 'Edibles'],
+        'stores': ['NC'],
         'brands': ['Stiiizy']
     # },
     # 'WYLD/GoodTide': {
@@ -177,115 +179,78 @@ brand_criteria2 = {
     #     #'include_phrases': ['Jeeter | BC LR Pre-Roll 1.3g','Jeeter | IN Pre-Roll 1g','Jeeter | IN Pre-Roll 2g','Jeeter | IN Pre-Rolls (5pk)','Jeeter | LE Pre-Roll 1g','Jeeter | IN Pre-Rolls 0.5g (5pk)'],
     #     #'excluded_phrases': ['(3pk)','SVL']
     },    
-    'Jeeter': {
-        'vendors': ['Med For America Inc.'],
-        'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
-        'discount': 0.0,
-        'kickback': 0.0,
-        #'categories': ['Pre-Rolls'],
-        'brands': ['Jeeter'],
-        #'include_phrases': ['LRO','2G','5pk','1G'],
-        #'excluded_phrases': ['(3pk)','SVL']
+    # 'Jeeter': {
+    #     'vendors': ['Med For America Inc.'],
+    #     'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
+    #     'discount': 0.0,
+    #     'kickback': 0.0,
+    #     #'categories': ['Pre-Rolls'],
+    #     'brands': ['Jeeter'],
+    #     #'include_phrases': ['LRO','2G','5pk','1G'],
+    #     #'excluded_phrases': ['(3pk)','SVL']
     
-    }
+    # }
 }
 brand_criteria420 = {
-    'TeamEliteGenetics': {
-        'vendors': ['Broadway Alliance, LLC'],
-        'days': ['Friday','Saturday','Sunday'],
-        'discount': 0.40,
-        'kickback': 0.20,
-        'brands': ['Team Elite G |']
+    'Preferred': {
+        'vendors': ['Garden Of Weeden Inc.','Helios | Hypeereon Corporation'],
+        'days': ['Thursday'],
+        'discount': 0.50,
+        'kickback': 0.30,
+        'brands': ['Preferred Gardens',]
     }, 
     'Cake': { 
         'vendors': ['ThirtyOne Labs, LLC'],
-        'days': ['Friday','Saturday','Sunday'],
-        'discount': 0.40,
-        'kickback': 0.20,
+        'days': ['Thursday'],
+        'discount': 0.50,
+        'kickback': 0.13,
         'brands': ['Cake |']
     },
-    'Cam - OFF INVOICE': { #OFF INVOICE
-        'vendors': ['California Artisanal Medicine (CAM)'],
-        'days': ['Friday','Saturday','Sunday'],
-        'discount': 0.40,
-        'kickback': 0.20,
-        'brands': ['CAM |']
+    'Uncle Arnies': { #OFF INVOICE
+        'vendors': ['KIVA / LCISM CORP'],
+        'days': ['Thursday'],
+        'discount': 0.50,
+        'kickback': 0.30,
+        'brands': ["Uncle Arnie's |"]
 
     }, 
     'Raw Garden': {
         'vendors': ['Garden Of Weeden Inc.'],
-        'days': ['Friday','Saturday','Sunday'],
-        'discount': 0.40,
-        'kickback': 0.20,
-        'brands': ['Raw Garden']
-
-    },'Jeeter': {
-        'vendors': ['Med For America Inc.'],
-        'days': ['Friday','Saturday','Sunday'],
-        'discount': 0.50,
-        'kickback': 0.25,
-        'brands': ['Jeeter'],
-
-    },'Stiiizy420-40back': {
-        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC'],
-        'days': ['Thursday','Friday','Saturday','Sunday'],
-        'discount': 0.50,
-        'kickback': 0.40,
-        'brands': ['Stiiizy |'],
-        'categories': ["Eighths", "Pre-Rolls", "Flower", "Halves", "Quarters", "Ounces", "Accessories"],
-        'excluded_phrases': ['Stiiizy | Pre-Roll 1g','Stiiizy | Pre-roll 1g',"Stiiizy | 40's Blunt 2G",'Naked'],
-
-    },'Stiiizy420-30back': {
-        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC'],
-        'days': ['Thursday','Friday','Saturday','Sunday'],
+        'days': ['Thursday'],
         'discount': 0.50,
         'kickback': 0.30,
-        'brands': ['Stiiizy |'],
-        'categories': ["Eighths", "Pre-Rolls", "Flower", "Halves", "Quarters", "Ounces", "Accessories",'Concentrate'],
-        'include_phrases': ['Stiiizy | Pre-Roll 1g','Stiiizy | Pre-roll 1g',"Stiiizy | 40's Blunt 2G",'Naked','Stiiizy | LRO','Stiiizy | LR','Stiiizy | CLR','Stiiizy | LRJ'],
+        'brands': ['Raw Garden']
+
+    },'PBR/ST.IDES': {
+        'vendors': ['Garden Of Weeden Inc.'],
+        'days': ['Friday','Thursday','Wednesday'],
+        'discount': 0.50,
+        'kickback': 0.30,
+        'brands': ['PBR |', "St. Ides |"],
 
     },
-      'Made': { #TURN AND MADE MONTH OF APRIL 50 off 50% kickback 
-        'vendors': ['Garden Of Weeden Inc.'],
-        'days': ['Friday','Saturday','Sunday'],
-        'discount': 0.50,
-        'kickback': 0.50,
-        #'categories': [''], 
-        'brands': ['Made |']
-    }, 
+    'Punch': { #TURN AND MADE MONTH OF APRIL 50 off 50% kickback
+        'vendors': ['Punch Media, LLC'],
+        'days': ['Thursday'],
+        'discount': 0.40,
+        'kickback': 0.25,
+        'categories': ['Concentrate'], 
+        'include_phrases': ['LRO'],
+        'brands': ['Punch |']
+    },
     'Turn': { #TURN AND MADE MONTH OF APRIL 50 off 50% kickback
         'vendors': ['Fluids Manufacturing Inc.', 'Garden Of Weeden', 'Garden Of Weeden Inc.'],
-        'days': ['Friday','Saturday','Sunday'],
+        'days': ['Thursday'],
         'discount': 0.50,
-        'kickback': 0.50,
+        'kickback': 0.30,
         'brands': ['Turn |']
-    },'Master Makers': {
-        'vendors': ['Broadway Alliance, LLC'],
-        'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
-        'discount': 0.50,
-        'kickback': 0.20,
-        'brands': ['Master Makers |']
-
-    },'Fresh Farms': {
-        'vendors': ['Vert Lake Elsinore, LLC'],
-        'days': ['Friday','Saturday','Sunday'],
-        'discount': 0.50,
+    },
+    'Heavy Hitters': { 
+       'vendors': ['Fluids Manufacturing Inc.','Garden Of Weeden Inc.'],
+        'days': ['Thursday'],
+        'discount': 0.40,
         'kickback': 0.25,
-        'brands': ['Fresh Farms |']
-
-    },'Half Oz House': {
-        'vendors': ['Vert Lake Elsinore, LLC'],
-        'days': ['Friday','Saturday','Sunday'],
-        'discount': 0.50,
-        'kickback': 0.25,
-        'brands': ['HOH |']
-
-    },'CBX_Brands': {
-        'vendors': ['Higherstar Distribution', 'Hilife LM', 'Four Star Distribution and Delivery LLC','Hilife Group MV , LLC'],
-        'days': ['Friday','Saturday','Sunday'],
-        'discount': 0.50,
-        'kickback': 0.25,
-        'brands': ['CBX |','HB |','Highatus |']
+        'brands': ['Heavy Hitters |']
     }
     }
 
@@ -602,7 +567,32 @@ brand_criteria = {
         'kickback': 0.30,
         #'categories': [''], 
         'brands': ["L.A.FF |"]
+    },  
+    'COTC': { 
+        'vendors': ["TERPX COTC/WCTC (Riverside)"],
+        'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
+        'discount': 0.50,
+        'kickback': 0.0,
+        #'categories': [''], 
+        'brands': ["COTC |"]
+    },  
+    'Cam - OFF INVOICE': { #OFF INVOICE
+        'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
+        'days': ['Friday','Saturday','Sunday'],
+        'discount': 0.40,
+        'kickback': 0.0,
+        'brands': ['CAM |']
+
     }, 
+    'Master Makers': {
+        'vendors': ['Broadway Alliance, LLC'],
+        'days': ['Tuesday','Thursday'],
+        'discount': 0.50,
+        'kickback': 0.30,
+        'brands': ['Master Makers |']
+
+    }
+    
 }
 
 def style_summary_sheet(sheet, brand_name):
@@ -811,7 +801,7 @@ def run_deals_reports():
     results_for_app = []
 
     # For each brand, gather data from whichever stores are not empty
-    for brand, criteria in brand_criteria.items():
+    for brand, criteria in brand_criteria2.items():
         # 1) Decide which stores are active for this brand
         desired_stores = criteria.get('stores', ['MV', 'LM', 'SV', 'LG', 'NC'])  # ✅ NC included
 
