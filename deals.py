@@ -440,7 +440,7 @@ brand_criteria = {
         'brands': ['Heavy Hitters']
     },
     'Almora': {
-        'vendors': ['Fluids Manufacturing Inc.','Garden Of Weeden Inc.'],
+        'vendors': ['Fluids Manufacturing Inc.','Garden Of Weeden Inc.','Vino & Cigarro, LLC'],
         'days': ['Sunday','Saturday'],
         'discount': 0.50,
         'kickback': 0.25,
@@ -546,7 +546,7 @@ brand_criteria = {
     }, 
     'Green Dawg': { 
         'vendors': ['Artisan Canna Cigars LLC'],
-        'days': ['Wednesday'],
+        'days': ['Thursday'],
         'discount': 0.50,
         'kickback': 0.30,
         #'categories': [''], 
@@ -571,14 +571,14 @@ brand_criteria = {
     'COTC': { 
         'vendors': ["TERPX COTC/WCTC (Riverside)"],
         'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
-        'discount': 0.50,
+        'discount': 0.30,
         'kickback': 0.0,
         #'categories': [''], 
         'brands': ["COTC |"]
     },  
-    'Cam - OFF INVOICE': { #OFF INVOICE
+    'Cam': { #OFF INVOICE
+        'vendors': ["California Artisanal Medicine (CAM)"],
         'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
-        'days': ['Friday','Saturday','Sunday'],
         'discount': 0.40,
         'kickback': 0.0,
         'brands': ['CAM |']
@@ -590,7 +590,6 @@ brand_criteria = {
         'discount': 0.50,
         'kickback': 0.30,
         'brands': ['Master Makers |']
-
     }
     
 }
@@ -801,7 +800,11 @@ def run_deals_reports():
     results_for_app = []
 
     # For each brand, gather data from whichever stores are not empty
-    for brand, criteria in brand_criteria2.items():
+    for brand, criteria in brand_criteria.items():
+        if not isinstance(criteria, dict) or 'vendors' not in criteria:
+            print(f"[SKIP] Brand '{brand}' has missing or invalid criteria. Skipping.")
+            continue
+
         # 1) Decide which stores are active for this brand
         desired_stores = criteria.get('stores', ['MV', 'LM', 'SV', 'LG', 'NC'])  # ✅ NC included
 

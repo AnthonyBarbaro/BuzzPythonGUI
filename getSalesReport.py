@@ -65,7 +65,7 @@ def launchBrowser():
     chrome_options.add_experimental_option("prefs", prefs)
 
     d = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
-    d.get("https://dusk.backoffice.dutchie.com/reports/sales/sales-report")
+    d.get("https://dusk.backoffice.dutchie.com/reports/sales/reports/sales-report")
     return d
 
 def login(driver):
