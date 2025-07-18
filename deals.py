@@ -135,14 +135,16 @@ def apply_discounts_and_kickbacks(data, discount, kickback):
     return data
 #Month to month
 brand_criteria3 = {
-    'Raw Garden': {
-        'vendors': ['Garden Of Weeden Inc.'],
+   'Jeeter': {
+        'vendors': ['Med For America Inc.'],
         'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
-        'discount': 0.30,
-        'kickback': 0.00,
-        'brands': ['Raw Garden']
-
-    },
+        'discount': 0.40,
+        'kickback': 0.0,
+        'brands': ['Jeeter'],
+        'include_phrases': ['Jeeter Juice | LLD AIO 1g'],
+        #'excluded_phrases': ['(3pk)','SVL']
+        #'stores': ['MV','LM','LG']
+    },  
 }
 brand_criteria2 = {
     'NC-Stiiizy(THURS-SAT)': {
@@ -377,7 +379,8 @@ brand_criteria = {
         'discount': 0.50,
         'kickback': 0.25,
         #'categories': ['Concentrate'], 
-        'brands': ['Hashish']
+        'brands': ['Hashish'] 
+
     },
     'Jeeter': {
         'vendors': ['Med For America Inc.'],
@@ -386,7 +389,7 @@ brand_criteria = {
         'kickback': 0.23,
         'categories': ['Pre-Rolls'],
         'brands': ['Jeeter'],
-        'include_phrases': ['LRO','2G','5pk','1G'],
+        'include_phrases': ['LRO','2G','5pk','1G','2g','1g'],
         #'excluded_phrases': ['(3pk)','SVL']
         #'stores': ['MV','LM','LG']
     },    
@@ -800,7 +803,7 @@ def run_deals_reports():
     results_for_app = []
 
     # For each brand, gather data from whichever stores are not empty
-    for brand, criteria in brand_criteria.items():
+    for brand, criteria in brand_criteria3.items():
         if not isinstance(criteria, dict) or 'vendors' not in criteria:
             print(f"[SKIP] Brand '{brand}' has missing or invalid criteria. Skipping.")
             continue
