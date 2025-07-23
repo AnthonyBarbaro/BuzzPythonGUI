@@ -135,16 +135,15 @@ def apply_discounts_and_kickbacks(data, discount, kickback):
     return data
 #Month to month
 brand_criteria3 = {
-   'Jeeter': {
-        'vendors': ['Med For America Inc.'],
-        'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
-        'discount': 0.40,
-        'kickback': 0.0,
-        'brands': ['Jeeter'],
-        'include_phrases': ['Jeeter Juice | LLD AIO 1g'],
-        #'excluded_phrases': ['(3pk)','SVL']
-        #'stores': ['MV','LM','LG']
-    },  
+    'LG_Pad_TreeSap': {
+        'vendors': ['Zenleaf LLC','Center Street Investments Inc.','Fluids Manufacturing Inc.'],
+        'days': ['Saturday'],
+        'discount': 0.50,
+        'kickback': 0.25,
+        'brands': ['TreeSap'],
+        'stores': ['LG']
+
+    },
 }
 brand_criteria2 = {
     'NC-Stiiizy(THURS-SAT)': {
@@ -419,7 +418,8 @@ brand_criteria = {
         'days': ['Friday','Saturday'],
         'discount': 0.50,
         'kickback': 0.25,
-        'brands': ['Dabwoods']
+        #'brands': ['Dabwoods','DabBar |']
+        'brands': ['DabBar |']
     },
      'Time Machine': {
          'vendors': ['Vino & Cigarro, LLC','Garden Of Weeden Inc.','KIVA / LCISM CORP'],
@@ -574,8 +574,8 @@ brand_criteria = {
     'COTC': { 
         'vendors': ["TERPX COTC/WCTC (Riverside)"],
         'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
-        'discount': 0.30,
-        'kickback': 0.0,
+        'discount': 0.50,
+        'kickback': 0.24,
         #'categories': [''], 
         'brands': ["COTC |"]
     },  
@@ -751,7 +751,17 @@ def style_top_sellers_sheet(sheet):
                 if val_length > max_length:
                     max_length = val_length
         sheet.column_dimensions[column_letter].width = max_length + 2
-
+def discount_for_store(base_discount: float, store_code: str) -> float:
+            """
+            Returns the effective discount for a given store.
+            Store 'WP' has special rules: 0.5 → 0.3, 0.4 → 0.2.
+            """
+            if store_code == 'WP':
+                if base_discount == 0.50:
+                    return 0.30
+                elif base_discount == 0.40:
+                    return 0.20
+            return base_discount
 def run_deals_reports():
     """
     Reads salesMV.xlsx, salesLM.xlsx, and salesSV.xlsx (if present).
@@ -782,6 +792,7 @@ def run_deals_reports():
     sv_data = process_file('files/salesSV.xlsx')  # NEW - If missing, returns None
     lg_data = process_file('files/salesLG.xlsx') 
     nc_data = process_file('files/salesNC.xlsx')
+    wp_data = process_file('files/salesWP.xlsx')
     # If a store file is None, we skip that store
     if mv_data is None:
         print("DEBUG: MV data not found or empty. Skipping Mission Valley.")
@@ -798,18 +809,21 @@ def run_deals_reports():
     if nc_data is None:
         print("DEBUG: NC data not found or empty. Skipping National City.")
         nc_data = pd.DataFrame()
+    if wp_data is None:
+        print("DEBUG: WP data not found or empty. Skipping Wildomar Palomar.")  # <- or whatever WP means
+        wp_data = pd.DataFrame()
     ALL_DAYS = {"Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"}
     consolidated_summary = []
     results_for_app = []
 
     # For each brand, gather data from whichever stores are not empty
-    for brand, criteria in brand_criteria3.items():
+    for brand, criteria in brand_criteria.items():
         if not isinstance(criteria, dict) or 'vendors' not in criteria:
             print(f"[SKIP] Brand '{brand}' has missing or invalid criteria. Skipping.")
             continue
 
         # 1) Decide which stores are active for this brand
-        desired_stores = criteria.get('stores', ['MV', 'LM', 'SV', 'LG', 'NC'])  # ✅ NC included
+        desired_stores = criteria.get('stores', ['MV', 'LM', 'SV', 'LG', 'NC', 'WP'])
 
 
         # 2) For each store, filter only if the brand criteria says so
@@ -846,14 +860,20 @@ def run_deals_reports():
                 nc_data['vendor name'].isin(criteria['vendors']) &
                 nc_data['day of week'].isin(criteria['days'])
             ].copy()
-
+        wp_brand_data = pd.DataFrame()
+        if 'WP' in desired_stores and not wp_data.empty:
+            wp_brand_data = wp_data[
+                wp_data['vendor name'].isin(criteria['vendors']) &
+                wp_data['day of week'].isin(criteria['days'])
+            ].copy()
+        
         # 🧠 Smart unknown vendor check: Only flag vendors that sold products with this brand
         brand_keywords = set(criteria.get('brands', []))
         expected_vendors = set(criteria.get('vendors', []))
 
         # Gather raw day-matched data before vendor filtering
         day_match_df = pd.concat([
-            df[df['day of week'].isin(criteria['days'])] for df in [mv_data, lm_data, sv_data, lg_data] if not df.empty and 'day of week' in df.columns], ignore_index=True)
+            df[df['day of week'].isin(criteria['days'])] for df in [mv_data, lm_data, sv_data, lg_data, nc_data, wp_data] if not df.empty and 'day of week' in df.columns], ignore_index=True)
 
         # Filter rows where product name includes brand keywords
         def matches_brand(product_name):
@@ -953,7 +973,7 @@ def run_deals_reports():
         print(f"DEBUG: {brand} - After filtering => MV: {mv_brand_data.shape}, LM: {lm_brand_data.shape}, SV: {sv_brand_data.shape}, LG: {lg_brand_data.shape}")
 
         # Skip brand if all stores are empty
-        if mv_brand_data.empty and lm_brand_data.empty and sv_brand_data.empty and lg_brand_data.empty and nc_brand_data.empty:
+        if mv_brand_data.empty and lm_brand_data.empty and sv_brand_data.empty and lg_brand_data.empty and nc_brand_data.empty and wp_brand_data.empty:
             print(f"DEBUG: No data remains for brand '{brand}'. Skipping.")
             continue
 
@@ -969,8 +989,13 @@ def run_deals_reports():
             lg_brand_data = apply_discounts_and_kickbacks(lg_brand_data, criteria['discount'], criteria['kickback'])
         if not nc_brand_data.empty and required_cols.issubset(nc_brand_data.columns):
             nc_brand_data = apply_discounts_and_kickbacks(nc_brand_data, criteria['discount'], criteria['kickback'])
-
-        # Determine date ranges
+        if not wp_brand_data.empty and required_cols.issubset(wp_brand_data.columns):
+            wp_brand_data = apply_discounts_and_kickbacks(
+                wp_brand_data,
+                discount_for_store(criteria['discount'], 'WP'),
+                criteria['kickback']
+            )
+                # Determine date ranges
         def get_date_range(df):
             if df.empty:
                 return None, None
@@ -981,8 +1006,9 @@ def run_deals_reports():
         start_sv, end_sv = get_date_range(sv_brand_data)
         start_lg, end_lg = get_date_range(lg_brand_data)
         start_nc, end_nc = get_date_range(nc_brand_data)
-        possible_starts = [d for d in [start_mv, start_lm, start_sv, start_lg, start_nc] if d]
-        possible_ends = [d for d in [end_mv, end_lm, end_sv, end_lg, end_nc] if d]
+        start_wp, end_wp = get_date_range(wp_brand_data)
+        possible_starts = [d for d in [start_mv, start_lm, start_sv, start_lg, start_nc, start_wp] if d]
+        possible_ends = [d for d in [end_mv, end_lm, end_sv, end_lg, end_nc, end_wp] if d]
         if not possible_starts or not possible_ends:
             print(f"DEBUG: Brand '{brand}' had data, but no valid date range. Skipping.")
             continue
@@ -1016,9 +1042,9 @@ def run_deals_reports():
         sv_summary = build_summary(sv_brand_data, 'Sorrento Valley',  include_units=want_units)
         lg_summary = build_summary(lg_brand_data, 'Lemon Grove',  include_units=want_units)
         nc_summary = build_summary(nc_brand_data, 'National City',  include_units=want_units)
-
+        wp_summary = build_summary(wp_brand_data, 'Wildomar Palomar', include_units=want_units)
         # Combine them
-        brand_summary = pd.concat([mv_summary, lm_summary, sv_summary,lg_summary,nc_summary], ignore_index=True)
+        brand_summary = pd.concat([mv_summary, lm_summary, sv_summary,lg_summary,nc_summary, wp_summary], ignore_index=True)
 
         # If the brand runs all days, show 'Everyday'
         if set(criteria['days']) == ALL_DAYS:
@@ -1056,7 +1082,7 @@ def run_deals_reports():
         print(f"DEBUG: Creating {output_filename} for brand '{brand}'...")
 
         # Build "Top Sellers" with combined data from MV + LM + SV
-        combined_df = pd.concat([mv_brand_data, lm_brand_data, sv_brand_data,lg_brand_data], ignore_index=True)
+        combined_df = pd.concat([mv_brand_data, lm_brand_data, sv_brand_data,lg_brand_data, nc_brand_data, wp_brand_data], ignore_index=True)
         if not combined_df.empty and 'gross sales' in combined_df.columns:
             top_sellers_df = (
                 combined_df.groupby('product name', as_index=False)
@@ -1087,6 +1113,8 @@ def run_deals_reports():
                 lg_brand_data.to_excel(writer, sheet_name='LG_Sales', index=False)
             if not nc_brand_data.empty:
                 nc_brand_data.to_excel(writer, sheet_name='NC_Sales', index=False)
+            if not wp_brand_data.empty:
+                wp_brand_data.to_excel(writer, sheet_name='WP_Sales', index=False)
 
             # Top Sellers
             top_sellers_df.to_excel(writer, sheet_name='Top Sellers', index=False)
@@ -1123,7 +1151,8 @@ def run_deals_reports():
             style_worksheet(wb['LG_Sales'])
         if 'NC_Sales' in wb.sheetnames:
             style_worksheet(wb['NC_Sales'])
-
+        if 'WP_Sales' in wb.sheetnames:
+            style_worksheet(wb['WP_Sales'])
         if 'Top Sellers' in wb.sheetnames:
             style_top_sellers_sheet(wb['Top Sellers'])
         wb.save(output_filename)

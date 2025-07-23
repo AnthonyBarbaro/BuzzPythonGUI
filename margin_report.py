@@ -18,7 +18,9 @@ store_abbr_map = {
         "Buzz Cannabis - Mission Valley",
         "Buzz Cannabis-La Mesa",
         "Buzz Cannabis - SORRENTO VALLEY",
-        "Buzz Cannabis - Lemon Grove"
+        "Buzz Cannabis - Lemon Grove",
+        "Buzz Cannabis (National City)",  # ✅ Add this line
+        "Buzz Cannabis Wildomar Palomar"
 }
 
 def ensure_dir_exists(directory):

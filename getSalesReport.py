@@ -30,7 +30,8 @@ store_abbr_map = {
     "Buzz Cannabis-La Mesa": "LM",
     "Buzz Cannabis - SORRENTO VALLEY" : "SV",
     "Buzz Cannabis - Lemon Grove" : "LG",
-    "Buzz Cannabis (National City)" : "NC"  # ✅ Add this line
+    "Buzz Cannabis (National City)" : "NC",  # ✅ Add this line
+    "Buzz Cannabis Wildomar Palomar" : "WP"
 }
 
 start_str = None
@@ -243,6 +244,8 @@ def clickActionsAndExport(current_store):
                     new_filename = f"salesLG.xlsx"
                 elif current_store == "Buzz Cannabis (National City)":
                     new_filename = f"salesNC.xlsx"  # ✅ Add this line
+                elif current_store == "Buzz Cannabis Wildomar Palomar":
+                    new_filename = f"salesWP.xlsx"
 
                 else:
                     new_filename = f"sales_{current_store}_{timestamp}.xlsx"
@@ -330,8 +333,13 @@ def create_store_checkboxes(frame):
     cbNC = tk.Checkbutton(frame, text="Buzz Cannabis (National City)", variable=varNC)
     cbNC.pack(anchor='w')
     store_vars["Buzz Cannabis (National City)"] = varNC  # ✅ Add this line
+    # Wildomar Palomar
+    varWP = tk.IntVar(value=1)
+    cbWP = tk.Checkbutton(frame,
+            text="Buzz Cannabis Wildomar Palomar", variable=varWP)
+    cbWP.pack(anchor='w')
+    store_vars["Buzz Cannabis Wildomar Palomar"] = varWP
     return store_vars
-
 def open_gui_and_run():
     root = tk.Tk()
     root.title("Select Date Range")
@@ -421,7 +429,8 @@ def open_gui_and_run():
                 "Buzz Cannabis-La Mesa",
                 "Buzz Cannabis - SORRENTO VALLEY",
                 "Buzz Cannabis - Lemon Grove",
-                "Buzz Cannabis (National City)"  # ✅ Add this line
+                "Buzz Cannabis (National City)",  # ✅ Add this line
+                "Buzz Cannabis Wildomar Palomar"
             ]
 
         # Close GUI
@@ -451,7 +460,8 @@ def run_sales_report(start_date, end_date):
         "Buzz Cannabis-La Mesa",
         "Buzz Cannabis - SORRENTO VALLEY",
         "Buzz Cannabis - Lemon Grove",
-        "Buzz Cannabis (National City)"
+        "Buzz Cannabis (National City)",
+        "Buzz Cannabis Wildomar Palomar"
     ]
     global driver
     driver = launchBrowser()

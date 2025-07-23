@@ -14,10 +14,13 @@ import shutil
 CONFIG_FILE = "config.txt"
 
 INPUT_COLUMNS = ['Available', 'Product', 'Category', 'Brand']
+
 store_abbr_map = {
     "Buzz Cannabis - Mission Valley": "MV",
     "Buzz Cannabis-La Mesa": "LM",
-    "Buzz Cannabis - SORRENTO VALLEY": "SV"
+    "Buzz Cannabis - SORRENTO VALLEY" : "SV",
+    "Buzz Cannabis - Lemon Grove" : "LG",
+    "Buzz Cannabis (National City)" : "NC",      "Buzz Cannabis Wildomar Palomar" : "WP"
 }
 def organize_by_brand(output_directory):
     """
