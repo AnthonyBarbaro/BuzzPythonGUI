@@ -388,7 +388,7 @@ brand_criteria = {
         'kickback': 0.23,
         'categories': ['Pre-Rolls'],
         'brands': ['Jeeter'],
-        'include_phrases': ['LRO','2G','5pk','1G','2g','1g'],
+        'include_phrases': ['LRO','2G','5pk','1G','2g','1g','BC LR Pre-Roll 1.3g','BC LR Pre-Roll 1.3g'],
         #'excluded_phrases': ['(3pk)','SVL']
         #'stores': ['MV','LM','LG']
     },    
@@ -418,8 +418,8 @@ brand_criteria = {
         'days': ['Friday','Saturday'],
         'discount': 0.50,
         'kickback': 0.25,
-        #'brands': ['Dabwoods','DabBar |']
-        'brands': ['DabBar |']
+        'brands': ['Dabwoods','DabBar']
+        #'brands': ['DabBar |']
     },
      'Time Machine': {
          'vendors': ['Vino & Cigarro, LLC','Garden Of Weeden Inc.','KIVA / LCISM CORP'],
@@ -933,6 +933,10 @@ def run_deals_reports():
                 )]
             if not nc_brand_data.empty:
                 nc_brand_data = nc_brand_data[nc_brand_data['product name'].apply(
+                    lambda x: any(b in x for b in brand_list if isinstance(x, str))
+                )]
+            if not wp_brand_data.empty:
+                wp_brand_data = wp_brand_data[wp_brand_data['product name'].apply(
                     lambda x: any(b in x for b in brand_list if isinstance(x, str))
                 )]
         # Include phrases filter (if provided, these take priority)
