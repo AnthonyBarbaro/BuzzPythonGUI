@@ -322,7 +322,7 @@ def send_brand_emails():
             brand_htmls.append(brand_html)
 
         consolidated_html = "<hr>".join(brand_htmls)
-        consolidated_html += f"<p><strong>GRAND TOTAL OWED: ${grand_total:,.2f}</strong></p>"
+        consolidated_html += f"<br><p><strong>GRAND TOTAL OWED: ${grand_total:,.2f}</strong></p>"
 
         subject = "Consolidated Weekly Kickback (All Brands)"
         html_body = f"""
@@ -340,7 +340,7 @@ def send_brand_emails():
         send_email_with_gmail_html(
             subject=subject,
             html_body=html_body,
-            recipients=["anthony@barbaro.tech","donna@buzzcannabis.com"],
+            recipients=["anthony@barbaro.tech","donna@buzzcannabis.com","kevin@buzzcannabis.com"],
             #recipients=["anthony@barbaro.tech"],
             attachments=None
         )

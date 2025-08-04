@@ -135,13 +135,12 @@ def apply_discounts_and_kickbacks(data, discount, kickback):
     return data
 #Month to month
 brand_criteria3 = {
-    'LG_Pad_TreeSap': {
-        'vendors': ['Zenleaf LLC','Center Street Investments Inc.','Fluids Manufacturing Inc.'],
-        'days': ['Saturday'],
-        'discount': 0.50,
-        'kickback': 0.25,
-        'brands': ['TreeSap'],
-        'stores': ['LG']
+    'Doja': {
+        'vendors': ['Crown Genetics, LLC'],
+        'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
+        'discount': 0.30,
+        'kickback': 0.0,
+        'brands': ['Doja']
 
     },
 }
@@ -159,38 +158,95 @@ brand_criteria2 = {
         'days': ['Monday','Tuesday','Wednesday','Sunday'],
         'discount': 0.40,
         'kickback': 0.30,
-        'categories': ['Disposables', 'Cartridges', 'Gummies', 'Edibles'],
+        'categories': ['Disposables', 'Cartridges', 'Gummies', 'Edibles','Accessories'],
         'stores': ['NC'],
         'brands': ['Stiiizy']
-    # },
-    # 'WYLD/GoodTide': {
-    #     'vendors': ['2020 Long Beach LLC'],
-    #     'days': ['Friday','Saturday'],
-    #     'discount': 0.50,
-    #     'kickback': 0.25,
-    #     'brands': ['Wyld', 'Good Tide']
-    # },
-    # 'JeeterSV': {
-    #     'vendors': ['Med For America Inc.'],
-    #     'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
-    #     'discount': 0.50,
-    #     'kickback': 0.25,
-    #     #'categories': ['Pre-Rolls'],
-    #     'brands': ['Jeeter'],
-    #     #'include_phrases': ['Jeeter | BC LR Pre-Roll 1.3g','Jeeter | IN Pre-Roll 1g','Jeeter | IN Pre-Roll 2g','Jeeter | IN Pre-Rolls (5pk)','Jeeter | LE Pre-Roll 1g','Jeeter | IN Pre-Rolls 0.5g (5pk)'],
-    #     #'excluded_phrases': ['(3pk)','SVL']
-    },    
-    # 'Jeeter': {
-    #     'vendors': ['Med For America Inc.'],
-    #     'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
-    #     'discount': 0.0,
-    #     'kickback': 0.0,
-    #     #'categories': ['Pre-Rolls'],
-    #     'brands': ['Jeeter'],
-    #     #'include_phrases': ['LRO','2G','5pk','1G'],
-    #     #'excluded_phrases': ['(3pk)','SVL']
-    
-    # }
+    },
+        'LG-Stiiizy(THURS-SAT)': {
+        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC'],
+        'days': ['Thursday','Friday','Saturday'],
+        'discount': 0.40,
+        'kickback': 0.30,
+        'stores': ['LG'],
+        'brands': ['Stiiizy']
+    },
+    'LG-Stiiizy(SUN-WED)': {
+        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC'],
+        'days': ['Monday','Tuesday','Wednesday','Sunday'],
+        'discount': 0.40,
+        'kickback': 0.30,
+        'categories': ['Disposables', 'Cartridges', 'Gummies', 'Edibles','Accessories'],
+        'stores': ['LG'],
+        'brands': ['Stiiizy']
+    },
+        'LM-Stiiizy(THURS-SAT)': {
+        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC'],
+        'days': ['Thursday','Friday','Saturday'],
+        'discount': 0.40,
+        'kickback': 0.30,
+        'stores': ['LM'],
+        'brands': ['Stiiizy']
+    },
+    'LM-Stiiizy(SUN-WED)': {
+        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC'],
+        'days': ['Monday','Tuesday','Wednesday','Sunday'],
+        'discount': 0.40,
+        'kickback': 0.30,
+        'categories': ['Disposables', 'Cartridges', 'Gummies', 'Edibles','Accessories'],
+        'stores': ['LM'],
+        'brands': ['Stiiizy']
+    },
+        'WP-Stiiizy(THURS-SAT)': {
+        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC'],
+        'days': ['Thursday','Friday','Saturday'],
+        'discount': 0.20,
+        'kickback': 0.30,
+        'stores': ['WP'],
+        'brands': ['Stiiizy']
+    },
+    'WP-Stiiizy(SUN-WED)': {
+        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC'],
+        'days': ['Monday','Tuesday','Wednesday','Sunday'],
+        'discount': 0.20,
+        'kickback': 0.30,
+        'categories': ['Disposables', 'Cartridges', 'Gummies', 'Edibles','Accessories'],
+        'stores': ['WP'],
+        'brands': ['Stiiizy']
+    },
+        'SV-Stiiizy(THURS-SAT)': {
+        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC'],
+        'days': ['Thursday','Friday','Saturday'],
+        'discount': 0.40,
+        'kickback': 0.30,
+        'stores': ['SV'],
+        'brands': ['Stiiizy']
+    },
+    'SV-Stiiizy(SUN-WED)': {
+        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC'],
+        'days': ['Monday','Tuesday','Wednesday','Sunday'],
+        'discount': 0.40,
+        'kickback': 0.30,
+        'categories': ['Disposables', 'Cartridges', 'Gummies', 'Edibles','Accessories'],
+        'stores': ['SV'],
+        'brands': ['Stiiizy']
+    },
+        'MV-Stiiizy(THURS-SAT)': {
+        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC'],
+        'days': ['Thursday','Friday','Saturday'],
+        'discount': 0.40,
+        'kickback': 0.30,
+        'stores': ['MV'],
+        'brands': ['Stiiizy']
+    },
+    'MV-Stiiizy(SUN-WED)': {
+        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC'],
+        'days': ['Monday','Tuesday','Wednesday','Sunday'],
+        'discount': 0.40,
+        'kickback': 0.30,
+        'categories': ['Disposables', 'Cartridges', 'Gummies', 'Edibles','Accessories'],
+        'stores': ['MV'],
+        'brands': ['Stiiizy']
+    }
 }
 brand_criteria420 = {
     'Preferred': {
@@ -573,9 +629,9 @@ brand_criteria = {
     },  
     'COTC': { 
         'vendors': ["TERPX COTC/WCTC (Riverside)"],
-        'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
-        'discount': 0.50,
-        'kickback': 0.24,
+        'days': ['Wednesday','Thursday','Friday','Saturday','Sunday'],
+        'discount': 0.40,
+        'kickback': 0.0,
         #'categories': [''], 
         'brands': ["COTC |"]
     },  
@@ -593,6 +649,13 @@ brand_criteria = {
         'discount': 0.50,
         'kickback': 0.30,
         'brands': ['Master Makers |']
+    }, 
+    'Dixie': {
+        'vendors': ['Broadway Alliance, LLC'],
+        'days': ['Saturday','Thursday'],
+        'discount': 0.50,
+        'kickback': 0.30,
+        'brands': ['Dizie']
     }
     
 }
@@ -817,7 +880,7 @@ def run_deals_reports():
     results_for_app = []
 
     # For each brand, gather data from whichever stores are not empty
-    for brand, criteria in brand_criteria.items():
+    for brand, criteria in brand_criteria3.items():
         if not isinstance(criteria, dict) or 'vendors' not in criteria:
             print(f"[SKIP] Brand '{brand}' has missing or invalid criteria. Skipping.")
             continue
