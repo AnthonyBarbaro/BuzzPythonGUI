@@ -880,7 +880,7 @@ def run_deals_reports():
     results_for_app = []
 
     # For each brand, gather data from whichever stores are not empty
-    for brand, criteria in brand_criteria3.items():
+    for brand, criteria in brand_criteria2.items():
         if not isinstance(criteria, dict) or 'vendors' not in criteria:
             print(f"[SKIP] Brand '{brand}' has missing or invalid criteria. Skipping.")
             continue
@@ -1068,14 +1068,16 @@ def run_deals_reports():
                 return None, None
             return df['order time'].min(), df['order time'].max()
 
-        start_mv, end_mv = get_date_range(mv_brand_data)
-        start_lm, end_lm = get_date_range(lm_brand_data)
-        start_sv, end_sv = get_date_range(sv_brand_data)
-        start_lg, end_lg = get_date_range(lg_brand_data)
-        start_nc, end_nc = get_date_range(nc_brand_data)
-        start_wp, end_wp = get_date_range(wp_brand_data)
-        possible_starts = [d for d in [start_mv, start_lm, start_sv, start_lg, start_nc, start_wp] if d]
-        possible_ends = [d for d in [end_mv, end_lm, end_sv, end_lg, end_nc, end_wp] if d]
+        # Collect all store dataframes used for this brand
+        store_dfs = [
+            mv_brand_data, lm_brand_data, sv_brand_data,
+            lg_brand_data, nc_brand_data, wp_brand_data
+        ]
+
+        # Extract all valid start and end dates across non-empty DataFrames
+        possible_starts = [df['order time'].min() for df in store_dfs if not df.empty and 'order time' in df.columns]
+        possible_ends = [df['order time'].max() for df in store_dfs if not df.empty and 'order time' in df.columns]
+
         if not possible_starts or not possible_ends:
             print(f"DEBUG: Brand '{brand}' had data, but no valid date range. Skipping.")
             continue
