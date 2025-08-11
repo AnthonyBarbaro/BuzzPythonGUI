@@ -479,14 +479,14 @@ brand_criteria = {
     },
      'Time Machine': {
          'vendors': ['Vino & Cigarro, LLC','Garden Of Weeden Inc.','KIVA / LCISM CORP'],
-         'days': ['Friday'],
+         'days': ['Tuesday','Friday'],
          'discount': 0.50,
          'kickback': 0.25,
          'brands': ['Time Machine']
      },
      'Pacific Stone': {
          'vendors': ['Vino & Cigarro, LLC','KIVA / LCISM CORP', 'Garden Of Weeden Inc.','Pacific Stone'],
-         'days': ['Thursday'],
+         'days': ['Monday','Thursday'],
          'discount': 0.50,
          'kickback': 0.25,
          'brands': ['Pacific Stone']
@@ -513,7 +513,7 @@ brand_criteria = {
         'brands': ['Wyld', 'Good Tide']
     },
     'Jetty': {
-        'vendors': ['KIVA / LCISM CORP', 'Vino & Cigarro, LLC','Garden Of Weeden Inc.'],
+        'vendors': ['KIVA / LCISM CORP', 'Vino & Cigarro, LLC','Garden Of Weeden Inc.','Garden Of Weeden'],
         'days': ['Thursday'],
         'discount': 0.50,
         'kickback': 0.25,
@@ -575,7 +575,7 @@ brand_criteria = {
         'vendors': ['Garden Of Weeden Inc.'],
         'days': ['Friday','Saturday'],
         'discount': 0.50,
-        'kickback': 0.30,
+        'kickback': 0.0,
         #'categories': [''], 
         'brands': ['Turn |']
     }, 
@@ -651,12 +651,19 @@ brand_criteria = {
         'brands': ['Master Makers |']
     }, 
     'Dixie': {
-        'vendors': ['Broadway Alliance, LLC'],
+        'vendors': ['Broadway Alliance, LLC','BRB California LLC', 'Garden Of Weeden Inc.'],
         'days': ['Saturday','Thursday'],
         'discount': 0.50,
         'kickback': 0.30,
-        'brands': ['Dizie']
-    }
+        'brands': ['Dixie']
+    },
+    "710": {
+        'vendors': [''],
+        'days': ['Monday'],
+        'discount': 0.50,
+        'kickback': 0.30,
+        'brands': ['710']
+    },
     
 }
 
@@ -880,7 +887,7 @@ def run_deals_reports():
     results_for_app = []
 
     # For each brand, gather data from whichever stores are not empty
-    for brand, criteria in brand_criteria2.items():
+    for brand, criteria in brand_criteria.items():
         if not isinstance(criteria, dict) or 'vendors' not in criteria:
             print(f"[SKIP] Brand '{brand}' has missing or invalid criteria. Skipping.")
             continue

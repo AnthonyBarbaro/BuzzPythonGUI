@@ -54,6 +54,7 @@ def launchBrowser():
 
     chrome_options = Options()
     chrome_options.add_argument("start-maximized")
+    #chrome_options.add_argument("--headless=new")
     chrome_options.add_experimental_option("detach", True)
     chrome_options.add_experimental_option('excludeSwitches', ['enable-logging'])
 
@@ -87,7 +88,7 @@ def click_dropdown():
         dropdown = wait.until(EC.element_to_be_clickable((By.XPATH, dropdown_xpath)))
         driver.execute_script("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", dropdown)
         dropdown.click()
-        time.sleep(1)  # Small delay to allow options to load
+        time.sleep(2)  # Small delay to allow options to load
     except TimeoutException:
         print("Dropdown not found or not clickable")
 
@@ -188,7 +189,7 @@ def wait_until_file_is_stable(file_path, stable_time=2, max_wait=30):
         last_size = current_size
         if time.time() - start_time > max_wait:
             return False
-        time.sleep(0.5)
+        time.sleep(1)
 
 def clickActionsAndExport(current_store):
     try:
