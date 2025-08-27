@@ -135,13 +135,12 @@ def apply_discounts_and_kickbacks(data, discount, kickback):
     return data
 #Month to month
 brand_criteria3 = {
-    'Doja': {
-        'vendors': ['Crown Genetics, LLC'],
-        'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
-        'discount': 0.30,
-        'kickback': 0.0,
-        'brands': ['Doja']
-
+    'WYLD/GoodTide': {
+        'vendors': ['2020 Long Beach LLC'],
+        'days': ['Friday','Saturday'],
+        'discount': 0.50,
+        'kickback': 0.25,
+        'brands': ['Wyld', 'Good Tide']
     },
 }
 brand_criteria2 = {
@@ -444,7 +443,7 @@ brand_criteria = {
         'kickback': 0.23,
         'categories': ['Pre-Rolls'],
         'brands': ['Jeeter'],
-        'include_phrases': ['LRO','2G','5pk','1G','2g','1g','BC LR Pre-Roll 1.3g','BC LR Pre-Roll 1.3g'],
+        #'include_phrases': ['LRO','2G','5pk','1G','2g','1g','BC LR Pre-Roll 1.3g','BC LR Pre-Roll 1.3g'],
         #'excluded_phrases': ['(3pk)','SVL']
         #'stores': ['MV','LM','LG']
     },    
@@ -658,7 +657,7 @@ brand_criteria = {
         'brands': ['Dixie']
     },
     "710": {
-        'vendors': [''],
+        'vendors': ['Fluids Manufacturing Inc.'],
         'days': ['Monday'],
         'discount': 0.50,
         'kickback': 0.30,
