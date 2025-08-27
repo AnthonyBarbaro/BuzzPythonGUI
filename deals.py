@@ -663,6 +663,21 @@ brand_criteria = {
         'kickback': 0.30,
         'brands': ['710']
     },
+    "Blem": {
+        'vendors': ['SSAL HORTICULTURE LLC'],
+        'days': ['Friday'],
+        'discount': 0.50,
+        'kickback': 0.30,
+        'brands': ['BLEM']
+    },
+    # "TreeSap PAD": {
+    #     'vendors': ['Center Street Investments Inc.'],
+    #     'days': ['Friday'],
+    #     'discount': 0.50,
+    #     'kickback': 0.25,
+    #     'stores': "MV",
+    #     'brands': ['Treesap']
+    # },
     
 }
 

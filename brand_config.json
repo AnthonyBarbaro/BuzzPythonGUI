@@ -53,10 +53,9 @@
         "Royal Blunts",
         "Snowtill",
         "SunSmoke",
-        "High Desert Pure",
-        "Black Pearl"
+        "Sinless"
       ],
-      "folder_name": "Moon Valley / Park Jams / Coastal Sun / Quiet Kings / Permanent Holiday / Royal Blunts / Snowtill / Sunsmoke / High Desert Pure / Black Pearl",
+      "folder_name": "Moon Valley / Park Jams / Coastal Sun / Quiet Kings / Permanent Holiday / Royal Blunts / Snowtill / Sunsmoke / Sinless",
       "rep": "Conor",
       "emails": ["conorjloughman@gmail.com","donna@buzzcannabis.com"],
       "days": ["Monday"],
@@ -491,6 +490,23 @@
       "emails": ["donna@buzzcannabis.com"],
       "days": ["Monday"],
       "location": "MV/LM/SV"
-    }
+    },  
+  { "brand_synonyms": ["BLEM"], "folder_name": "BLEM", "emails": ["donna@buzzcannabis.com"], "days": ["Monday"] },
+  { "brand_synonyms": ["Ball Family Farms"], "folder_name": "Ball Family Farms", "emails": ["donna@buzzcannabis.com"], "days": ["Monday"] },
+  { "brand_synonyms": ["Blue Print"], "folder_name": "Blue Print", "emails": ["donna@buzzcannabis.com"], "days": ["Monday"] },
+  { "brand_synonyms": ["Cannabiotix (CBX)","Heirbloom"], "folder_name": "Cannabiotix (CBX/Heirbloom)", "emails": ["donna@buzzcannabis.com"], "days": ["Monday"] },
+  { "brand_synonyms": ["Cizi"], "folder_name": "Cizi", "emails": ["donna@buzzcannabis.com"], "days": ["Monday"] },
+  { "brand_synonyms": ["Claybourne Co."], "folder_name": "Claybourne Co.", "emails": ["donna@buzzcannabis.com"], "days": ["Monday"] },
+  { "brand_synonyms": ["Emerald Sky"], "folder_name": "Emerald Sky", "emails": ["donna@buzzcannabis.com"], "days": ["Monday"] },
+  { "brand_synonyms": ["Gotti"], "folder_name": "Gotti", "emails": ["donna@buzzcannabis.com"], "days": ["Monday"] },
+  { "brand_synonyms": ["Kikoko"], "folder_name": "Kikoko", "emails": ["donna@buzzcannabis.com"], "days": ["Monday"] },
+  { "brand_synonyms": ["Lift Tickets"], "folder_name": "Lift Tickets", "emails": ["donna@buzzcannabis.com"], "days": ["Monday"] },
+  { "brand_synonyms": ["Made"], "folder_name": "Made", "emails": ["donna@buzzcannabis.com"], "days": ["Monday"] },
+  { "brand_synonyms": ["Master Maker"], "folder_name": "Master Maker", "emails": ["donna@buzzcannabis.com"], "days": ["Monday"] },
+  { "brand_synonyms": ["Nasha"], "folder_name": "Nasha", "emails": ["donna@buzzcannabis.com"], "days": ["Monday"] },
+  { "brand_synonyms": ["Planta"], "folder_name": "Planta", "emails": ["donna@buzzcannabis.com"], "days": ["Monday"] },
+  { "brand_synonyms": ["Pure Beauty"], "folder_name": "Pure Beauty", "emails": ["donna@buzzcannabis.com"], "days": ["Monday"] },
+  { "brand_synonyms": ["Seed Junky"], "folder_name": "Seed Junky", "emails": ["donna@buzzcannabis.com"], "days": ["Monday"] },
+  { "brand_synonyms": ["TAGS"], "folder_name": "TAGS", "emails": ["donna@buzzcannabis.com"], "days": ["Monday"] }
   ]
 }
