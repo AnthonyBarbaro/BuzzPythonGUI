@@ -135,13 +135,24 @@ def apply_discounts_and_kickbacks(data, discount, kickback):
     return data
 #Month to month
 brand_criteria3 = {
-    'WYLD/GoodTide': {
-        'vendors': ['2020 Long Beach LLC'],
-        'days': ['Friday','Saturday'],
+ 
+    'Mary Medical-OLD': { 
+        'vendors': ["Mary's Tech CA, Inc.",'BRB California LLC', 'Garden Of Weeden Inc.', 'Broadway Alliance, LLC'],
+        'days': ['Monday','Tuesday'],
         'discount': 0.50,
-        'kickback': 0.25,
-        'brands': ['Wyld', 'Good Tide']
-    },
+        'kickback': 0.30,
+        #'categories': [''], 
+        'brands': ["Mary's Medicinals |"]
+    }, 
+     
+    'Mary Medical': { 
+        'vendors': ["Mary's Tech CA, Inc.",'BRB California LLC', 'Garden Of Weeden Inc.', 'Broadway Alliance, LLC'],
+        'days': ['Thursday'],
+        'discount': 0.50,
+        'kickback': 0.30,
+        #'categories': [''], 
+        'brands': ["Mary's Medicinals |"]
+    }, 
 }
 brand_criteria2 = {
     'NC-Stiiizy(THURS-SAT)': {
@@ -438,7 +449,8 @@ brand_criteria = {
     },
     'Jeeter': {
         'vendors': ['Med For America Inc.'],
-        'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
+        #'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
+        'days': ['Monday','Tuesday','Wednesday','Thursday'],
         'discount': 0.40,
         'kickback': 0.23,
         'categories': ['Pre-Rolls'],
@@ -457,14 +469,14 @@ brand_criteria = {
     'BigPetes': {
         'vendors': ["Big Pete's | LCISM Corp","Vino & Cigarro, LLC",'Garden Of Weeden Inc.'],
         'days': ['Tuesday'],
-        'discount': 0.50,
+        'discount': 0.50, #LAST WEEK 8/31
         'kickback': 0.25,
         'brands': ['Big Pete']
     },
     'HolySmoke/Water': {
         'vendors': ['Heritage Holding of Califonia, Inc.', 'Barlow Printing LLC','Hilife LM'],
         'days': ['Sunday'],
-        'discount': 0.50,
+        'discount': 0.50, #LAST WEEK 8/31
         'kickback': 0.25,
         'brands': ['Holy Smokes', 'Holy Water']
     },
@@ -523,7 +535,7 @@ brand_criteria = {
     'Dr.Norm': {
         'vendors': ['Punch Media, LLC'],
         'days': ['Thursday'],
-        'discount': 0.50,
+        'discount': 0.50, #LAST WEEK 8/31
         'kickback': 0.25,
         'brands': ['Dr. Norms']
     },
@@ -531,7 +543,7 @@ brand_criteria = {
         'vendors': ['Garden Of Weeden Inc.','Garden Of Weeden'],
         'days': ['Sunday'],
         'discount': 0.50,
-        'kickback': 0.25,
+        'kickback': 0.25,  #LAST WEEK 8/31
         'brands': ['Smokies']
     },
     'Preferred': {
@@ -612,7 +624,7 @@ brand_criteria = {
     }, 
     'Mary Medical': { 
         'vendors': ["Mary's Tech CA, Inc.",'BRB California LLC', 'Garden Of Weeden Inc.', 'Broadway Alliance, LLC'],
-        'days': ['Monday','Tuesday'],
+        'days': ['Thursday'],
         'discount': 0.50,
         'kickback': 0.30,
         #'categories': [''], 
@@ -659,25 +671,28 @@ brand_criteria = {
     "710": {
         'vendors': ['Fluids Manufacturing Inc.'],
         'days': ['Monday'],
-        'discount': 0.50,
+        'discount': 0.50, #9/8 last day
         'kickback': 0.30,
         'brands': ['710']
     },
     "Blem": {
         'vendors': ['SSAL HORTICULTURE LLC'],
-        'days': ['Friday'],
+        'days': ['Thursday','Friday','Saturday'],
         'discount': 0.50,
         'kickback': 0.30,
         'brands': ['BLEM']
-    },
-    # "TreeSap PAD": {
-    #     'vendors': ['Center Street Investments Inc.'],
-    #     'days': ['Friday'],
-    #     'discount': 0.50,
-    #     'kickback': 0.25,
-    #     'stores': "MV",
-    #     'brands': ['Treesap']
-    # },
+    },'Jeeter': {
+        'vendors': ['Med For America Inc.'],
+        #'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
+        'days': ['Friday','Saturday','Sunday'],
+        'discount': 0.50,
+        'kickback': 0.30,
+        #'categories': ['Pre-Rolls'],
+        'brands': ['Jeeter'],
+        #'include_phrases': ['LRO','2G','5pk','1G','2g','1g','BC LR Pre-Roll 1.3g','BC LR Pre-Roll 1.3g'],
+        #'excluded_phrases': ['(3pk)','SVL']
+        #'stores': ['MV','LM','LG']
+    },    
     
 }
 
@@ -901,7 +916,7 @@ def run_deals_reports():
     results_for_app = []
 
     # For each brand, gather data from whichever stores are not empty
-    for brand, criteria in brand_criteria.items():
+    for brand, criteria in brand_criteria3.items():
         if not isinstance(criteria, dict) or 'vendors' not in criteria:
             print(f"[SKIP] Brand '{brand}' has missing or invalid criteria. Skipping.")
             continue
