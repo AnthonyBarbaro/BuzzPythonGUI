@@ -135,28 +135,17 @@ def apply_discounts_and_kickbacks(data, discount, kickback):
     return data
 #Month to month
 brand_criteria3 = {
- 
-    'Mary Medical-OLD': { 
-        'vendors': ["Mary's Tech CA, Inc.",'BRB California LLC', 'Garden Of Weeden Inc.', 'Broadway Alliance, LLC'],
-        'days': ['Monday','Tuesday'],
+       "P&B": {
+        'vendors': ['Fluids Manufacturing Inc.'],
+        'days': ['Sunday','Tuesday'],
         'discount': 0.50,
         'kickback': 0.30,
-        #'categories': [''], 
-        'brands': ["Mary's Medicinals |"]
-    }, 
-     
-    'Mary Medical': { 
-        'vendors': ["Mary's Tech CA, Inc.",'BRB California LLC', 'Garden Of Weeden Inc.', 'Broadway Alliance, LLC'],
-        'days': ['Thursday'],
-        'discount': 0.50,
-        'kickback': 0.30,
-        #'categories': [''], 
-        'brands': ["Mary's Medicinals |"]
-    }, 
+        'brands': ['P&B |']
+    },
 }
 brand_criteria2 = {
     'NC-Stiiizy(THURS-SAT)': {
-        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC'],
+        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC','SGI Jackson LLC'],
         'days': ['Thursday','Friday','Saturday'],
         'discount': 0.40,
         'kickback': 0.30,
@@ -164,7 +153,7 @@ brand_criteria2 = {
         'brands': ['Stiiizy']
     },
     'NC-Stiiizy(SUN-WED)': {
-        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC'],
+        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC','SGI Jackson LLC'],
         'days': ['Monday','Tuesday','Wednesday','Sunday'],
         'discount': 0.40,
         'kickback': 0.30,
@@ -173,7 +162,7 @@ brand_criteria2 = {
         'brands': ['Stiiizy']
     },
         'LG-Stiiizy(THURS-SAT)': {
-        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC'],
+        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC','SGI Jackson LLC'],
         'days': ['Thursday','Friday','Saturday'],
         'discount': 0.40,
         'kickback': 0.30,
@@ -181,7 +170,7 @@ brand_criteria2 = {
         'brands': ['Stiiizy']
     },
     'LG-Stiiizy(SUN-WED)': {
-        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC'],
+        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC','SGI Jackson LLC'],
         'days': ['Monday','Tuesday','Wednesday','Sunday'],
         'discount': 0.40,
         'kickback': 0.30,
@@ -190,7 +179,7 @@ brand_criteria2 = {
         'brands': ['Stiiizy']
     },
         'LM-Stiiizy(THURS-SAT)': {
-        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC'],
+        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC','SGI Jackson LLC'],
         'days': ['Thursday','Friday','Saturday'],
         'discount': 0.40,
         'kickback': 0.30,
@@ -198,7 +187,7 @@ brand_criteria2 = {
         'brands': ['Stiiizy']
     },
     'LM-Stiiizy(SUN-WED)': {
-        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC'],
+        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC','SGI Jackson LLC'],
         'days': ['Monday','Tuesday','Wednesday','Sunday'],
         'discount': 0.40,
         'kickback': 0.30,
@@ -207,7 +196,7 @@ brand_criteria2 = {
         'brands': ['Stiiizy']
     },
         'WP-Stiiizy(THURS-SAT)': {
-        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC'],
+        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC','SGI Jackson LLC'],
         'days': ['Thursday','Friday','Saturday'],
         'discount': 0.20,
         'kickback': 0.30,
@@ -215,7 +204,7 @@ brand_criteria2 = {
         'brands': ['Stiiizy']
     },
     'WP-Stiiizy(SUN-WED)': {
-        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC'],
+        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC','SGI Jackson LLC'],
         'days': ['Monday','Tuesday','Wednesday','Sunday'],
         'discount': 0.20,
         'kickback': 0.30,
@@ -224,7 +213,7 @@ brand_criteria2 = {
         'brands': ['Stiiizy']
     },
         'SV-Stiiizy(THURS-SAT)': {
-        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC'],
+        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC','SGI Jackson LLC'],
         'days': ['Thursday','Friday','Saturday'],
         'discount': 0.40,
         'kickback': 0.30,
@@ -232,7 +221,7 @@ brand_criteria2 = {
         'brands': ['Stiiizy']
     },
     'SV-Stiiizy(SUN-WED)': {
-        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC'],
+        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC','SGI Jackson LLC'],
         'days': ['Monday','Tuesday','Wednesday','Sunday'],
         'discount': 0.40,
         'kickback': 0.30,
@@ -241,7 +230,7 @@ brand_criteria2 = {
         'brands': ['Stiiizy']
     },
         'MV-Stiiizy(THURS-SAT)': {
-        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC'],
+        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC','SGI Jackson LLC'],
         'days': ['Thursday','Friday','Saturday'],
         'discount': 0.40,
         'kickback': 0.30,
@@ -249,7 +238,7 @@ brand_criteria2 = {
         'brands': ['Stiiizy']
     },
     'MV-Stiiizy(SUN-WED)': {
-        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC'],
+        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC','SGI Jackson LLC'],
         'days': ['Monday','Tuesday','Wednesday','Sunday'],
         'discount': 0.40,
         'kickback': 0.30,
@@ -449,8 +438,8 @@ brand_criteria = {
     },
     'Jeeter': {
         'vendors': ['Med For America Inc.'],
-        #'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
-        'days': ['Monday','Tuesday','Wednesday','Thursday'],
+        'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
+        #'days': ['Monday','Tuesday','Wednesday','Thursday'],
         'discount': 0.40,
         'kickback': 0.23,
         'categories': ['Pre-Rolls'],
@@ -466,20 +455,20 @@ brand_criteria = {
         'kickback': 0.25,
         'brands': ['Terra', 'Petra', 'KIVA', 'Lost Farms', 'Camino']
     },
-    'BigPetes': {
-        'vendors': ["Big Pete's | LCISM Corp","Vino & Cigarro, LLC",'Garden Of Weeden Inc.'],
-        'days': ['Tuesday'],
-        'discount': 0.50, #LAST WEEK 8/31
-        'kickback': 0.25,
-        'brands': ['Big Pete']
-    },
-    'HolySmoke/Water': {
-        'vendors': ['Heritage Holding of Califonia, Inc.', 'Barlow Printing LLC','Hilife LM'],
-        'days': ['Sunday'],
-        'discount': 0.50, #LAST WEEK 8/31
-        'kickback': 0.25,
-        'brands': ['Holy Smokes', 'Holy Water']
-    },
+    # 'BigPetes': {
+    #     'vendors': ["Big Pete's | LCISM Corp","Vino & Cigarro, LLC",'Garden Of Weeden Inc.'],
+    #     'days': ['Tuesday'],
+    #     'discount': 0.50, #LAST WEEK 8/31
+    #     'kickback': 0.25,
+    #     'brands': ['Big Pete']
+    # },
+    # 'HolySmoke/Water': {
+    #     'vendors': ['Heritage Holding of Califonia, Inc.', 'Barlow Printing LLC','Hilife LM'],
+    #     'days': ['Sunday'],
+    #     'discount': 0.50, #LAST WEEK 8/31
+    #     'kickback': 0.25,
+    #     'brands': ['Holy Smokes', 'Holy Water']
+    # },
     'Dabwoods': {
         'vendors': ['The Clear Group Inc.','Decoi','Garden Of Weeden Inc.'],
         'days': ['Friday','Saturday'],
@@ -532,20 +521,20 @@ brand_criteria = {
         'include_phrases': ['SVL','ULR',],
         'brands': ['Jetty']
     },
-    'Dr.Norm': {
-        'vendors': ['Punch Media, LLC'],
-        'days': ['Thursday'],
-        'discount': 0.50, #LAST WEEK 8/31
-        'kickback': 0.25,
-        'brands': ['Dr. Norms']
-    },
-    'Smokiez': {
-        'vendors': ['Garden Of Weeden Inc.','Garden Of Weeden'],
-        'days': ['Sunday'],
-        'discount': 0.50,
-        'kickback': 0.25,  #LAST WEEK 8/31
-        'brands': ['Smokies']
-    },
+    # 'Dr.Norm': {
+    #     'vendors': ['Punch Media, LLC'],
+    #     'days': ['Thursday'],
+    #     'discount': 0.50, #LAST WEEK 8/31
+    #     'kickback': 0.25,
+    #     'brands': ['Dr. Norms']
+    # },
+    # 'Smokiez': {
+    #     'vendors': ['Garden Of Weeden Inc.','Garden Of Weeden'],
+    #     'days': ['Sunday'],
+    #     'discount': 0.50,
+    #     'kickback': 0.25,  #LAST WEEK 8/31
+    #     'brands': ['Smokies']
+    # },
     'Preferred': {
         'vendors': ['Garden Of Weeden Inc.','Helios | Hypeereon Corporation'],
         'days': ['Monday','Wednesday'],
@@ -640,7 +629,7 @@ brand_criteria = {
     },  
     'COTC': { 
         'vendors': ["TERPX COTC/WCTC (Riverside)"],
-        'days': ['Wednesday','Thursday','Friday','Saturday','Sunday'],
+        'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
         'discount': 0.40,
         'kickback': 0.0,
         #'categories': [''], 
@@ -681,18 +670,16 @@ brand_criteria = {
         'discount': 0.50,
         'kickback': 0.30,
         'brands': ['BLEM']
-    },'Jeeter': {
-        'vendors': ['Med For America Inc.'],
-        #'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
-        'days': ['Friday','Saturday','Sunday'],
+    },
+       "P&B": {
+        'vendors': ['Fluids Manufacturing Inc.'],
+        'days': ['Sunday','Tuesday'],
         'discount': 0.50,
         'kickback': 0.30,
-        #'categories': ['Pre-Rolls'],
-        'brands': ['Jeeter'],
-        #'include_phrases': ['LRO','2G','5pk','1G','2g','1g','BC LR Pre-Roll 1.3g','BC LR Pre-Roll 1.3g'],
-        #'excluded_phrases': ['(3pk)','SVL']
-        #'stores': ['MV','LM','LG']
-    },    
+        'brands': ['P&B |']
+    },
+    #PABST NYF PBR ST DES 50% 50%
+    #P&B 
     
 }
 
