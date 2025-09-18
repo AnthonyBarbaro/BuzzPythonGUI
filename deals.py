@@ -249,7 +249,7 @@ brand_criteria2 = {
 }
 brand_criteria420 = {
     'Preferred': {
-        'vendors': ['Garden Of Weeden Inc.','Helios | Hypeereon Corporation'],
+        'vendors': ['Garden Of Weeden Inc.','Helios | Hypeereon Corporation','Garden Of Weeden'],
         'days': ['Thursday'],
         'discount': 0.50,
         'kickback': 0.30,
@@ -449,7 +449,7 @@ brand_criteria = {
         #'stores': ['MV','LM','LG']
     },    
     'Kiva': {
-        'vendors': ['KIVA / LCISM CORP', 'Vino & Cigarro, LLC','Garden Of Weeden Inc.'],
+        'vendors': ['KIVA / LCISM CORP', 'Vino & Cigarro, LLC','Garden Of Weeden Inc.','PuffCo'],
         'days': ['Monday','Wednesday'],
         'discount': 0.50,
         'kickback': 0.25,
@@ -470,7 +470,7 @@ brand_criteria = {
     #     'brands': ['Holy Smokes', 'Holy Water']
     # },
     'Dabwoods': {
-        'vendors': ['The Clear Group Inc.','Decoi','Garden Of Weeden Inc.'],
+        'vendors': ['The Clear Group Inc.','Decoi','Garden Of Weeden Inc.','Garden Of Weeden'],
         'days': ['Friday','Saturday'],
         'discount': 0.50,
         'kickback': 0.25,
@@ -536,11 +536,11 @@ brand_criteria = {
     #     'brands': ['Smokies']
     # },
     'Preferred': {
-        'vendors': ['Garden Of Weeden Inc.','Helios | Hypeereon Corporation'],
+        'vendors': ['Garden Of Weeden Inc.','Helios | Hypeereon Corporation','Garden Of Weeden'],
         'days': ['Monday','Wednesday'],
         'discount': 0.50,
         'kickback': 0.25,
-        'brands': ['Preferred Gardens',]
+        'brands': ['Preferred Gardens']
     },
     'Kikoko': {
         'vendors': ['Garden Of Weeden Inc.'],
@@ -571,14 +571,14 @@ brand_criteria = {
         #'categories': [''], 
         'brands': ['Made |']
     }, 
-      'Turn': { 
-        'vendors': ['Garden Of Weeden Inc.'],
-        'days': ['Friday','Saturday'],
-        'discount': 0.50,
-        'kickback': 0.0,
-        #'categories': [''], 
-        'brands': ['Turn |']
-    }, 
+    #   'Turn': { 
+    #     'vendors': ['Garden Of Weeden Inc.'],
+    #     'days': ['Friday','Saturday'],
+    #     'discount': 0.50,
+    #     'kickback': 0.0,
+    #     #'categories': [''], 
+    #     'brands': ['Turn |']
+    # }, 
       'Eureka': { 
         'vendors': ['Light Box Leasing Corp.'],
         'days': ['Monday','Tuesday'],
@@ -636,7 +636,7 @@ brand_criteria = {
         'brands': ["COTC |"]
     },  
     'Cam': { #OFF INVOICE
-        'vendors': ["California Artisanal Medicine (CAM)"],
+        'vendors': ["California Artisanal Medicine (CAM)",'Garden Of Weeden Inc.'],
         'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
         'discount': 0.40,
         'kickback': 0.0,
@@ -660,13 +660,13 @@ brand_criteria = {
     "710": {
         'vendors': ['Fluids Manufacturing Inc.'],
         'days': ['Monday'],
-        'discount': 0.50, #9/8 last day
+        'discount': 0.50, #9/31 last day
         'kickback': 0.30,
         'brands': ['710']
     },
     "Blem": {
         'vendors': ['SSAL HORTICULTURE LLC'],
-        'days': ['Thursday','Friday','Saturday'],
+        'days': ['Thursday'],
         'discount': 0.50,
         'kickback': 0.30,
         'brands': ['BLEM']
@@ -679,8 +679,27 @@ brand_criteria = {
         'brands': ['P&B |']
     },
     #PABST NYF PBR ST DES 50% 50%
-    #P&B 
-    
+    "PBR-NYF-STIDES": {
+        'vendors': ['Garden Of Weeden','Garden Of Weeden Inc.'],
+        'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
+        'discount': 0.50,
+        'kickback': 0.50,
+        'brands': ['NYF |','PBR |','St. Ides |'],
+    },   
+    "Drops": {
+        'vendors': ['Garden Of Weeden','Garden Of Weeden Inc.'],
+        'days': ['Sunday'],
+        'discount': 0.50,
+        'kickback': 0.30,
+        'brands': ['Drops | ']
+    },
+    "SeedJunky": {
+        'vendors': ['Seed Junky | LCISM Corp','Garden Of Weeden Inc.'],
+        'days': ['Sunday'],
+        'discount': 0.50,
+        'kickback': 0.30,
+        'brands': ['Seed Junky']
+    },
 }
 
 def style_summary_sheet(sheet, brand_name):
@@ -903,7 +922,7 @@ def run_deals_reports():
     results_for_app = []
 
     # For each brand, gather data from whichever stores are not empty
-    for brand, criteria in brand_criteria3.items():
+    for brand, criteria in brand_criteria.items():
         if not isinstance(criteria, dict) or 'vendors' not in criteria:
             print(f"[SKIP] Brand '{brand}' has missing or invalid criteria. Skipping.")
             continue
