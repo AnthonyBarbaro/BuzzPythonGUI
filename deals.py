@@ -651,7 +651,7 @@ brand_criteria = {
         'brands': ['Master Makers |']
     }, 
     'Dixie': {
-        'vendors': ['Broadway Alliance, LLC','BRB California LLC', 'Garden Of Weeden Inc.'],
+        'vendors': ['Broadway Alliance, LLC','BRB California LLC', 'Garden Of Weeden Inc.','Hilife Group MV , LLC'],
         'days': ['Saturday','Thursday'],
         'discount': 0.50,
         'kickback': 0.30,
@@ -699,6 +699,13 @@ brand_criteria = {
         'discount': 0.50,
         'kickback': 0.30,
         'brands': ['Seed Junky']
+    },
+        "KEEF": {
+        'vendors': ['Vino & Cigarro, LLC','Garden Of Weeden Inc.'],
+        'days': ['Tuesday','Wednesday'],
+        'discount': 0.50,
+        'kickback': 0.30,
+        'brands': ['Keef']
     },
 }
 

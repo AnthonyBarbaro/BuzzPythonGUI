@@ -304,7 +304,7 @@ def extract_strain_type(product_name):
     return ""
 
 # ----------------- CSV -> XLSX: Avail + Unavail -----------------
-def generate_brand_reports(csv_path, out_dir, selected_brands):
+def generate_brand_reports(csv_path, out_dir, selected_brands, include_cost=True):
     """
     Splits CSV rows into:
       - Available: Available>2
@@ -335,7 +335,12 @@ def generate_brand_reports(csv_path, out_dir, selected_brands):
     # Split into available/unavailable
     unavailable_df = df[df["Available"] <= MAX_AVAIL_FOR_UNAVAILABLE]
     available_df = df[df["Available"] > MAX_AVAIL_FOR_UNAVAILABLE]
-
+     # Drop Cost column if disabled
+    if not include_cost:
+        if "Cost" in available_df.columns:
+            available_df.drop(columns=["Cost"], inplace=True)
+        if "Cost" in unavailable_df.columns:
+            unavailable_df.drop(columns=["Cost"], inplace=True)
     if "Brand" not in available_df.columns or available_df.empty:
         print(f"[INFO] No brand data or empty after filtering in '{csv_path}'")
         return {}
@@ -362,7 +367,7 @@ def generate_brand_reports(csv_path, out_dir, selected_brands):
     sort_cols = []
     if "Category" in available_df.columns:
         sort_cols.append("Category")
-    if "Cost" in available_df.columns:
+    if include_cost  and "Cost" in available_df.columns:
         available_df["Cost"] = pd.to_numeric(available_df["Cost"], errors="coerce")
         sort_cols.append("Cost")
     if "Product" in available_df.columns:
@@ -370,11 +375,11 @@ def generate_brand_reports(csv_path, out_dir, selected_brands):
     if sort_cols:
         available_df.sort_values(by=sort_cols, inplace=True, na_position="last")
 
-    # Drop "Cost"
-    if "Cost" in available_df.columns:
-        available_df.drop(columns=["Cost"], inplace=True)
-    if "Cost" in unavailable_df.columns:
-        unavailable_df = unavailable_df.drop(columns=["Cost"])
+    # # Drop "Cost"
+    # if "Cost" in available_df.columns:
+    #     available_df.drop(columns=["Cost"], inplace=True)
+    # if "Cost" in unavailable_df.columns:
+    #     unavailable_df = unavailable_df.drop(columns=["Cost"])
 
     # Also normalize brand in the unavailable set
     if "Brand" in unavailable_df.columns and not unavailable_df.empty:
@@ -499,7 +504,14 @@ class BrandInventoryGUI:
         row5.pack(pady=5, fill="x")
         tk.Label(row5, text="Email(s) (comma-separated):").pack(anchor="w")
         tk.Entry(row5, textvariable=self.emails_var, width=60, relief="solid", bd=1).pack()
-
+        # Row 5b: Cost toggle
+        self.include_cost_var = tk.BooleanVar(value=True)
+        tk.Checkbutton(
+           row5,
+           text="Include Cost Column",
+           variable=self.include_cost_var,
+           bg="#f5f5f5"
+       ).pack(anchor="w", pady=3)
         # Row 6: final run
         row6 = tk.Frame(self.frame)
         row6.pack(pady=1)
@@ -703,7 +715,7 @@ class BrandInventoryGUI:
             for fname in os.listdir(in_dir):
                 if fname.lower().endswith(".csv"):
                     path = os.path.join(in_dir, fname)
-                    brand_map = generate_brand_reports(path, out_dir, selected_brands)
+                    brand_map = generate_brand_reports( path, out_dir, selected_brands, include_cost=self.include_cost_var.get())
                     # Merge
                     for b_name, xlsx_list in brand_map.items():
                         if b_name not in all_brand_map:
