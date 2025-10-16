@@ -135,12 +135,12 @@ def apply_discounts_and_kickbacks(data, discount, kickback):
     return data
 #Month to month
 brand_criteria3 = {
-       "P&B": {
-        'vendors': ['Fluids Manufacturing Inc.'],
-        'days': ['Sunday','Tuesday'],
-        'discount': 0.50,
-        'kickback': 0.30,
-        'brands': ['P&B |']
+       "KANHA": {
+        'vendors': ['Sunderstorm Bay LLC.'],
+        'days': ['Sunday','Thursday'],
+        'discount': 0.30,
+        'kickback': 0.0,
+        'brands': ['KANHA']
     },
 }
 brand_criteria2 = {
@@ -247,66 +247,14 @@ brand_criteria2 = {
         'brands': ['Stiiizy']
     }
 }
-brand_criteria420 = {
-    'Preferred': {
-        'vendors': ['Garden Of Weeden Inc.','Helios | Hypeereon Corporation','Garden Of Weeden'],
-        'days': ['Thursday'],
+brand_criteria00 = {
+    'Kushy': {
+        'vendors': ['Garden Of Weeden Inc.', 'Varavo'],
+        'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
+        'categories': ['Edibles'],
         'discount': 0.50,
-        'kickback': 0.30,
-        'brands': ['Preferred Gardens',]
-    }, 
-    'Cake': { 
-        'vendors': ['ThirtyOne Labs, LLC'],
-        'days': ['Thursday'],
-        'discount': 0.50,
-        'kickback': 0.13,
-        'brands': ['Cake |']
-    },
-    'Uncle Arnies': { #OFF INVOICE
-        'vendors': ['KIVA / LCISM CORP'],
-        'days': ['Thursday'],
-        'discount': 0.50,
-        'kickback': 0.30,
-        'brands': ["Uncle Arnie's |"]
-
-    }, 
-    'Raw Garden': {
-        'vendors': ['Garden Of Weeden Inc.'],
-        'days': ['Thursday'],
-        'discount': 0.50,
-        'kickback': 0.30,
-        'brands': ['Raw Garden']
-
-    },'PBR/ST.IDES': {
-        'vendors': ['Garden Of Weeden Inc.'],
-        'days': ['Friday','Thursday','Wednesday'],
-        'discount': 0.50,
-        'kickback': 0.30,
-        'brands': ['PBR |', "St. Ides |"],
-
-    },
-    'Punch': { #TURN AND MADE MONTH OF APRIL 50 off 50% kickback
-        'vendors': ['Punch Media, LLC'],
-        'days': ['Thursday'],
-        'discount': 0.40,
-        'kickback': 0.25,
-        'categories': ['Concentrate'], 
-        'include_phrases': ['LRO'],
-        'brands': ['Punch |']
-    },
-    'Turn': { #TURN AND MADE MONTH OF APRIL 50 off 50% kickback
-        'vendors': ['Fluids Manufacturing Inc.', 'Garden Of Weeden', 'Garden Of Weeden Inc.'],
-        'days': ['Thursday'],
-        'discount': 0.50,
-        'kickback': 0.30,
-        'brands': ['Turn |']
-    },
-    'Heavy Hitters': { 
-       'vendors': ['Fluids Manufacturing Inc.','Garden Of Weeden Inc.'],
-        'days': ['Thursday'],
-        'discount': 0.40,
-        'kickback': 0.25,
-        'brands': ['Heavy Hitters |']
+        'kickback': 0.20,
+        'brands': ['Kushy Punch',]
     }
     }
 
@@ -471,9 +419,11 @@ brand_criteria = {
     # },
     'Dabwoods': {
         'vendors': ['The Clear Group Inc.','Decoi','Garden Of Weeden Inc.','Garden Of Weeden'],
-        'days': ['Friday','Saturday'],
+        'days': ['Thursday','Friday','Saturday','Sunday'],
         'discount': 0.50,
-        'kickback': 0.25,
+        'kickback': 0.30,
+        'categories': ['Disposables'],
+        'excluded_phrases': ['DabBar X'],
         'brands': ['Dabwoods','DabBar']
         #'brands': ['DabBar |']
     },
@@ -518,23 +468,9 @@ brand_criteria = {
         'discount': 0.50,
         'kickback': 0.25,
         #'excluded_phrases': ['Jetty | Cart 1g |'],
-        'include_phrases': ['SVL','ULR',],
+        #'include_phrases': ['SVL','ULR',],
         'brands': ['Jetty']
     },
-    # 'Dr.Norm': {
-    #     'vendors': ['Punch Media, LLC'],
-    #     'days': ['Thursday'],
-    #     'discount': 0.50, #LAST WEEK 8/31
-    #     'kickback': 0.25,
-    #     'brands': ['Dr. Norms']
-    # },
-    # 'Smokiez': {
-    #     'vendors': ['Garden Of Weeden Inc.','Garden Of Weeden'],
-    #     'days': ['Sunday'],
-    #     'discount': 0.50,
-    #     'kickback': 0.25,  #LAST WEEK 8/31
-    #     'brands': ['Smokies']
-    # },
     'Preferred': {
         'vendors': ['Garden Of Weeden Inc.','Helios | Hypeereon Corporation','Garden Of Weeden'],
         'days': ['Monday','Wednesday'],
@@ -550,7 +486,7 @@ brand_criteria = {
         'brands': ['Kikoko']
     },
     'JoshWax': {
-        'vendors': ['Zasp'],
+        'vendors': ['Zasp','Garden Of Weeden Inc.'],
         'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
         'discount': 0.40,
         'kickback': 0.0,
@@ -612,7 +548,7 @@ brand_criteria = {
         'brands': ['Green Dawg |']
     }, 
     'Mary Medical': { 
-        'vendors': ["Mary's Tech CA, Inc.",'BRB California LLC', 'Garden Of Weeden Inc.', 'Broadway Alliance, LLC'],
+        'vendors': ["Mary's Tech CA, Inc.",'BRB California LLC', 'Garden Of Weeden Inc.', 'Broadway Alliance, LLC','Garden Of Weeden'],
         'days': ['Thursday'],
         'discount': 0.50,
         'kickback': 0.30,
@@ -636,7 +572,7 @@ brand_criteria = {
         'brands': ["COTC |"]
     },  
     'Cam': { #OFF INVOICE
-        'vendors': ["California Artisanal Medicine (CAM)",'Garden Of Weeden Inc.'],
+        'vendors': ["California Artisanal Medicine (CAM)",'Garden Of Weeden Inc.','NC INVESTMENT GROUP, LLC'],
         'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
         'discount': 0.40,
         'kickback': 0.0,
@@ -651,7 +587,7 @@ brand_criteria = {
         'brands': ['Master Makers |']
     }, 
     'Dixie': {
-        'vendors': ['Broadway Alliance, LLC','BRB California LLC', 'Garden Of Weeden Inc.','Hilife Group MV , LLC'],
+        'vendors': ['Broadway Alliance, LLC','BRB California LLC', 'Garden Of Weeden Inc.','Hilife Group MV , LLC','Garden Of Weeden'],
         'days': ['Saturday','Thursday'],
         'discount': 0.50,
         'kickback': 0.30,
@@ -681,7 +617,7 @@ brand_criteria = {
     #PABST NYF PBR ST DES 50% 50%
     "PBR-NYF-STIDES": {
         'vendors': ['Garden Of Weeden','Garden Of Weeden Inc.'],
-        'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
+        'days': ['Monday','Tuesday'],
         'discount': 0.50,
         'kickback': 0.50,
         'brands': ['NYF |','PBR |','St. Ides |'],
@@ -694,18 +630,61 @@ brand_criteria = {
         'brands': ['Drops | ']
     },
     "SeedJunky": {
-        'vendors': ['Seed Junky | LCISM Corp','Garden Of Weeden Inc.'],
+        'vendors': ['Seed Junky | LCISM Corp','Garden Of Weeden Inc.','Vino & Cigarro, LLC'],
         'days': ['Sunday'],
         'discount': 0.50,
         'kickback': 0.30,
         'brands': ['Seed Junky']
     },
         "KEEF": {
-        'vendors': ['Vino & Cigarro, LLC','Garden Of Weeden Inc.'],
+        'vendors': ['Vino & Cigarro, LLC','Garden Of Weeden Inc.','KIVA / LCISM CORP'],
         'days': ['Tuesday','Wednesday'],
         'discount': 0.50,
-        'kickback': 0.30,
+        'kickback': 0.35,
         'brands': ['Keef']
+    },
+        "Decibel": {
+        'vendors': ['Decibel Enterprise Inc.','Hilife LM'],
+        'days': ['Sunday'],
+        'discount': 0.50,
+        'kickback': 0.30,
+        'brands': ['Decibel']
+    },
+        "PlugnPlay": {
+        'vendors': ['Vino & Cigarro, LLC','Garden Of Weeden Inc.','KIVA / LCISM CORP','IE Licensing, LLC'],
+        'days': ['Monday','Sunday'],
+        'discount': 0.50,
+        'kickback': 0.30,
+        'brands': ['Plug n Play |','Plug N Play |']
+    },
+        "Sluggers": {
+        'vendors': ['Garden Of Weeden','Garden Of Weeden Inc.'],
+        'days': ['Monday','Sunday'],
+        'discount': 0.50,
+        'kickback': 0.30,
+        'brands': ['Sluggers']
+    },
+    "Turn": {
+        'vendors': ['Garden Of Weeden','Garden Of Weeden Inc.','Hilife Group MV , LLC'],
+        'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
+        'discount': 0.50,
+        'kickback': 0.30,
+        'brands': ['Turn']
+    },
+    "Tags": {
+         'vendors': ['Light Box Leasing Corp.'],
+        'days': ['Friday','Saturday','Sunday'],
+        'discount': 0.50,
+        'kickback': 0.30,
+        'brands': ['Tags |']
+    },
+    "EmeraldBay": {
+        'vendors': ['Emerald Bay Wellness','Garden Of Weeden Inc.'],
+        'days': ['Wednesday','Thursday','Friday','Saturday','Sunday'],
+        'discount': 0.50,
+        'kickback': 0.30,
+        'stores': ['NC'],
+        'brands': ['EBE |']
     },
 }
 
@@ -870,9 +849,9 @@ def discount_for_store(base_discount: float, store_code: str) -> float:
             """
             if store_code == 'WP':
                 if base_discount == 0.50:
-                    return 0.30
+                    return 0.50
                 elif base_discount == 0.40:
-                    return 0.20
+                    return 0.40
             return base_discount
 def run_deals_reports():
     """
@@ -1024,6 +1003,8 @@ def run_deals_reports():
                 lg_brand_data = lg_brand_data[lg_brand_data['category'].isin(criteria['categories'])]
             if not nc_brand_data.empty:
                 nc_brand_data = nc_brand_data[nc_brand_data['category'].isin(criteria['categories'])]
+            if not wp_brand_data.empty:
+                wp_brand_data = wp_brand_data[~wp_brand_data['category'].isin(criteria['categories'])]
         # Filter brand names
         if 'brands' in criteria:
             brand_list = criteria['brands']
@@ -1068,7 +1049,8 @@ def run_deals_reports():
                 lg_brand_data = lg_brand_data[lg_brand_data['product name'].apply(matches_include)]
             if not nc_brand_data.empty:
                 nc_brand_data = nc_brand_data[nc_brand_data['product name'].apply(matches_include)]
-
+            if not wp_brand_data.empty:
+                wp_brand_data = wp_brand_data[~wp_brand_data['product name'].apply(matches_include)]
         # Excluded phrases
         if 'excluded_phrases' in criteria:
             for phrase in criteria['excluded_phrases']:
@@ -1084,7 +1066,8 @@ def run_deals_reports():
                     lg_brand_data = lg_brand_data[~lg_brand_data['product name'].str.contains(pat, na=False)]
                 if not nc_brand_data.empty:
                     nc_brand_data = nc_brand_data[~nc_brand_data['product name'].str.contains(pat, na=False)]
-
+                if not wp_brand_data.empty:
+                    wp_brand_data = wp_brand_data[~wp_brand_data['product name'].str.contains(pat, na=False)]
         # Debug: shapes after filtering
         print(f"DEBUG: {brand} - After filtering => MV: {mv_brand_data.shape}, LM: {lm_brand_data.shape}, SV: {sv_brand_data.shape}, LG: {lg_brand_data.shape}")
 

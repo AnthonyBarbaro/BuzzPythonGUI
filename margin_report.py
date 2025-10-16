@@ -8,20 +8,33 @@ from openpyxl import load_workbook
 from openpyxl.styles import Font, Alignment, PatternFill
 import traceback
 from datetime import datetime
-import re
 import shutil
+import numpy as np  # ### NEW
 
 CONFIG_FILE = "config.txt"
 
 INPUT_COLUMNS = ['Available', 'Product', 'Category', 'Brand', 'Price', 'Cost']
+
+# (Not used in this file yet; kept as-is.)
 store_abbr_map = {
-        "Buzz Cannabis - Mission Valley",
-        "Buzz Cannabis-La Mesa",
-        "Buzz Cannabis - SORRENTO VALLEY",
-        "Buzz Cannabis - Lemon Grove",
-        "Buzz Cannabis (National City)",  # ✅ Add this line
-        "Buzz Cannabis Wildomar Palomar"
+    "Buzz Cannabis - Mission Valley",
+    "Buzz Cannabis-La Mesa",
+    "Buzz Cannabis - SORRENTO VALLEY",
+    "Buzz Cannabis - Lemon Grove",
+    "Buzz Cannabis (National City)",
+    "Buzz Cannabis Wildomar Palomar"
 }
+
+# --- Price selection behavior (easy to tweak) ------------------------------- #
+# We’ll prefer a per-location price if it exists and is > 0. Otherwise fallback
+# to base Price. Add/remove aliases here as needed.
+### NEW: aliases we’ll search for in the CSV (case sensitive matches)
+LOCATION_PRICE_ALIASES = [
+    "Location price",     # current export spelling in your code
+    "Location Price",     # some files use this
+    "location price",     # be tolerant
+    "location_price",     # just in case
+]
 
 def ensure_dir_exists(directory):
     if not os.path.exists(directory):
@@ -54,7 +67,7 @@ def organize_by_brand(output_directory):
                     shutil.move(old_path, new_path)
 
 def extract_strain_type(product_name: str):
-    """Example function to identify single-letter strain markers like S, H, I."""
+    """Identify single-letter strain markers like S, H, I."""
     if not isinstance(product_name, str):
         return ""
     name = " " + product_name.upper() + " "
@@ -67,7 +80,7 @@ def extract_strain_type(product_name: str):
     return ""
 
 def extract_product_details(product_name: str):
-    """Example function to parse weight and an extra sub-type from the product name."""
+    """Parse weight and an optional subtype from the product name."""
     if not isinstance(product_name, str):
         return "", ""
     name_upper = product_name.upper()
@@ -122,6 +135,42 @@ def format_excel_file(filename: str):
 
     wb.save(filename)
 
+# --- NEW: Helpers to compute the per-row sell price ------------------------- #
+def _first_present_column(df: pd.DataFrame, candidates) -> str | None:
+    """Return the first column name from candidates that exists in df.columns."""
+    for c in candidates:
+        if c in df.columns:
+            return c
+    return None
+
+def _to_num(series):
+    """Coerce to numeric; invalid → NaN."""
+    return pd.to_numeric(series, errors="coerce")
+
+def inject_sell_price_columns(df: pd.DataFrame) -> tuple[pd.DataFrame, str | None]:
+    """
+    Create two diagnostic columns:
+      - Price_Used: numeric value actually used for downstream math
+      - Price_Used_Source: string label 'Location price' or 'Price'
+    Returns (df, location_price_colname_or_None).
+    """
+    loc_col = _first_present_column(df, LOCATION_PRICE_ALIASES)
+    price_col_exists = 'Price' in df.columns
+
+    loc = _to_num(df[loc_col]) if loc_col else pd.Series(np.nan, index=df.index)
+    base = _to_num(df['Price']) if price_col_exists else pd.Series(np.nan, index=df.index)
+
+    # prefer location price when > 0, else fall back to base Price
+    use_loc_mask = loc.notna() & (loc > 0)
+
+    df['Price_Used'] = np.where(use_loc_mask, loc, base)           # numeric
+    df['Price_Used_Source'] = np.where(use_loc_mask,
+                                       loc_col if loc_col else 'Price',
+                                       'Price' if price_col_exists else (loc_col or ''))
+
+    return df, loc_col
+# --------------------------------------------------------------------------- #
+
 def process_file(file_path, output_directory, selected_brands):
     """
     Read CSV, filter out rows, compute margin columns, then group by brand & output XLSX files.
@@ -132,13 +181,18 @@ def process_file(file_path, output_directory, selected_brands):
         print(f"Error reading {file_path}: {e}")
         return None, None
 
-    # Filter to only columns we care about (if present)
+    # Quick sanity check: make sure at least some expected columns exist
     existing_cols = [c for c in INPUT_COLUMNS if c in df.columns]
     if not existing_cols:
         print(f"No required columns found in {file_path}. Skipping.")
         return None, None
 
-    # 1) EXCLUDE PROMO / SAMPLE
+    # Normalize numeric types we rely on later
+    for col in ['Price', 'Cost', 'Available']:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors='coerce')
+
+    # 1) EXCLUDE PROMO / SAMPLE by name
     if 'Product' in df.columns:
         df = df[~df['Product'].str.contains(r'(?i)\bpromo(s)?\b|\bsample\b', na=False)]
 
@@ -146,11 +200,17 @@ def process_file(file_path, output_directory, selected_brands):
     if 'Category' in df.columns:
         df = df[~df['Category'].str.contains(r'(?i)\baccessories\b', na=False)]
 
-    # 3) EXCLUDE Price < 1.01
-    if 'Price' in df.columns:
-        df = df[df['Price'] >= 1.01]
+    # ### NEW: Make the “sell price” we’ll use everywhere
+    df, loc_col = inject_sell_price_columns(df)
 
-    # 4) EXCLUDE Available < 5
+    # 3) EXCLUDE rows with too-small price using the *effective* price input
+    #    If Price_Used is entirely NaN (no price info), keep rows for now.
+    if 'Price_Used' in df.columns:
+        df = df[(df['Price_Used'].isna()) | (df['Price_Used'] >= 1.01)]
+    elif 'Price' in df.columns:
+        df = df[(df['Price'].isna()) | (df['Price'] >= 1.01)]
+
+    # 4) EXCLUDE Available < 5  (left as-is from your original logic)
     if 'Available' in df.columns:
         df = df[df['Available'] >= 5]
 
@@ -163,13 +223,13 @@ def process_file(file_path, output_directory, selected_brands):
         print(f"'Available' column not found in {file_path} after filtering. Skipping.")
         return None, None
 
-    # Separate out "unavailable" lines
-    unavailable_data = df[df['Available'] <= 2]
-    available_data = df[df['Available'] > 2]
+    # Separate out "unavailable" lines (will usually be empty due to the >=5 filter above)
+    unavailable_data = df[df['Available'] <= 2].copy()
+    available_data = df[df['Available'] > 2].copy()
 
     # Keep only selected brands
     if 'Brand' in available_data.columns and selected_brands:
-        available_data = available_data[available_data['Brand'].isin(selected_brands)]
+        available_data = available_data[available_data['Brand'].isin(selected_brands)].copy()
 
     # Extract strain type & product details
     if 'Product' in available_data.columns:
@@ -177,7 +237,7 @@ def process_file(file_path, output_directory, selected_brands):
         available_data[['Product_Weight', 'Product_SubType']] = available_data['Product'].apply(
             lambda x: pd.Series(extract_product_details(x))
         )
-        available_data = available_data[~available_data['Product'].apply(is_empty_or_numbers)]
+        available_data = available_data[~available_data['Product'].apply(is_empty_or_numbers)].copy()
     else:
         available_data['Strain_Type'] = ""
         available_data['Product_Weight'] = ""
@@ -185,12 +245,35 @@ def process_file(file_path, output_directory, selected_brands):
 
     # ──────────────────────────────────────────
     # MARGIN & "Out-The-Door" PRICE CALCULATIONS
+    # Use Price_Used for all margin math; Effective_Price is 70% of that
     # ──────────────────────────────────────────
-    if 'Price' in available_data.columns and 'Cost' in available_data.columns:
-        available_data['Effective_Price'] = available_data['Price'] * 0.7
-        available_data['Margin'] = (available_data['Effective_Price'] - available_data['Cost']) / available_data['Effective_Price']
-        available_data['TargetPrice_45Margin'] = available_data['Cost'] / 0.385
-        available_data['DiffTo45Margin'] = available_data['TargetPrice_45Margin'] - available_data['Price']
+    if 'Price_Used' in available_data.columns and 'Cost' in available_data.columns:
+        # numeric safety
+        available_data['Price_Used'] = pd.to_numeric(available_data['Price_Used'], errors='coerce')
+        available_data['Cost'] = pd.to_numeric(available_data['Cost'], errors='coerce')
+
+        available_data['Effective_Price'] = available_data['Price_Used'] * 0.70
+        # Guard against divide-by-zero or NaNs
+        eff = available_data['Effective_Price']
+        cost = available_data['Cost']
+
+        available_data['Margin'] = np.where(
+            eff.notna() & (eff != 0),
+            (eff - cost) / eff,
+            np.nan
+        )
+
+        # Target price for 45% margin (your original formula)
+        available_data['TargetPrice_45Margin'] = np.where(
+            available_data['Cost'].notna(),
+            available_data['Cost'] / 0.385,
+            np.nan
+        )
+
+        # Compare target vs the actual input price we used
+        available_data['DiffTo45Margin'] = available_data['TargetPrice_45Margin'] - available_data['Price_Used']
+
+        # OTD still based on Effective_Price
         available_data['Out-The-Door'] = available_data['Effective_Price'] * 1.33
     else:
         available_data['Effective_Price'] = None
@@ -201,17 +284,20 @@ def process_file(file_path, output_directory, selected_brands):
 
     # ──────────────────────────────────────────
     # REMOVE COLUMNS YOU DON'T WANT IN EXPORT
+    # (You can keep Location price/Price_Used/etc. if you want—just remove from the list)
     # ──────────────────────────────────────────
     columns_to_remove = [
         "Strain",
-        "Location price",
+        "Location price",   # you were removing this before; keep or delete this line as you prefer
         "Vendor",
         "Tags",
         "Strain_Type",
         "Product_Weight",
         "Product_SubType"
+        # NOTE: We intentionally keep Price_Used and Price_Used_Source in the export
+        # so you can see which value was used. If you want them hidden, add them here.
+        # "Price_Used", "Price_Used_Source"
     ]
-    # Remove from both available_data & unavailable_data
     for col in columns_to_remove:
         if col in available_data.columns:
             available_data.drop(columns=col, inplace=True)
@@ -224,9 +310,6 @@ def process_file(file_path, output_directory, selected_brands):
         sort_cols.append('Category')
     if 'Product' in available_data.columns:
         sort_cols.append('Product')
-    # e.g. if you also want to sort by Margin ascending:
-    # sort_cols.append('Margin')
-
     if sort_cols:
         available_data.sort_values(by=sort_cols, inplace=True, na_position='last')
 
