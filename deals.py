@@ -493,10 +493,10 @@ brand_criteria = {
         'brands': ['Josh Wax']
     },
     'TreeSap': {
-        'vendors': ['Zenleaf LLC','Center Street Investments Inc.','Fluids Manufacturing Inc.'],
+        'vendors': ['Zenleaf LLC','Center Street Investments Inc.','Fluids Manufacturing Inc.','Garden Of Weeden Inc.'],
         'days': ['Thursday'],
         'discount': 0.50,
-        'kickback': 0.25,
+        'kickback': 0.25,  #oct 20 to oct 31
         'brands': ['TreeSap']
     },
       'Made': { 
@@ -614,14 +614,14 @@ brand_criteria = {
         'kickback': 0.30,
         'brands': ['P&B |']
     },
-    #PABST NYF PBR ST DES 50% 50%
-    "PBR-NYF-STIDES": {
-        'vendors': ['Garden Of Weeden','Garden Of Weeden Inc.'],
-        'days': ['Monday','Tuesday'],
-        'discount': 0.50,
-        'kickback': 0.50,
-        'brands': ['NYF |','PBR |','St. Ides |'],
-    },   
+    # #PABST NYF PBR ST DES 50% 50%
+    # "PBR-NYF-STIDES": {
+    #     'vendors': ['Garden Of Weeden','Garden Of Weeden Inc.'],
+    #     'days': ['Monday','Tuesday'],
+    #     'discount': 0.50,
+    #     'kickback': 0.50,
+    #     'brands': ['NYF |','PBR |','St. Ides |'],
+    # },   
     "Drops": {
         'vendors': ['Garden Of Weeden','Garden Of Weeden Inc.'],
         'days': ['Sunday'],
@@ -630,34 +630,34 @@ brand_criteria = {
         'brands': ['Drops | ']
     },
     "SeedJunky": {
-        'vendors': ['Seed Junky | LCISM Corp','Garden Of Weeden Inc.','Vino & Cigarro, LLC'],
+        'vendors': ['Seed Junky | LCISM Corp','Garden Of Weeden Inc.','Vino & Cigarro, LLC','Garden Of Weeden'],
         'days': ['Sunday'],
         'discount': 0.50,
         'kickback': 0.30,
         'brands': ['Seed Junky']
     },
-        "KEEF": {
+    "KEEF": {
         'vendors': ['Vino & Cigarro, LLC','Garden Of Weeden Inc.','KIVA / LCISM CORP'],
         'days': ['Tuesday','Wednesday'],
         'discount': 0.50,
         'kickback': 0.35,
         'brands': ['Keef']
     },
-        "Decibel": {
+    "Decibel": {
         'vendors': ['Decibel Enterprise Inc.','Hilife LM'],
         'days': ['Sunday'],
         'discount': 0.50,
         'kickback': 0.30,
         'brands': ['Decibel']
     },
-        "PlugnPlay": {
+    "PlugnPlay": {
         'vendors': ['Vino & Cigarro, LLC','Garden Of Weeden Inc.','KIVA / LCISM CORP','IE Licensing, LLC'],
         'days': ['Monday','Sunday'],
         'discount': 0.50,
         'kickback': 0.30,
         'brands': ['Plug n Play |','Plug N Play |']
     },
-        "Sluggers": {
+    "Sluggers": {
         'vendors': ['Garden Of Weeden','Garden Of Weeden Inc.'],
         'days': ['Monday','Sunday'],
         'discount': 0.50,
@@ -669,14 +669,14 @@ brand_criteria = {
         'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
         'discount': 0.50,
         'kickback': 0.30,
-        'brands': ['Turn']
+        'brands': ['Turn |']
     },
-    "Tags": {
-         'vendors': ['Light Box Leasing Corp.'],
-        'days': ['Friday','Saturday','Sunday'],
+    "Level": {
+         'vendors': ['Garden Of Weeden Inc.', 'Vino & Cigarro, LLC'],
+        'days': ['Thursday','Friday','Saturday','Sunday'],
         'discount': 0.50,
         'kickback': 0.30,
-        'brands': ['Tags |']
+        'brands': ['Level |']
     },
     "EmeraldBay": {
         'vendors': ['Emerald Bay Wellness','Garden Of Weeden Inc.'],
@@ -685,6 +685,14 @@ brand_criteria = {
         'kickback': 0.30,
         'stores': ['NC'],
         'brands': ['EBE |']
+    },
+        "Planta": {
+        'vendors': ['Garden Of Weeden Inc.'],
+        'days': ['Friday'],
+        'discount': 0.50,
+        'kickback': 0.50,
+        'stores': ['MV'],
+        'brands': ['Planta |']
     },
 }
 
