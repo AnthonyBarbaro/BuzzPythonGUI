@@ -676,7 +676,7 @@ brand_criteria = {
         'days': ['Thursday','Friday','Saturday','Sunday'],
         'discount': 0.50,
         'kickback': 0.30,
-        'brands': ['Level |']
+        'brands': ['Level |', 'LEVEL |']
     },
     "EmeraldBay": {
         'vendors': ['Emerald Bay Wellness','Garden Of Weeden Inc.'],
