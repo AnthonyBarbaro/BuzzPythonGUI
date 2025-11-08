@@ -382,15 +382,14 @@ brand_criteria = {
         'kickback': 0.25,
         #'categories': ['Concentrate'], 
         'brands': ['Hashish'] 
-
     },
     'Jeeter': {
         'vendors': ['Med For America Inc.'],
         'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
         #'days': ['Monday','Tuesday','Wednesday','Thursday'],
-        'discount': 0.40,
-        'kickback': 0.23,
-        'categories': ['Pre-Rolls'],
+        'discount': 0.50,
+        'kickback': 0.30,
+        # 'categories': ['Pre-Rolls'],
         'brands': ['Jeeter'],
         #'include_phrases': ['LRO','2G','5pk','1G','2g','1g','BC LR Pre-Roll 1.3g','BC LR Pre-Roll 1.3g'],
         #'excluded_phrases': ['(3pk)','SVL']
@@ -403,20 +402,6 @@ brand_criteria = {
         'kickback': 0.25,
         'brands': ['Terra', 'Petra', 'KIVA', 'Lost Farms', 'Camino']
     },
-    # 'BigPetes': {
-    #     'vendors': ["Big Pete's | LCISM Corp","Vino & Cigarro, LLC",'Garden Of Weeden Inc.'],
-    #     'days': ['Tuesday'],
-    #     'discount': 0.50, #LAST WEEK 8/31
-    #     'kickback': 0.25,
-    #     'brands': ['Big Pete']
-    # },
-    # 'HolySmoke/Water': {
-    #     'vendors': ['Heritage Holding of Califonia, Inc.', 'Barlow Printing LLC','Hilife LM'],
-    #     'days': ['Sunday'],
-    #     'discount': 0.50, #LAST WEEK 8/31
-    #     'kickback': 0.25,
-    #     'brands': ['Holy Smokes', 'Holy Water']
-    # },
     'Dabwoods': {
         'vendors': ['The Clear Group Inc.','Decoi','Garden Of Weeden Inc.','Garden Of Weeden'],
         'days': ['Thursday','Friday','Saturday','Sunday'],
@@ -504,7 +489,16 @@ brand_criteria = {
         'days': ['Friday','Saturday'],
         'discount': 0.50,
         'kickback': 0.30,
-        #'categories': [''], 
+        'categories': ['Pre-Rolls','Flower','Eigths'], 
+        'brands': ['Made |']
+    }, 
+    
+      'Made-Eddys': { 
+        'vendors': ['Garden Of Weeden Inc.'],
+        'days': ['Friday','Saturday'],
+        'discount': 0.50,
+        'kickback': 0.30,
+        'categories': ['Edibles'], 
         'brands': ['Made |']
     }, 
     #   'Turn': { 
@@ -613,15 +607,7 @@ brand_criteria = {
         'discount': 0.50,
         'kickback': 0.30,
         'brands': ['P&B |']
-    },
-    # #PABST NYF PBR ST DES 50% 50%
-    # "PBR-NYF-STIDES": {
-    #     'vendors': ['Garden Of Weeden','Garden Of Weeden Inc.'],
-    #     'days': ['Monday','Tuesday'],
-    #     'discount': 0.50,
-    #     'kickback': 0.50,
-    #     'brands': ['NYF |','PBR |','St. Ides |'],
-    # },   
+    }, 
     "Drops": {
         'vendors': ['Garden Of Weeden','Garden Of Weeden Inc.'],
         'days': ['Sunday'],
@@ -673,26 +659,97 @@ brand_criteria = {
     },
     "Level": {
          'vendors': ['Garden Of Weeden Inc.', 'Vino & Cigarro, LLC'],
-        'days': ['Thursday','Friday','Saturday','Sunday'],
+        'days': ['Monday','Tuesday'],
         'discount': 0.50,
-        'kickback': 0.30,
+        'kickback': 0.25,
+        'excluded_phrases': ['10mg'],
         'brands': ['Level |', 'LEVEL |']
     },
-    "EmeraldBay": {
-        'vendors': ['Emerald Bay Wellness','Garden Of Weeden Inc.'],
-        'days': ['Wednesday','Thursday','Friday','Saturday','Sunday'],
+    "Level 10": {
+         'vendors': ['Garden Of Weeden Inc.', 'Vino & Cigarro, LLC'],
+        'days': ['Monday','Tuesday'],
         'discount': 0.50,
         'kickback': 0.30,
-        'stores': ['NC'],
-        'brands': ['EBE |']
+        'include_phrases': ['10mg'],
+        'brands': ['Level |', 'LEVEL |']
     },
-        "Planta": {
+    "Raw Garden": {
         'vendors': ['Garden Of Weeden Inc.'],
+        'days': ['Wednsday','Tuesday'],
+        'discount': 0.50,
+        'kickback': 0.30,
+        'brands': ['Raw Garden |']
+    }, 
+    "Claybourne": {
+        'vendors': ['CI Distribution'],
+        'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
+        'discount': 0.50,
+        'kickback': 0.30,
+        'brands': ['Claybourne |']
+    }, 
+    "Smokiez": {
+        'vendors': ['Garden Of Weeden Inc.'],
+        'days': ['Tuesday','Wednesday'],
+        'discount': 0.50,
+        'kickback': 0.30,
+        'brands': ['Smokies |']
+    },
+    "Uncle Arnies": {
+        'vendors': ['Garden Of Weeden Inc.','Vino & Cigarro, LLC'],
+        'days': ['Monday','Friday'],
+        'discount': 0.50,
+        'kickback': 0.30,
+        'brands': ["Uncle Arnie's |"]
+    },
+    "KANHA": {
+        'vendors': ['Garden Of Weeden Inc.','Sunderstorm Bay LLC.'],
+        'days': ['Thursday','Sunday'],
+        'discount': 0.50,
+        'kickback': 0.30,
+        'brands': ["KANHA |",'Kanha | ']
+    },
+     "Kushy Punch": {
+        'vendors': ['Garden Of Weeden Inc.','Varavo'],
+        'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
+        'discount': 0.50,
+        'kickback': 0.30,
+        'brands': ['Kushy Punch |']
+    },
+    "Royal Blunts": {
+        'vendors': ['Garden Of Weeden','Garden Of Weeden Inc.','Royal M&D LLC'],
+        'days': ['Monday','Wednesday'],
+        'discount': 0.50,
+        'kickback': 0.30,
+        'brands': ['Royal Blunts']
+    },
+    "Heady Heads": {
+        'vendors': ['Garden Of Weeden','Garden Of Weeden Inc.'],
+        'days': ['Wednesday'],
+        'discount': 0.50,
+        'kickback': 0.30,
+        'brands': ['Heady Heads |']
+    }, 
+    "American Weed": {
+        'vendors': ['Garden Of Weeden','Garden Of Weeden Inc.'],
+        'days': ['Wednesday','Thursday'],
+        'discount': 0.50,
+        'kickback': 0.30,
+        'stores': ['MV'],
+        'brands': ['American Weed']
+    },    
+    "Josh Wax": {
+        'vendors': ['Garden Of Weeden','Garden Of Weeden Inc.','Zasp'],
         'days': ['Friday'],
         'discount': 0.50,
-        'kickback': 0.50,
-        'stores': ['MV'],
-        'brands': ['Planta |']
+        'kickback': 0.30,
+        'brands': ['Josh Wax']
+    },  
+    "Cam": {
+        'vendors': ['Garden Of Weeden','Garden Of Weeden Inc.'],
+        'days': ['Saturday'],
+        'discount': 0.50,
+        'kickback': 0.30,
+        'brands': ['Cam |']
     },
 }
 

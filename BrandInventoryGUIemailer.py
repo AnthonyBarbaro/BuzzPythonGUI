@@ -397,7 +397,8 @@ def generate_brand_reports(csv_path, out_dir, selected_brands, include_cost=True
             brand_unavail = unavailable_df[unavailable_df["Brand"] == brand_name_lower]
 
         dt_str = datetime.now().strftime("%m-%d-%Y")
-        out_name = f"{base_csv_name}_{brand_name_lower}_{dt_str}.xlsx"
+        #out_name = f"{base_csv_name}_{brand_name_lower}_{dt_str}.xlsx"
+        out_name = f"{base_csv_name}_{brand_name_lower}.xlsx"
         out_path = os.path.join(out_dir, out_name)
 
         with pd.ExcelWriter(out_path, engine="openpyxl") as writer:
