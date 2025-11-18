@@ -9,7 +9,7 @@ from openpyxl.utils import get_column_letter
 from pathlib import Path
 import locale
 import shutil
-
+import warnings
 # Global dictionary to map real names -> pseudonyms
 NAME_MAP = {}
 GLOBAL_COUNTER = 1
@@ -50,7 +50,13 @@ def process_file(file_path):
             "producer", "order profit", "day of week"
         ])
 
-    df = pd.read_excel(file_path, header=4)
+    # OPTIONAL: capture pandas warnings and re-emit with file context
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        df = pd.read_excel(file_path, header=4)
+        for w in caught:
+            # Show the file this warning is associated with
+            print(f"⚠️ [{os.path.abspath(file_path)}] {w.category.__name__}: {w.message}")
     df.columns = df.columns.str.strip().str.lower()
 
     # Standard set of columns for Dutchie sales exports
@@ -67,10 +73,16 @@ def process_file(file_path):
     df['order time'] = pd.to_datetime(df['order time'], errors='coerce')
     df['day of week'] = df['order time'].dt.strftime('%A')
     df['customer name'] = df['customer name'].apply(pseudonymize_name)
+    # NEW: tag rows with their source file and store code for later debug/traceability
+    df['__source_file'] = os.path.basename(file_path)
+    # Infer store code from filename like "salesMV.xlsx" -> "MV"
+    _bn = os.path.basename(file_path)
+    _m = re.search(r"sales([A-Za-z]+)\.xlsx$", _bn)
+    df['__store'] = _m.group(1).upper() if _m else ""
     # Debug: show shape and columns
-    print(f"DEBUG: Successfully read {file_path}")
-    print(f"DEBUG: {file_path} shape: {df.shape}")
-    print(f"DEBUG: {file_path} columns: {list(df.columns)}")
+    # print(f"DEBUG: Successfully read {file_path}")
+    # print(f"DEBUG: {file_path} shape: {df.shape}")
+    # print(f"DEBUG: {file_path} columns: {list(df.columns)}")
     return df
 
 import numpy as np
@@ -257,7 +269,6 @@ brand_criteria00 = {
         'brands': ['Kushy Punch',]
     }
     }
-
 brand_criteria4 = {
      'Monday': {
         'vendors': ['Vino & Cigarro, LLC','Garden Of Weeden Inc.'],
@@ -387,9 +398,9 @@ brand_criteria = {
         'vendors': ['Med For America Inc.'],
         'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
         #'days': ['Monday','Tuesday','Wednesday','Thursday'],
-        'discount': 0.50,
-        'kickback': 0.30,
-        # 'categories': ['Pre-Rolls'],
+        'discount': 0.40,
+        'kickback': 0.20,
+        'categories': ['Pre-Rolls'],
         'brands': ['Jeeter'],
         #'include_phrases': ['LRO','2G','5pk','1G','2g','1g','BC LR Pre-Roll 1.3g','BC LR Pre-Roll 1.3g'],
         #'excluded_phrases': ['(3pk)','SVL']
@@ -402,18 +413,18 @@ brand_criteria = {
         'kickback': 0.25,
         'brands': ['Terra', 'Petra', 'KIVA', 'Lost Farms', 'Camino']
     },
-    'Dabwoods': {
-        'vendors': ['The Clear Group Inc.','Decoi','Garden Of Weeden Inc.','Garden Of Weeden'],
-        'days': ['Thursday','Friday','Saturday','Sunday'],
-        'discount': 0.50,
-        'kickback': 0.30,
-        'categories': ['Disposables'],
-        'excluded_phrases': ['DabBar X'],
-        'brands': ['Dabwoods','DabBar']
-        #'brands': ['DabBar |']
-    },
+    # 'Dabwoods': {
+    #     'vendors': ['The Clear Group Inc.','Decoi','Garden Of Weeden Inc.','Garden Of Weeden'],
+    #     'days': ['Thursday','Friday','Saturday','Sunday'],
+    #     'discount': 0.50,
+    #     'kickback': 0.30,
+    #     'categories': ['Disposables'],
+    #     'excluded_phrases': ['DabBar X'],
+    #     'brands': ['Dabwoods','DabBar']
+    #     #'brands': ['DabBar |']
+    # },
      'Time Machine': {
-         'vendors': ['Vino & Cigarro, LLC','Garden Of Weeden Inc.','KIVA / LCISM CORP'],
+         'vendors': ['Vino & Cigarro, LLC','Garden Of Weeden Inc.','KIVA / LCISM CORP','Garden Of Weeden'],
          'days': ['Tuesday','Friday'],
          'discount': 0.50,
          'kickback': 0.25,
@@ -471,7 +482,7 @@ brand_criteria = {
         'brands': ['Kikoko']
     },
     'JoshWax': {
-        'vendors': ['Zasp','Garden Of Weeden Inc.'],
+        'vendors': ['Zasp','Garden Of Weeden Inc.','Garden Of Weeden'],
         'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
         'discount': 0.40,
         'kickback': 0.0,
@@ -479,36 +490,36 @@ brand_criteria = {
     },
     'TreeSap': {
         'vendors': ['Zenleaf LLC','Center Street Investments Inc.','Fluids Manufacturing Inc.','Garden Of Weeden Inc.'],
-        'days': ['Thursday'],
+        'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
         'discount': 0.50,
-        'kickback': 0.25,  #oct 20 to oct 31
+        'kickback': 0.25, 
         'brands': ['TreeSap']
     },
       'Made': { 
-        'vendors': ['Garden Of Weeden Inc.'],
+        'vendors': ['Garden Of Weeden Inc.','Garden Of Weeden'],
         'days': ['Friday','Saturday'],
         'discount': 0.50,
         'kickback': 0.30,
-        'categories': ['Pre-Rolls','Flower','Eigths'], 
+        'categories': ['Pre-Rolls','Flower','Eighths'], 
         'brands': ['Made |']
     }, 
     
       'Made-Eddys': { 
-        'vendors': ['Garden Of Weeden Inc.'],
+        'vendors': ['Garden Of Weeden Inc.','Garden Of Weeden'],
         'days': ['Friday','Saturday'],
         'discount': 0.50,
         'kickback': 0.30,
         'categories': ['Edibles'], 
         'brands': ['Made |']
     }, 
-    #   'Turn': { 
-    #     'vendors': ['Garden Of Weeden Inc.'],
-    #     'days': ['Friday','Saturday'],
-    #     'discount': 0.50,
-    #     'kickback': 0.0,
-    #     #'categories': [''], 
-    #     'brands': ['Turn |']
-    # }, 
+      'Yada Yada': { 
+        'vendors': ['Fluids Manufacturing Inc.'],
+        'days': ['Wednesday'],
+        'discount': 0.50,
+        'kickback': 0.30,
+        #'categories': [''], 
+        'brands': ['Yada Yada |']
+    }, 
       'Eureka': { 
         'vendors': ['Light Box Leasing Corp.'],
         'days': ['Monday','Tuesday'],
@@ -542,7 +553,7 @@ brand_criteria = {
         'brands': ['Green Dawg |']
     }, 
     'Mary Medical': { 
-        'vendors': ["Mary's Tech CA, Inc.",'BRB California LLC', 'Garden Of Weeden Inc.', 'Broadway Alliance, LLC','Garden Of Weeden'],
+        'vendors': ["Mary's Tech CA, Inc.",'BRB California LLC', 'Garden Of Weeden Inc.', 'Broadway Alliance, LLC','Garden Of Weeden','Garden Society / LCISM Corp'],
         'days': ['Thursday'],
         'discount': 0.50,
         'kickback': 0.30,
@@ -550,7 +561,7 @@ brand_criteria = {
         'brands': ["Mary's Medicinals |"]
     }, 
     'LA FARMS': { 
-        'vendors': ["LA Family Farms LLC"],
+        'vendors': ["LA Family Farms LLC",'Los Angeles Family Farms LLC'],
         'days': ['Friday','Sunday'],
         'discount': 0.50,
         'kickback': 0.30,
@@ -581,7 +592,7 @@ brand_criteria = {
         'brands': ['Master Makers |']
     }, 
     'Dixie': {
-        'vendors': ['Broadway Alliance, LLC','BRB California LLC', 'Garden Of Weeden Inc.','Hilife Group MV , LLC','Garden Of Weeden'],
+        'vendors': ['Broadway Alliance, LLC','BRB California LLC', 'Garden Of Weeden Inc.','Hilife Group MV , LLC','Garden Of Weeden',"Mary's Tech CA, Inc."],
         'days': ['Saturday','Thursday'],
         'discount': 0.50,
         'kickback': 0.30,
@@ -623,7 +634,7 @@ brand_criteria = {
         'brands': ['Seed Junky']
     },
     "KEEF": {
-        'vendors': ['Vino & Cigarro, LLC','Garden Of Weeden Inc.','KIVA / LCISM CORP'],
+        'vendors': ['Vino & Cigarro, LLC','Garden Of Weeden Inc.','KIVA / LCISM CORP','GB2, LLC'],
         'days': ['Tuesday','Wednesday'],
         'discount': 0.50,
         'kickback': 0.35,
@@ -674,14 +685,14 @@ brand_criteria = {
         'brands': ['Level |', 'LEVEL |']
     },
     "Raw Garden": {
-        'vendors': ['Garden Of Weeden Inc.'],
+        'vendors': ['Garden Of Weeden Inc.','Garden Of Weeden'],
         'days': ['Wednsday','Tuesday'],
         'discount': 0.50,
         'kickback': 0.30,
         'brands': ['Raw Garden |']
     }, 
     "Claybourne": {
-        'vendors': ['CI Distribution'],
+        'vendors': ['CI Distribution','Garden Of Weeden Inc.'],
         'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
         'discount': 0.50,
         'kickback': 0.30,
@@ -712,18 +723,18 @@ brand_criteria = {
         'vendors': ['Garden Of Weeden Inc.','Varavo'],
         'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
         'discount': 0.50,
-        'kickback': 0.30,
+        'kickback': 0.0,
         'brands': ['Kushy Punch |']
     },
     "Royal Blunts": {
-        'vendors': ['Garden Of Weeden','Garden Of Weeden Inc.','Royal M&D LLC'],
+        'vendors': ['Garden Of Weeden','Garden Of Weeden Inc.','Royal M&D LLC','Bud Technology'],
         'days': ['Monday','Wednesday'],
         'discount': 0.50,
         'kickback': 0.30,
         'brands': ['Royal Blunts']
     },
     "Heady Heads": {
-        'vendors': ['Garden Of Weeden','Garden Of Weeden Inc.'],
+        'vendors': ['Garden Of Weeden','Garden Of Weeden Inc.','HD Health Industries'],
         'days': ['Wednesday'],
         'discount': 0.50,
         'kickback': 0.30,
@@ -741,15 +752,15 @@ brand_criteria = {
         'vendors': ['Garden Of Weeden','Garden Of Weeden Inc.','Zasp'],
         'days': ['Friday'],
         'discount': 0.50,
-        'kickback': 0.30,
+        'kickback': 0.12,
         'brands': ['Josh Wax']
     },  
     "Cam": {
-        'vendors': ['Garden Of Weeden','Garden Of Weeden Inc.'],
+        'vendors': ['Garden Of Weeden','Garden Of Weeden Inc.','California Artisanal Medicine (CAM)','NC INVESTMENT GROUP, LLC'],
         'days': ['Saturday'],
         'discount': 0.50,
-        'kickback': 0.30,
-        'brands': ['Cam |']
+        'kickback': 0.12,
+        'brands': ['Cam','CAM']
     },
 }
 
@@ -798,8 +809,7 @@ def style_summary_sheet(sheet, brand_name):
             cell = sheet.cell(row=row_idx, column=col_idx)
             cell.border = thin_border
             hdr_val = sheet.cell(row=header_row_idx, column=col_idx).value
-            if hdr_val:
-                    lower_hdr = str(hdr_val).lower()
+            lower_hdr = str(hdr_val).lower() if hdr_val is not None else ""
             if "owed" in lower_hdr:
                 # Format as currency
                 cell.number_format = '"$"#,##0.00'
@@ -918,6 +928,54 @@ def discount_for_store(base_discount: float, store_code: str) -> float:
                 elif base_discount == 0.40:
                     return 0.40
             return base_discount
+from collections import defaultdict
+
+def print_unknown_vendors(brand: str, criteria: dict, dataframes: list):
+    """
+    For the given brand and its criteria, scan all provided dataframes and
+    print unknown vendors along with the Excel file(s) they came from.
+    """
+    brand_keywords = set(criteria.get('brands', []))
+    expected_vendors = set(criteria.get('vendors', []))
+    if not brand_keywords:
+        return
+
+    def _matches_brand(name: str) -> bool:
+        s = str(name or "")
+        s_low = s.lower()
+        return any(b.lower() in s_low for b in brand_keywords)
+
+    unknown_map = defaultdict(set)  # vendor -> set of source files
+    days = set(criteria.get('days', []))
+
+    for df in dataframes:
+        if df is None or df.empty:
+            continue
+        if 'day of week' not in df.columns or 'product name' not in df.columns or 'vendor name' not in df.columns:
+            continue
+        # Day filter first
+        day_df = df[df['day of week'].isin(days)]
+        if day_df.empty:
+            continue
+        # Then brand match
+        matched = day_df[day_df['product name'].apply(_matches_brand)]
+        if matched.empty:
+            continue
+        # Collect unknown vendors with their source files
+        for _, row in matched.iterrows():
+            vendor = str(row.get('vendor name', '')).strip()
+            if not vendor or vendor in expected_vendors:
+                continue
+            src = row.get('__source_file', '<unknown file>')
+            unknown_map[vendor].add(src)
+
+    if unknown_map:
+        print(f"\n⚠️⚠️⚠️ Brand '{brand}' has unknown vendor(s):")
+        for v, files in sorted(unknown_map.items()):
+            files_list = ", ".join(sorted(files))
+            print(f"   - {v}: {files_list}")
+        print(f"👉 Consider adding to brand_criteria['{brand}']['vendors']\n")
+
 def run_deals_reports():
     """
     Reads salesMV.xlsx, salesLM.xlsx, and salesSV.xlsx (if present).
@@ -1022,40 +1080,10 @@ def run_deals_reports():
                 wp_data['vendor name'].isin(criteria['vendors']) &
                 wp_data['day of week'].isin(criteria['days'])
             ].copy()
-        
-        # 🧠 Smart unknown vendor check: Only flag vendors that sold products with this brand
-        brand_keywords = set(criteria.get('brands', []))
-        expected_vendors = set(criteria.get('vendors', []))
-
-        # Gather raw day-matched data before vendor filtering
-        day_match_df = pd.concat([
-            df[df['day of week'].isin(criteria['days'])] for df in [mv_data, lm_data, sv_data, lg_data, nc_data, wp_data] if not df.empty and 'day of week' in df.columns], ignore_index=True)
-
-        # Filter rows where product name includes brand keywords
-        def matches_brand(product_name):
-            return any(b.lower() in str(product_name).lower() for b in brand_keywords)
-        
-        matched_rows = day_match_df[day_match_df['product name'].apply(matches_brand)]
-
-        # Find vendors who sold those products
-        if 'vendor name' not in matched_rows.columns:
-            print(f"⚠️ Skipping unknown vendor check for brand '{brand}' (no 'vendor name' column in matched_rows)")
-            vendors_in_matched_products = set()
-        else:
-            vendors_in_matched_products = set(matched_rows['vendor name'].dropna().unique())
-
-
-        # Subtract vendors that are already in the criteria
-        unknown_vendors = vendors_in_matched_products - expected_vendors
-
-        if unknown_vendors:
-            print()
-            print(f"⚠️⚠️⚠️⚠️⚠️ Brand '{brand}' has unknown vendor(s): {unknown_vendors}")
-            print(f"👉 Consider adding to brand_criteria['{brand}']['vendors']")
-
-        # Debug: shapes before further filtering
-        #print(f"\nDEBUG: {brand} - Initial shapes => MV: {mv_brand_data.shape}, LM: {lm_brand_data.shape}, SV: {sv_brand_data.shape}, LG: {lg_brand_data.shape}")
-
+            print_unknown_vendors(
+            brand,
+            criteria,
+            [mv_data, lm_data, sv_data, lg_data, nc_data, wp_data])
         # Filter categories
         if 'categories' in criteria:
             if not mv_brand_data.empty:
@@ -1069,7 +1097,7 @@ def run_deals_reports():
             if not nc_brand_data.empty:
                 nc_brand_data = nc_brand_data[nc_brand_data['category'].isin(criteria['categories'])]
             if not wp_brand_data.empty:
-                wp_brand_data = wp_brand_data[~wp_brand_data['category'].isin(criteria['categories'])]
+                wp_brand_data = wp_brand_data[wp_brand_data['category'].isin(criteria['categories'])]
         # Filter brand names
         if 'brands' in criteria:
             brand_list = criteria['brands']
@@ -1134,8 +1162,10 @@ def run_deals_reports():
                 if not wp_brand_data.empty:
                     wp_brand_data = wp_brand_data[~wp_brand_data['product name'].str.contains(pat, na=False)]
         # Debug: shapes after filtering
-        print(f"DEBUG: {brand} - After filtering => MV: {mv_brand_data.shape}, LM: {lm_brand_data.shape}, SV: {sv_brand_data.shape}, LG: {lg_brand_data.shape}")
-
+        print(f"DEBUG: {brand} - After filtering => "
+              f"MV: {mv_brand_data.shape}, LM: {lm_brand_data.shape}, "
+              f"SV: {sv_brand_data.shape}, LG: {lg_brand_data.shape}, "
+              f"NC: {nc_brand_data.shape}, WP: {wp_brand_data.shape}")
         # Skip brand if all stores are empty
         if mv_brand_data.empty and lm_brand_data.empty and sv_brand_data.empty and lg_brand_data.empty and nc_brand_data.empty and wp_brand_data.empty:
             print(f"DEBUG: No data remains for brand '{brand}'. Skipping.")
