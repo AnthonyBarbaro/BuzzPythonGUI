@@ -431,7 +431,7 @@ brand_criteria = {
          'brands': ['Time Machine']
      },
      'Pacific Stone': {
-         'vendors': ['Vino & Cigarro, LLC','KIVA / LCISM CORP', 'Garden Of Weeden Inc.','Pacific Stone'],
+         'vendors': ['Vino & Cigarro, LLC','KIVA / LCISM CORP', 'Garden Of Weeden Inc.','Pacific Stone','Garden Of Weeden'],
          'days': ['Monday','Thursday'],
          'discount': 0.50,
          'kickback': 0.25,
@@ -641,7 +641,7 @@ brand_criteria = {
         'brands': ['Keef']
     },
     "Decibel": {
-        'vendors': ['Decibel Enterprise Inc.','Hilife LM'],
+        'vendors': ['Decibel Enterprise Inc.','Hilife LM','Push 365'],
         'days': ['Sunday'],
         'discount': 0.50,
         'kickback': 0.30,
@@ -706,7 +706,7 @@ brand_criteria = {
         'brands': ['Smokies |']
     },
     "Uncle Arnies": {
-        'vendors': ['Garden Of Weeden Inc.','Vino & Cigarro, LLC'],
+        'vendors': ['Garden Of Weeden Inc.','Vino & Cigarro, LLC','KIVA / LCISM CORP'],
         'days': ['Monday','Friday'],
         'discount': 0.50,
         'kickback': 0.30,
@@ -760,8 +760,15 @@ brand_criteria = {
         'days': ['Saturday'],
         'discount': 0.50,
         'kickback': 0.12,
-        'brands': ['Cam','CAM']
-    },
+        'brands': ['CAM']
+    },    # #PABST NYF PBR ST DES 50% 50%
+    "PBR-NYF-STIDES": {
+        'vendors': ['Garden Of Weeden','Garden Of Weeden Inc.'],
+        'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
+        'discount': 0.50,
+        'kickback': 0.50,
+        'brands': ['NYF |','PBR |','St. Ides |'],
+    }  
 }
 
 def style_summary_sheet(sheet, brand_name):
