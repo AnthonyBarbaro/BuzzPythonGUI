@@ -727,10 +727,10 @@ brand_criteria = {
     },
     'Jeeter': {
         'vendors': ['Med For America Inc.'],
-        'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
+        'days': ['Monday','Tuesday'],
         'discount': 0.40,
         'kickback': 0.20,
-        'categories': ['Pre-Rolls'],
+        # 'categories': ['Pre-Rolls'],
         'brands': ['Jeeter'],
         #'include_phrases': ['LRO','2G','5pk','1G','2g','1g','BC LR Pre-Roll 1.3g','BC LR Pre-Roll 1.3g'],
         #'excluded_phrases': ['(3pk)','SVL']
@@ -935,6 +935,14 @@ brand_criteria = {
         'kickback': 0.30,
         'brands': ['710']
     },
+    # "710": {
+    #     'vendors': ['Fluids Manufacturing Inc.'],
+    #     'days': ['Friday'],
+    #     'discount': 0.50, #9/31 last day
+    #     'kickback': 0.30,
+    #     'stores': ['MV'],
+    #     'brands': ['710']
+    # },
     "Blem": {
         'vendors': ['SSAL HORTICULTURE LLC'],
         'days': ['Thursday'],
@@ -1368,7 +1376,7 @@ def run_deals_reports():
     results_for_app = []
 
     # For each brand, gather data from whichever stores are not empty
-    for brand, criteria in brand_criteriaGW.items():
+    for brand, criteria in brand_criteria.items():
         if not isinstance(criteria, dict) or 'vendors' not in criteria:
             print(f"[SKIP] Brand '{brand}' has missing or invalid criteria. Skipping.")
             continue
