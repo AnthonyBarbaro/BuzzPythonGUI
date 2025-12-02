@@ -9,7 +9,7 @@ from openpyxl.utils import get_column_letter
 from pathlib import Path
 import locale
 import shutil
-
+import warnings
 # Global dictionary to map real names -> pseudonyms
 NAME_MAP = {}
 GLOBAL_COUNTER = 1
@@ -50,7 +50,13 @@ def process_file(file_path):
             "producer", "order profit", "day of week"
         ])
 
-    df = pd.read_excel(file_path, header=4)
+    # OPTIONAL: capture pandas warnings and re-emit with file context
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        df = pd.read_excel(file_path, header=4)
+        for w in caught:
+            # Show the file this warning is associated with
+            print(f"⚠️ [{os.path.abspath(file_path)}] {w.category.__name__}: {w.message}")
     df.columns = df.columns.str.strip().str.lower()
 
     # Standard set of columns for Dutchie sales exports
@@ -67,10 +73,16 @@ def process_file(file_path):
     df['order time'] = pd.to_datetime(df['order time'], errors='coerce')
     df['day of week'] = df['order time'].dt.strftime('%A')
     df['customer name'] = df['customer name'].apply(pseudonymize_name)
+    # NEW: tag rows with their source file and store code for later debug/traceability
+    df['__source_file'] = os.path.basename(file_path)
+    # Infer store code from filename like "salesMV.xlsx" -> "MV"
+    _bn = os.path.basename(file_path)
+    _m = re.search(r"sales([A-Za-z]+)\.xlsx$", _bn)
+    df['__store'] = _m.group(1).upper() if _m else ""
     # Debug: show shape and columns
-    print(f"DEBUG: Successfully read {file_path}")
-    print(f"DEBUG: {file_path} shape: {df.shape}")
-    print(f"DEBUG: {file_path} columns: {list(df.columns)}")
+    # print(f"DEBUG: Successfully read {file_path}")
+    # print(f"DEBUG: {file_path} shape: {df.shape}")
+    # print(f"DEBUG: {file_path} columns: {list(df.columns)}")
     return df
 
 import numpy as np
@@ -134,29 +146,350 @@ def apply_discounts_and_kickbacks(data, discount, kickback):
 
     return data
 #Month to month
-brand_criteria3 = {
- 
-    'Mary Medical-OLD': { 
-        'vendors': ["Mary's Tech CA, Inc.",'BRB California LLC', 'Garden Of Weeden Inc.', 'Broadway Alliance, LLC'],
-        'days': ['Monday','Tuesday'],
-        'discount': 0.50,
-        'kickback': 0.30,
-        #'categories': [''], 
-        'brands': ["Mary's Medicinals |"]
-    }, 
-     
-    'Mary Medical': { 
-        'vendors': ["Mary's Tech CA, Inc.",'BRB California LLC', 'Garden Of Weeden Inc.', 'Broadway Alliance, LLC'],
-        'days': ['Thursday'],
-        'discount': 0.50,
-        'kickback': 0.30,
-        #'categories': [''], 
-        'brands': ["Mary's Medicinals |"]
-    }, 
-}
+brand_criteriaGW = {
+'American Weed': {'vendors': ['Garden Of Weeden Inc.'],
+                   'days': ['Monday',
+                            'Tuesday',
+                            'Friday',
+                            'Saturday',
+                            'Sunday'],
+                   'discount': 0.5,
+                   'kickback': 0.3,
+                   'brands': ['American Weed Co.']},
+ 'Sluggers': {'vendors': ['Garden Of Weeden Inc.'],
+              'days': [
+                       'Tuesday',
+                       'Wednesday',
+                       'Thursday',
+                       'Friday',
+                       'Saturday',
+                       ],
+              'discount': 0.5,
+              'kickback': 0.3,
+              'brands': ['Sluggers']},
+ 'BLEM': {'vendors': ['SSAL HORTICULTURE LLC'],
+          'days': ['Monday',
+                   'Tuesday',
+                   'Wednesday',
+                   'Friday',
+                   'Saturday',
+                   'Sunday'],
+          'discount': 0.5,
+          'kickback': 0.3,
+          'brands': ['BLEM', 'BLEM x Coldfire']},
+ 'Ball Family Farms': {'vendors': ['Ball Family Farms Corporation'],
+                       'days': ['Monday',
+                                'Tuesday',
+                                'Wednesday',
+                                'Thursday',
+                                'Friday',
+                                'Saturday',
+                                'Sunday'],
+                       'discount': 0.5,
+                       'kickback': 0.3,
+                       'brands': ['Ball Family Farms']},
+ 'Turtle Pie Co.': {'vendors': ['Artisan Canna Cigars LLC'],
+                    'days': ['Monday',
+                             'Tuesday',
+                             'Wednesday',
+                             'Thursday',
+                             'Friday',
+                             'Saturday',
+                             'Sunday'],
+                    'discount': 0.5,
+                    'kickback': 0.3,
+                    'brands': ['Turtle Pie Co.']},
+ 'Eureka': {'vendors': ['Light Box Leasing Corp.'],
+            'days': [
+                     'Wednesday',
+                     'Thursday',
+                     'Friday',
+                     'Saturday',
+                     'Sunday'],
+            'discount': 0.5,
+            'kickback': 0.3,
+            'brands': ['Eureka']},
+ 'Drops': {'vendors': ['Garden Of Weeden Inc.'],
+           'days': ['Monday',
+                    'Tuesday',
+                    'Wednesday',
+                    'Thursday',
+                    'Friday',
+                    'Saturday'],
+           'discount': 0.5,
+           'kickback': 0.3,
+           'brands': ['Drops']},
+ 'Quiet Kings': {'vendors': ['Garden Of Weeden Inc.'],
+                 'days': ['Monday',
+                          'Tuesday',
+                          'Wednesday',
+                          'Thursday',
+                          'Friday',
+                          'Saturday',
+                          'Sunday'],
+                 'discount': 0.5,
+                 'kickback': 0.3,
+                 'brands': ['Quiet Kings', 'Wave Rider']},
+ 'Pure Beauty': {'vendors': ['KIVA / LCISM CORP',
+                             'Pure Beauty | LCISM Corp',
+                             'Vino & Cigarro, LLC'],
+                 'days': ['Monday',
+                          'Tuesday',
+                          'Wednesday',
+                          'Thursday',
+                          'Friday',
+                          'Saturday',
+                          'Sunday'],
+                 'discount': 0.5,
+                 'kickback': 0.3,
+                 'brands': ['Pure Beauty']},
+ 'Dab Daddy': {'vendors': ['Solister Inc',
+                           'Solister Inc.',
+                           'Valley of The Sun LLC','Valley of the Sun'],
+               'days': ['Monday',
+                        'Tuesday',
+                        'Wednesday',
+                        'Thursday',
+                        'Friday',
+                        'Saturday',
+                        'Sunday'],
+               'discount': 0.5,
+               'kickback': 0.3,
+               'brands': ['Dab Daddy']},
+ 'Dabwoods': {'vendors': ['Garden Of Weeden Inc.'],
+              'days': ['Monday',
+                       'Tuesday',
+                       'Wednesday',
+                       'Thursday',
+                       'Friday',
+                       'Saturday',
+                       'Sunday'],
+              'discount': 0.5,
+              'kickback': 0.3,
+              'brands': ['DabBar', 'DabBar X', 'Dabwoods']},
+ 'Green Dawg': {'vendors': ['Artisan Canna Cigars LLC'],
+                'days': ['Monday',
+                         'Tuesday',
+                         'Wednesday',
+                         'Friday',
+                         'Saturday',
+                         'Sunday'],
+                'discount': 0.5,
+                'kickback': 0.3,
+                'brands': ['Green Dawg']},
+ 'Nasha': {'vendors': ['KIVA / LCISM CORP', 'Vino & Cigarro, LLC'],
+           'days': ['Monday',
+                    'Tuesday',
+                    'Wednesday',
+                    'Thursday',
+                    'Friday',
+                    'Saturday',
+                    'Sunday'],
+           'discount': 0.5,
+           'kickback': 0.3,
+           'brands': ['Nasha']},
+ 'Claybourne Co.': {'vendors': ['CI Distribution', 'Elevation (Stiiizy)'],
+                    'days': ['Monday',
+                             'Tuesday',
+                             'Wednesday',
+                             'Thursday',
+                             'Friday',
+                             'Saturday',
+                             'Sunday'],
+                    'discount': 0.5,
+                    'kickback': 0.3,
+                    'brands': ['Claybourne', 'Claybourne Co.']},
+ 'Cannabiotix (CBX)': {'vendors': ['Four Star Distribution and Delivery LLC',
+                                   'Highstar Distribution LLC'],
+                       'days': ['Monday',
+                                'Tuesday',
+                                'Wednesday',
+                                'Thursday',
+                                'Friday',
+                                'Saturday',
+                                'Sunday'],
+                       'discount': 0.5,
+                       'kickback': 0.3,
+                       'brands': ['CBX', 'Cannabiotix (CBX)', 'HB']},
+ 'Keef': {'vendors': ['Kind House Inc','Vino & Cigarro, LLC'],
+          'days': ['Monday',
+                   'Thursday',
+                   'Friday',
+                   'Saturday',
+                   'Sunday'],
+          'discount': 0.5,
+          'kickback': 0.3,
+          'brands': ['Keef Cola', 'Keef Cola Xtreme', 'Keef Slim']},
+ 'Yada Yada': {'vendors': ['Fluids Manufacturing Inc.'],
+               'days': ['Monday',
+                        'Tuesday',
+                        'Thursday',
+                        'Friday',
+                        'Saturday',
+                        'Sunday'],
+               'discount': 0.5,
+               'kickback': 0.3,
+               'brands': ['Yada Yada']},
+ 'Emerald Sky': {'vendors': ['KIVA / LCISM CORP','Garden Of Weeden Inc.','Vino & Cigarro, LLC'],
+                 'days': ['Monday',
+                          'Tuesday',
+                          'Wednesday',
+                          'Thursday',
+                          'Friday',
+                          'Saturday',
+                          'Sunday'],
+                 'discount': 0.5,
+                 'kickback': 0.3,
+                 'brands': ['Emerald Sky']},
+ 'Jeeter': {'vendors': ['Med For America Inc.'],
+            'days': ['Monday',
+                     'Wednesday',
+                     'Thursday',
+                     'Friday',
+                     'Saturday',
+                     'Sunday'],
+            'discount': 0.5,
+            'kickback': 0.3,
+            'brands': ['Jeeter', 'Jeeter Juice']},
+ 'CLSICS': {'vendors': ['KIVA / LCISM CORP','Garden Of Weeden Inc.','Vino & Cigarro, LLC'],
+            'days': ['Monday',
+                     'Tuesday',
+                     'Wednesday',
+                     'Thursday',
+                     'Friday',
+                     'Saturday',
+                     'Sunday'],
+            'discount': 0.5,
+            'kickback': 0.3,
+            'brands': ['CLSICS']},
+ 'Dr. Norms': {'vendors': ['Punch Media, LLC'],
+               'days': ['Monday',
+                        'Tuesday',
+                        'Wednesday',
+                        'Thursday',
+                        'Friday',
+                        'Saturday',
+                        'Sunday'],
+               'discount': 0.5,
+               'kickback': 0.3,
+               'brands': ["Dr. Norm's", 'Dr. Norms']},
+ 'Pearl Pharma': {'vendors': ['Kanaplya LLC'],
+                  'days': ['Monday',
+                           'Tuesday',
+                           'Wednesday',
+                           'Thursday',
+                           'Friday',
+                           'Saturday',
+                           'Sunday'],
+                  'discount': 0.5,
+                  'kickback': 0.3,
+                  'brands': ['Pearl Pharma']},
+ 'Almora Farm': {'vendors': ['Fluids Manufacturing Inc.'],
+                 'days': ['Monday',
+                          'Tuesday',
+                          'Wednesday',
+                          'Thursday',
+                          'Friday',],
+                 'discount': 0.5,
+                 'kickback': 0.3,
+                 'brands': ['Almora', 'Almora Farm']},
+ 'Smokiez': {'vendors': ['Garden Of Weeden Inc.'],
+             'days': ['Monday',
+                      'Thursday',
+                      'Friday',
+                      'Saturday',
+                      'Sunday'],
+             'discount': 0.5,
+             'kickback': 0.3,
+             'brands': ['Smokies']},
+ 'Seed Junky': {'vendors': ['Garden Of Weeden Inc.',
+                            'KIVA / LCISM CORP',
+                            'Seed Junky | LCISM Corp','Garden Of Weeden'],
+                'days': ['Monday',
+                         'Tuesday',
+                         'Wednesday',
+                         'Thursday',
+                         'Friday',
+                         'Saturday'],
+                'discount': 0.5,
+                'kickback': 0.3,
+                'brands': ['Seed Junky']},
+ 'P&B': {'vendors': ['Fluids Manufacturing Inc.',
+                                      'P&B Labs Humboldt LLC'],
+                          'days': ['Monday',
+                                   'Wednesday',
+                                   'Thursday',
+                                   'Friday',
+                                   'Saturday'],
+                          'discount': 0.5,
+                          'kickback': 0.3,
+                          'brands': ['P&B']},
+ "Uncle Arnies": {'vendors': ['KIVA / LCISM CORP','Vino & Cigarro, LLC','Garden Of Weeden Inc.'],
+                   'days': [
+                            'Tuesday',
+                            'Wednesday',
+                            'Thursday',
+                            'Saturday',
+                            'Sunday'],
+                   'discount': 0.5,
+                   'kickback': 0.3,
+                   'brands': ["Uncle Arnie's"]},
+ 'Punch': {'vendors': ['Punch Media, LLC'],
+           'days': ['Monday',
+                    'Tuesday',
+                    'Wednesday',
+                    'Thursday',
+                    'Friday',
+                    'Saturday',
+                    'Sunday'],
+           'discount': 0.5,
+           'kickback': 0.3,
+           'brands': ['Punch |']},
+ 'KANHA': {'vendors': ['Sunderstorm Bay LLC.'],
+           'days': ['Monday',
+                    'Tuesday',
+                    'Wednesday',
+                    'Friday',
+                    'Saturday'],
+           'discount': 0.5,
+           'kickback': 0.3,
+           'brands': ['KANHA', 'Kanha']},
+ 'Pacific Stone': {'vendors': ['KIVA / LCISM CORP', 'Vino & Cigarro, LLC','Garden Of Weeden'],
+                   'days': [
+                            'Tuesday',
+                            'Wednesday',
+                            'Friday',
+                            'Saturday',
+                            'Sunday'],
+                   'discount': 0.5,
+                   'kickback': 0.3,
+                   'brands': ['Pacific Stone']},
+ 'Heavy Hitters': {'vendors': ['Falcon (Riverside)',
+                               'Fluids Manufacturing Inc.','Center Street Investments Inc.','Valley of The Sun LLC'],
+                   'days': ['Monday',
+                            'Tuesday',
+                            'Wednesday',
+                            'Thursday',
+                            'Sunday'],
+                   'discount': 0.5,
+                   'kickback': 0.3,
+                   'brands': ['HH',
+                              'Heavy Hitters']},
+ 'Stiiizy': {
+     'vendors': ['Elevation (Stiiizy)', 'SGI Jackson LLC','GOAT Venture, LLC','Garden Of Weeden Inc.','Hilife LM'],
+             'days': ['Monday',
+                      'Tuesday',
+                      'Wednesday',
+                      'Thursday',
+                      'Friday',
+                      'Saturday',
+                      'Sunday'],
+             'discount': 0.5,
+             'kickback': 0.20,
+             'brands': ['Stiiizy']}}
 brand_criteria2 = {
     'NC-Stiiizy(THURS-SAT)': {
-        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC'],
+        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC','SGI Jackson LLC'],
         'days': ['Thursday','Friday','Saturday'],
         'discount': 0.40,
         'kickback': 0.30,
@@ -164,7 +497,7 @@ brand_criteria2 = {
         'brands': ['Stiiizy']
     },
     'NC-Stiiizy(SUN-WED)': {
-        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC'],
+        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC','SGI Jackson LLC'],
         'days': ['Monday','Tuesday','Wednesday','Sunday'],
         'discount': 0.40,
         'kickback': 0.30,
@@ -173,7 +506,7 @@ brand_criteria2 = {
         'brands': ['Stiiizy']
     },
         'LG-Stiiizy(THURS-SAT)': {
-        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC'],
+        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC','SGI Jackson LLC'],
         'days': ['Thursday','Friday','Saturday'],
         'discount': 0.40,
         'kickback': 0.30,
@@ -181,7 +514,7 @@ brand_criteria2 = {
         'brands': ['Stiiizy']
     },
     'LG-Stiiizy(SUN-WED)': {
-        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC'],
+        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC','SGI Jackson LLC'],
         'days': ['Monday','Tuesday','Wednesday','Sunday'],
         'discount': 0.40,
         'kickback': 0.30,
@@ -190,7 +523,7 @@ brand_criteria2 = {
         'brands': ['Stiiizy']
     },
         'LM-Stiiizy(THURS-SAT)': {
-        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC'],
+        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC','SGI Jackson LLC'],
         'days': ['Thursday','Friday','Saturday'],
         'discount': 0.40,
         'kickback': 0.30,
@@ -198,7 +531,7 @@ brand_criteria2 = {
         'brands': ['Stiiizy']
     },
     'LM-Stiiizy(SUN-WED)': {
-        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC'],
+        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC','SGI Jackson LLC'],
         'days': ['Monday','Tuesday','Wednesday','Sunday'],
         'discount': 0.40,
         'kickback': 0.30,
@@ -207,7 +540,7 @@ brand_criteria2 = {
         'brands': ['Stiiizy']
     },
         'WP-Stiiizy(THURS-SAT)': {
-        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC'],
+        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC','SGI Jackson LLC'],
         'days': ['Thursday','Friday','Saturday'],
         'discount': 0.20,
         'kickback': 0.30,
@@ -215,7 +548,7 @@ brand_criteria2 = {
         'brands': ['Stiiizy']
     },
     'WP-Stiiizy(SUN-WED)': {
-        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC'],
+        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC','SGI Jackson LLC'],
         'days': ['Monday','Tuesday','Wednesday','Sunday'],
         'discount': 0.20,
         'kickback': 0.30,
@@ -224,7 +557,7 @@ brand_criteria2 = {
         'brands': ['Stiiizy']
     },
         'SV-Stiiizy(THURS-SAT)': {
-        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC'],
+        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC','SGI Jackson LLC'],
         'days': ['Thursday','Friday','Saturday'],
         'discount': 0.40,
         'kickback': 0.30,
@@ -232,7 +565,7 @@ brand_criteria2 = {
         'brands': ['Stiiizy']
     },
     'SV-Stiiizy(SUN-WED)': {
-        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC'],
+        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC','SGI Jackson LLC'],
         'days': ['Monday','Tuesday','Wednesday','Sunday'],
         'discount': 0.40,
         'kickback': 0.30,
@@ -241,7 +574,7 @@ brand_criteria2 = {
         'brands': ['Stiiizy']
     },
         'MV-Stiiizy(THURS-SAT)': {
-        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC'],
+        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC','SGI Jackson LLC'],
         'days': ['Thursday','Friday','Saturday'],
         'discount': 0.40,
         'kickback': 0.30,
@@ -249,7 +582,7 @@ brand_criteria2 = {
         'brands': ['Stiiizy']
     },
     'MV-Stiiizy(SUN-WED)': {
-        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC'],
+        'vendors': ['Elevation (Stiiizy)','Vino & Cigarro, LLC','SGI Jackson LLC'],
         'days': ['Monday','Tuesday','Wednesday','Sunday'],
         'discount': 0.40,
         'kickback': 0.30,
@@ -258,69 +591,16 @@ brand_criteria2 = {
         'brands': ['Stiiizy']
     }
 }
-brand_criteria420 = {
-    'Preferred': {
-        'vendors': ['Garden Of Weeden Inc.','Helios | Hypeereon Corporation'],
-        'days': ['Thursday'],
+brand_criteria00 = {
+    'Kushy': {
+        'vendors': ['Garden Of Weeden Inc.', 'Varavo'],
+        'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
+        'categories': ['Edibles'],
         'discount': 0.50,
-        'kickback': 0.30,
-        'brands': ['Preferred Gardens',]
-    }, 
-    'Cake': { 
-        'vendors': ['ThirtyOne Labs, LLC'],
-        'days': ['Thursday'],
-        'discount': 0.50,
-        'kickback': 0.13,
-        'brands': ['Cake |']
-    },
-    'Uncle Arnies': { #OFF INVOICE
-        'vendors': ['KIVA / LCISM CORP'],
-        'days': ['Thursday'],
-        'discount': 0.50,
-        'kickback': 0.30,
-        'brands': ["Uncle Arnie's |"]
-
-    }, 
-    'Raw Garden': {
-        'vendors': ['Garden Of Weeden Inc.'],
-        'days': ['Thursday'],
-        'discount': 0.50,
-        'kickback': 0.30,
-        'brands': ['Raw Garden']
-
-    },'PBR/ST.IDES': {
-        'vendors': ['Garden Of Weeden Inc.'],
-        'days': ['Friday','Thursday','Wednesday'],
-        'discount': 0.50,
-        'kickback': 0.30,
-        'brands': ['PBR |', "St. Ides |"],
-
-    },
-    'Punch': { #TURN AND MADE MONTH OF APRIL 50 off 50% kickback
-        'vendors': ['Punch Media, LLC'],
-        'days': ['Thursday'],
-        'discount': 0.40,
-        'kickback': 0.25,
-        'categories': ['Concentrate'], 
-        'include_phrases': ['LRO'],
-        'brands': ['Punch |']
-    },
-    'Turn': { #TURN AND MADE MONTH OF APRIL 50 off 50% kickback
-        'vendors': ['Fluids Manufacturing Inc.', 'Garden Of Weeden', 'Garden Of Weeden Inc.'],
-        'days': ['Thursday'],
-        'discount': 0.50,
-        'kickback': 0.30,
-        'brands': ['Turn |']
-    },
-    'Heavy Hitters': { 
-       'vendors': ['Fluids Manufacturing Inc.','Garden Of Weeden Inc.'],
-        'days': ['Thursday'],
-        'discount': 0.40,
-        'kickback': 0.25,
-        'brands': ['Heavy Hitters |']
+        'kickback': 0.20,
+        'brands': ['Kushy Punch',]
     }
     }
-
 brand_criteria4 = {
      'Monday': {
         'vendors': ['Vino & Cigarro, LLC','Garden Of Weeden Inc.'],
@@ -443,60 +723,45 @@ brand_criteria = {
         'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
         'discount': 0.50,
         'kickback': 0.25,
-        #'categories': ['Concentrate'], 
         'brands': ['Hashish'] 
-
     },
     'Jeeter': {
         'vendors': ['Med For America Inc.'],
-        #'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
-        'days': ['Monday','Tuesday','Wednesday','Thursday'],
+        'days': ['Monday','Tuesday'],
         'discount': 0.40,
-        'kickback': 0.23,
-        'categories': ['Pre-Rolls'],
+        'kickback': 0.20,
+        # 'categories': ['Pre-Rolls'],
         'brands': ['Jeeter'],
         #'include_phrases': ['LRO','2G','5pk','1G','2g','1g','BC LR Pre-Roll 1.3g','BC LR Pre-Roll 1.3g'],
         #'excluded_phrases': ['(3pk)','SVL']
         #'stores': ['MV','LM','LG']
     },    
     'Kiva': {
-        'vendors': ['KIVA / LCISM CORP', 'Vino & Cigarro, LLC','Garden Of Weeden Inc.'],
+        'vendors': ['KIVA / LCISM CORP', 'Vino & Cigarro, LLC','Garden Of Weeden Inc.','PuffCo'],
         'days': ['Monday','Wednesday'],
         'discount': 0.50,
         'kickback': 0.25,
         'brands': ['Terra', 'Petra', 'KIVA', 'Lost Farms', 'Camino']
     },
-    'BigPetes': {
-        'vendors': ["Big Pete's | LCISM Corp","Vino & Cigarro, LLC",'Garden Of Weeden Inc.'],
-        'days': ['Tuesday'],
-        'discount': 0.50, #LAST WEEK 8/31
-        'kickback': 0.25,
-        'brands': ['Big Pete']
-    },
-    'HolySmoke/Water': {
-        'vendors': ['Heritage Holding of Califonia, Inc.', 'Barlow Printing LLC','Hilife LM'],
-        'days': ['Sunday'],
-        'discount': 0.50, #LAST WEEK 8/31
-        'kickback': 0.25,
-        'brands': ['Holy Smokes', 'Holy Water']
-    },
-    'Dabwoods': {
-        'vendors': ['The Clear Group Inc.','Decoi','Garden Of Weeden Inc.'],
-        'days': ['Friday','Saturday'],
-        'discount': 0.50,
-        'kickback': 0.25,
-        'brands': ['Dabwoods','DabBar']
-        #'brands': ['DabBar |']
-    },
+    # 'Dabwoods': {
+    #     'vendors': ['The Clear Group Inc.','Decoi','Garden Of Weeden Inc.','Garden Of Weeden'],
+    #     'days': ['Thursday','Friday','Saturday','Sunday'],
+    #     'discount': 0.50,
+    #     'kickback': 0.30,
+    #     'categories': ['Disposables'],
+    #     'excluded_phrases': ['DabBar X'],
+    #     'brands': ['Dabwoods','DabBar']
+    #     #'brands': ['DabBar |']
+    # },
      'Time Machine': {
-         'vendors': ['Vino & Cigarro, LLC','Garden Of Weeden Inc.','KIVA / LCISM CORP'],
+         'vendors': ['Vino & Cigarro, LLC','Garden Of Weeden Inc.','KIVA / LCISM CORP','Garden Of Weeden'],
          'days': ['Tuesday','Friday'],
          'discount': 0.50,
          'kickback': 0.25,
          'brands': ['Time Machine']
      },
      'Pacific Stone': {
-         'vendors': ['Vino & Cigarro, LLC','KIVA / LCISM CORP', 'Garden Of Weeden Inc.','Pacific Stone'],
+         'vendors': ['Vino & Cigarro, LLC','KIVA / LCISM CORP', 'Garden Of Weeden Inc.','Pacific Stone','Garden Of Weeden'],
          'days': ['Monday','Thursday'],
          'discount': 0.50,
          'kickback': 0.25,
@@ -529,29 +794,15 @@ brand_criteria = {
         'discount': 0.50,
         'kickback': 0.25,
         #'excluded_phrases': ['Jetty | Cart 1g |'],
-        'include_phrases': ['SVL','ULR',],
+        #'include_phrases': ['SVL','ULR',],
         'brands': ['Jetty']
     },
-    'Dr.Norm': {
-        'vendors': ['Punch Media, LLC'],
-        'days': ['Thursday'],
-        'discount': 0.50, #LAST WEEK 8/31
-        'kickback': 0.25,
-        'brands': ['Dr. Norms']
-    },
-    'Smokiez': {
-        'vendors': ['Garden Of Weeden Inc.','Garden Of Weeden'],
-        'days': ['Sunday'],
-        'discount': 0.50,
-        'kickback': 0.25,  #LAST WEEK 8/31
-        'brands': ['Smokies']
-    },
     'Preferred': {
-        'vendors': ['Garden Of Weeden Inc.','Helios | Hypeereon Corporation'],
+        'vendors': ['Garden Of Weeden Inc.','Helios | Hypeereon Corporation','Garden Of Weeden'],
         'days': ['Monday','Wednesday'],
         'discount': 0.50,
         'kickback': 0.25,
-        'brands': ['Preferred Gardens',]
+        'brands': ['Preferred Gardens']
     },
     'Kikoko': {
         'vendors': ['Garden Of Weeden Inc.'],
@@ -561,34 +812,43 @@ brand_criteria = {
         'brands': ['Kikoko']
     },
     'JoshWax': {
-        'vendors': ['Zasp'],
+        'vendors': ['Zasp','Garden Of Weeden Inc.','Garden Of Weeden'],
         'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
         'discount': 0.40,
         'kickback': 0.0,
         'brands': ['Josh Wax']
     },
     'TreeSap': {
-        'vendors': ['Zenleaf LLC','Center Street Investments Inc.','Fluids Manufacturing Inc.'],
-        'days': ['Thursday'],
+        'vendors': ['Zenleaf LLC','Center Street Investments Inc.','Fluids Manufacturing Inc.','Garden Of Weeden Inc.'],
+        'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
         'discount': 0.50,
-        'kickback': 0.25,
+        'kickback': 0.25, 
         'brands': ['TreeSap']
     },
       'Made': { 
-        'vendors': ['Garden Of Weeden Inc.'],
+        'vendors': ['Garden Of Weeden Inc.','Garden Of Weeden'],
         'days': ['Friday','Saturday'],
         'discount': 0.50,
         'kickback': 0.30,
-        #'categories': [''], 
+        'categories': ['Pre-Rolls','Flower','Eighths'], 
         'brands': ['Made |']
     }, 
-      'Turn': { 
-        'vendors': ['Garden Of Weeden Inc.'],
+    
+      'Made-Eddys': { 
+        'vendors': ['Garden Of Weeden Inc.','Garden Of Weeden'],
         'days': ['Friday','Saturday'],
         'discount': 0.50,
-        'kickback': 0.0,
+        'kickback': 0.30,
+        'categories': ['Edibles'], 
+        'brands': ['Made |']
+    }, 
+      'Yada Yada': { 
+        'vendors': ['Fluids Manufacturing Inc.'],
+        'days': ['Wednesday'],
+        'discount': 0.50,
+        'kickback': 0.30,
         #'categories': [''], 
-        'brands': ['Turn |']
+        'brands': ['Yada Yada |']
     }, 
       'Eureka': { 
         'vendors': ['Light Box Leasing Corp.'],
@@ -623,7 +883,7 @@ brand_criteria = {
         'brands': ['Green Dawg |']
     }, 
     'Mary Medical': { 
-        'vendors': ["Mary's Tech CA, Inc.",'BRB California LLC', 'Garden Of Weeden Inc.', 'Broadway Alliance, LLC'],
+        'vendors': ["Mary's Tech CA, Inc.",'BRB California LLC', 'Garden Of Weeden Inc.', 'Broadway Alliance, LLC','Garden Of Weeden','Garden Society / LCISM Corp'],
         'days': ['Thursday'],
         'discount': 0.50,
         'kickback': 0.30,
@@ -631,7 +891,7 @@ brand_criteria = {
         'brands': ["Mary's Medicinals |"]
     }, 
     'LA FARMS': { 
-        'vendors': ["LA Family Farms LLC"],
+        'vendors': ["LA Family Farms LLC",'Los Angeles Family Farms LLC'],
         'days': ['Friday','Sunday'],
         'discount': 0.50,
         'kickback': 0.30,
@@ -640,14 +900,14 @@ brand_criteria = {
     },  
     'COTC': { 
         'vendors': ["TERPX COTC/WCTC (Riverside)"],
-        'days': ['Wednesday','Thursday','Friday','Saturday','Sunday'],
+        'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
         'discount': 0.40,
         'kickback': 0.0,
         #'categories': [''], 
         'brands': ["COTC |"]
     },  
     'Cam': { #OFF INVOICE
-        'vendors': ["California Artisanal Medicine (CAM)"],
+        'vendors': ["California Artisanal Medicine (CAM)",'Garden Of Weeden Inc.','NC INVESTMENT GROUP, LLC'],
         'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
         'discount': 0.40,
         'kickback': 0.0,
@@ -662,7 +922,7 @@ brand_criteria = {
         'brands': ['Master Makers |']
     }, 
     'Dixie': {
-        'vendors': ['Broadway Alliance, LLC','BRB California LLC', 'Garden Of Weeden Inc.'],
+        'vendors': ['Broadway Alliance, LLC','BRB California LLC', 'Garden Of Weeden Inc.','Hilife Group MV , LLC','Garden Of Weeden',"Mary's Tech CA, Inc."],
         'days': ['Saturday','Thursday'],
         'discount': 0.50,
         'kickback': 0.30,
@@ -671,29 +931,182 @@ brand_criteria = {
     "710": {
         'vendors': ['Fluids Manufacturing Inc.'],
         'days': ['Monday'],
-        'discount': 0.50, #9/8 last day
+        'discount': 0.50, #9/31 last day
         'kickback': 0.30,
         'brands': ['710']
     },
+    # "710": {
+    #     'vendors': ['Fluids Manufacturing Inc.'],
+    #     'days': ['Friday'],
+    #     'discount': 0.50, #9/31 last day
+    #     'kickback': 0.30,
+    #     'stores': ['MV'],
+    #     'brands': ['710']
+    # },
     "Blem": {
         'vendors': ['SSAL HORTICULTURE LLC'],
-        'days': ['Thursday','Friday','Saturday'],
+        'days': ['Thursday'],
         'discount': 0.50,
         'kickback': 0.30,
         'brands': ['BLEM']
-    },'Jeeter': {
-        'vendors': ['Med For America Inc.'],
-        #'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
-        'days': ['Friday','Saturday','Sunday'],
+    },
+       "P&B": {
+        'vendors': ['Fluids Manufacturing Inc.'],
+        'days': ['Sunday','Tuesday'],
         'discount': 0.50,
         'kickback': 0.30,
-        #'categories': ['Pre-Rolls'],
-        'brands': ['Jeeter'],
-        #'include_phrases': ['LRO','2G','5pk','1G','2g','1g','BC LR Pre-Roll 1.3g','BC LR Pre-Roll 1.3g'],
-        #'excluded_phrases': ['(3pk)','SVL']
-        #'stores': ['MV','LM','LG']
+        'brands': ['P&B |']
+    }, 
+    "Drops": {
+        'vendors': ['Garden Of Weeden','Garden Of Weeden Inc.'],
+        'days': ['Sunday'],
+        'discount': 0.50,
+        'kickback': 0.30,
+        'brands': ['Drops | ']
+    },
+    "SeedJunky": {
+        'vendors': ['Seed Junky | LCISM Corp','Garden Of Weeden Inc.','Vino & Cigarro, LLC','Garden Of Weeden'],
+        'days': ['Sunday'],
+        'discount': 0.50,
+        'kickback': 0.30,
+        'brands': ['Seed Junky']
+    },
+    "KEEF": {
+        'vendors': ['Vino & Cigarro, LLC','Garden Of Weeden Inc.','KIVA / LCISM CORP','GB2, LLC'],
+        'days': ['Tuesday','Wednesday'],
+        'discount': 0.50,
+        'kickback': 0.35,
+        'brands': ['Keef']
+    },
+    "Decibel": {
+        'vendors': ['Decibel Enterprise Inc.','Hilife LM','Push 365'],
+        'days': ['Sunday'],
+        'discount': 0.50,
+        'kickback': 0.30,
+        'brands': ['Decibel']
+    },
+    "PlugnPlay": {
+        'vendors': ['Vino & Cigarro, LLC','Garden Of Weeden Inc.','KIVA / LCISM CORP','IE Licensing, LLC'],
+        'days': ['Monday','Sunday'],
+        'discount': 0.50,
+        'kickback': 0.30,
+        'brands': ['Plug n Play |','Plug N Play |']
+    },
+    "Sluggers": {
+        'vendors': ['Garden Of Weeden','Garden Of Weeden Inc.'],
+        'days': ['Monday','Sunday'],
+        'discount': 0.50,
+        'kickback': 0.30,
+        'brands': ['Sluggers']
+    },
+    "Turn": {
+        'vendors': ['Garden Of Weeden','Garden Of Weeden Inc.','Hilife Group MV , LLC'],
+        'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
+        'discount': 0.50,
+        'kickback': 0.30,
+        'brands': ['Turn |']
+    },
+    "Level": {
+         'vendors': ['Garden Of Weeden Inc.', 'Vino & Cigarro, LLC'],
+        'days': ['Monday','Tuesday'],
+        'discount': 0.50,
+        'kickback': 0.25,
+        'excluded_phrases': ['10mg'],
+        'brands': ['Level |', 'LEVEL |']
+    },
+    "Level 10": {
+         'vendors': ['Garden Of Weeden Inc.', 'Vino & Cigarro, LLC'],
+        'days': ['Monday','Tuesday'],
+        'discount': 0.50,
+        'kickback': 0.30,
+        'include_phrases': ['10mg'],
+        'brands': ['Level |', 'LEVEL |']
+    },
+    "Raw Garden": {
+        'vendors': ['Garden Of Weeden Inc.','Garden Of Weeden'],
+        'days': ['Wednsday','Tuesday'],
+        'discount': 0.50,
+        'kickback': 0.30,
+        'brands': ['Raw Garden |']
+    }, 
+    "Claybourne": {
+        'vendors': ['CI Distribution','Garden Of Weeden Inc.'],
+        'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
+        'discount': 0.50,
+        'kickback': 0.30,
+        'brands': ['Claybourne |']
+    }, 
+    "Smokiez": {
+        'vendors': ['Garden Of Weeden Inc.'],
+        'days': ['Tuesday','Wednesday'],
+        'discount': 0.50,
+        'kickback': 0.30,
+        'brands': ['Smokies |']
+    },
+    "Uncle Arnies": {
+        'vendors': ['Garden Of Weeden Inc.','Vino & Cigarro, LLC','KIVA / LCISM CORP'],
+        'days': ['Monday','Friday'],
+        'discount': 0.50,
+        'kickback': 0.30,
+        'brands': ["Uncle Arnie's |"]
+    },
+    "KANHA": {
+        'vendors': ['Garden Of Weeden Inc.','Sunderstorm Bay LLC.'],
+        'days': ['Thursday','Sunday'],
+        'discount': 0.50,
+        'kickback': 0.30,
+        'brands': ["KANHA |",'Kanha | ']
+    },
+     "Kushy Punch": {
+        'vendors': ['Garden Of Weeden Inc.','Varavo'],
+        'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
+        'discount': 0.50,
+        'kickback': 0.0,
+        'brands': ['Kushy Punch |']
+    },
+    "Royal Blunts": {
+        'vendors': ['Garden Of Weeden','Garden Of Weeden Inc.','Royal M&D LLC','Bud Technology'],
+        'days': ['Monday','Wednesday'],
+        'discount': 0.50,
+        'kickback': 0.30,
+        'brands': ['Royal Blunts']
+    },
+    "Heady Heads": {
+        'vendors': ['Garden Of Weeden','Garden Of Weeden Inc.','HD Health Industries'],
+        'days': ['Wednesday'],
+        'discount': 0.50,
+        'kickback': 0.30,
+        'brands': ['Heady Heads |']
+    }, 
+    "American Weed": {
+        'vendors': ['Garden Of Weeden','Garden Of Weeden Inc.'],
+        'days': ['Wednesday','Thursday'],
+        'discount': 0.50,
+        'kickback': 0.30,
+        'stores': ['MV'],
+        'brands': ['American Weed']
     },    
-    
+    "Josh Wax": {
+        'vendors': ['Garden Of Weeden','Garden Of Weeden Inc.','Zasp'],
+        'days': ['Friday'],
+        'discount': 0.50,
+        'kickback': 0.12,
+        'brands': ['Josh Wax']
+    },  
+    "Cam": {
+        'vendors': ['Garden Of Weeden','Garden Of Weeden Inc.','California Artisanal Medicine (CAM)','NC INVESTMENT GROUP, LLC'],
+        'days': ['Saturday'],
+        'discount': 0.50,
+        'kickback': 0.12,
+        'brands': ['CAM']
+    },    # #PABST NYF PBR ST DES 50% 50%
+    "PBR-NYF-STIDES": {
+        'vendors': ['Garden Of Weeden','Garden Of Weeden Inc.'],
+        'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
+        'discount': 0.50,
+        'kickback': 0.50,
+        'brands': ['NYF |','PBR |','St. Ides |'],
+    }  
 }
 
 def style_summary_sheet(sheet, brand_name):
@@ -741,8 +1154,7 @@ def style_summary_sheet(sheet, brand_name):
             cell = sheet.cell(row=row_idx, column=col_idx)
             cell.border = thin_border
             hdr_val = sheet.cell(row=header_row_idx, column=col_idx).value
-            if hdr_val:
-                    lower_hdr = str(hdr_val).lower()
+            lower_hdr = str(hdr_val).lower() if hdr_val is not None else ""
             if "owed" in lower_hdr:
                 # Format as currency
                 cell.number_format = '"$"#,##0.00'
@@ -857,10 +1269,58 @@ def discount_for_store(base_discount: float, store_code: str) -> float:
             """
             if store_code == 'WP':
                 if base_discount == 0.50:
-                    return 0.30
+                    return 0.50
                 elif base_discount == 0.40:
-                    return 0.20
+                    return 0.40
             return base_discount
+from collections import defaultdict
+
+def print_unknown_vendors(brand: str, criteria: dict, dataframes: list):
+    """
+    For the given brand and its criteria, scan all provided dataframes and
+    print unknown vendors along with the Excel file(s) they came from.
+    """
+    brand_keywords = set(criteria.get('brands', []))
+    expected_vendors = set(criteria.get('vendors', []))
+    if not brand_keywords:
+        return
+
+    def _matches_brand(name: str) -> bool:
+        s = str(name or "")
+        s_low = s.lower()
+        return any(b.lower() in s_low for b in brand_keywords)
+
+    unknown_map = defaultdict(set)  # vendor -> set of source files
+    days = set(criteria.get('days', []))
+
+    for df in dataframes:
+        if df is None or df.empty:
+            continue
+        if 'day of week' not in df.columns or 'product name' not in df.columns or 'vendor name' not in df.columns:
+            continue
+        # Day filter first
+        day_df = df[df['day of week'].isin(days)]
+        if day_df.empty:
+            continue
+        # Then brand match
+        matched = day_df[day_df['product name'].apply(_matches_brand)]
+        if matched.empty:
+            continue
+        # Collect unknown vendors with their source files
+        for _, row in matched.iterrows():
+            vendor = str(row.get('vendor name', '')).strip()
+            if not vendor or vendor in expected_vendors:
+                continue
+            src = row.get('__source_file', '<unknown file>')
+            unknown_map[vendor].add(src)
+
+    if unknown_map:
+        print(f"\n⚠️⚠️⚠️ Brand '{brand}' has unknown vendor(s):")
+        for v, files in sorted(unknown_map.items()):
+            files_list = ", ".join(sorted(files))
+            print(f"   - {v}: {files_list}")
+        print(f"👉 Consider adding to brand_criteria['{brand}']['vendors']\n")
+
 def run_deals_reports():
     """
     Reads salesMV.xlsx, salesLM.xlsx, and salesSV.xlsx (if present).
@@ -916,7 +1376,7 @@ def run_deals_reports():
     results_for_app = []
 
     # For each brand, gather data from whichever stores are not empty
-    for brand, criteria in brand_criteria3.items():
+    for brand, criteria in brand_criteria.items():
         if not isinstance(criteria, dict) or 'vendors' not in criteria:
             print(f"[SKIP] Brand '{brand}' has missing or invalid criteria. Skipping.")
             continue
@@ -965,40 +1425,10 @@ def run_deals_reports():
                 wp_data['vendor name'].isin(criteria['vendors']) &
                 wp_data['day of week'].isin(criteria['days'])
             ].copy()
-        
-        # 🧠 Smart unknown vendor check: Only flag vendors that sold products with this brand
-        brand_keywords = set(criteria.get('brands', []))
-        expected_vendors = set(criteria.get('vendors', []))
-
-        # Gather raw day-matched data before vendor filtering
-        day_match_df = pd.concat([
-            df[df['day of week'].isin(criteria['days'])] for df in [mv_data, lm_data, sv_data, lg_data, nc_data, wp_data] if not df.empty and 'day of week' in df.columns], ignore_index=True)
-
-        # Filter rows where product name includes brand keywords
-        def matches_brand(product_name):
-            return any(b.lower() in str(product_name).lower() for b in brand_keywords)
-        
-        matched_rows = day_match_df[day_match_df['product name'].apply(matches_brand)]
-
-        # Find vendors who sold those products
-        if 'vendor name' not in matched_rows.columns:
-            print(f"⚠️ Skipping unknown vendor check for brand '{brand}' (no 'vendor name' column in matched_rows)")
-            vendors_in_matched_products = set()
-        else:
-            vendors_in_matched_products = set(matched_rows['vendor name'].dropna().unique())
-
-
-        # Subtract vendors that are already in the criteria
-        unknown_vendors = vendors_in_matched_products - expected_vendors
-
-        if unknown_vendors:
-            print()
-            print(f"⚠️⚠️⚠️⚠️⚠️ Brand '{brand}' has unknown vendor(s): {unknown_vendors}")
-            print(f"👉 Consider adding to brand_criteria['{brand}']['vendors']")
-
-        # Debug: shapes before further filtering
-        #print(f"\nDEBUG: {brand} - Initial shapes => MV: {mv_brand_data.shape}, LM: {lm_brand_data.shape}, SV: {sv_brand_data.shape}, LG: {lg_brand_data.shape}")
-
+            print_unknown_vendors(
+            brand,
+            criteria,
+            [mv_data, lm_data, sv_data, lg_data, nc_data, wp_data])
         # Filter categories
         if 'categories' in criteria:
             if not mv_brand_data.empty:
@@ -1011,6 +1441,8 @@ def run_deals_reports():
                 lg_brand_data = lg_brand_data[lg_brand_data['category'].isin(criteria['categories'])]
             if not nc_brand_data.empty:
                 nc_brand_data = nc_brand_data[nc_brand_data['category'].isin(criteria['categories'])]
+            if not wp_brand_data.empty:
+                wp_brand_data = wp_brand_data[wp_brand_data['category'].isin(criteria['categories'])]
         # Filter brand names
         if 'brands' in criteria:
             brand_list = criteria['brands']
@@ -1055,7 +1487,8 @@ def run_deals_reports():
                 lg_brand_data = lg_brand_data[lg_brand_data['product name'].apply(matches_include)]
             if not nc_brand_data.empty:
                 nc_brand_data = nc_brand_data[nc_brand_data['product name'].apply(matches_include)]
-
+            if not wp_brand_data.empty:
+                wp_brand_data = wp_brand_data[~wp_brand_data['product name'].apply(matches_include)]
         # Excluded phrases
         if 'excluded_phrases' in criteria:
             for phrase in criteria['excluded_phrases']:
@@ -1071,10 +1504,13 @@ def run_deals_reports():
                     lg_brand_data = lg_brand_data[~lg_brand_data['product name'].str.contains(pat, na=False)]
                 if not nc_brand_data.empty:
                     nc_brand_data = nc_brand_data[~nc_brand_data['product name'].str.contains(pat, na=False)]
-
+                if not wp_brand_data.empty:
+                    wp_brand_data = wp_brand_data[~wp_brand_data['product name'].str.contains(pat, na=False)]
         # Debug: shapes after filtering
-        print(f"DEBUG: {brand} - After filtering => MV: {mv_brand_data.shape}, LM: {lm_brand_data.shape}, SV: {sv_brand_data.shape}, LG: {lg_brand_data.shape}")
-
+        print(f"DEBUG: {brand} - After filtering => "
+              f"MV: {mv_brand_data.shape}, LM: {lm_brand_data.shape}, "
+              f"SV: {sv_brand_data.shape}, LG: {lg_brand_data.shape}, "
+              f"NC: {nc_brand_data.shape}, WP: {wp_brand_data.shape}")
         # Skip brand if all stores are empty
         if mv_brand_data.empty and lm_brand_data.empty and sv_brand_data.empty and lg_brand_data.empty and nc_brand_data.empty and wp_brand_data.empty:
             print(f"DEBUG: No data remains for brand '{brand}'. Skipping.")

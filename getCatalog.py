@@ -159,6 +159,7 @@ driver = launchBrowser()
 login()
 
 store_names = ["Buzz Cannabis - Mission Valley", "Buzz Cannabis-La Mesa","Buzz Cannabis - SORRENTO VALLEY","Buzz Cannabis - Lemon Grove","Buzz Cannabis (National City)","Buzz Cannabis Wildomar Palomar"]
+#store_names = ["Buzz Cannabis - Mission Valley"]
 for store in store_names:
     if not select_dropdown_item(store):
         break

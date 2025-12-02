@@ -273,7 +273,8 @@ def create_store_checkboxes(frame):
         "Buzz Cannabis-La Mesa",
         "Buzz Cannabis - SORRENTO VALLEY",
         "Buzz Cannabis - Lemon Grove",
-        "Buzz Cannabis (National City)"
+        "Buzz Cannabis (National City)",
+        "Buzz Cannabis Wildomar Palomar"
     ]
 
     for store_name in store_map:
