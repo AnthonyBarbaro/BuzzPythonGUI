@@ -507,6 +507,8 @@
   { "brand_synonyms": ["Planta"], "folder_name": "Planta", "emails": ["donna@buzzcannabis.com"], "days": ["Monday"] },
   { "brand_synonyms": ["Pure Beauty"], "folder_name": "Pure Beauty", "emails": ["donna@buzzcannabis.com"], "days": ["Monday"] },
   { "brand_synonyms": ["Seed Junky"], "folder_name": "Seed Junky", "emails": ["donna@buzzcannabis.com"], "days": ["Monday"] },
-  { "brand_synonyms": ["TAGS"], "folder_name": "TAGS", "emails": ["donna@buzzcannabis.com"], "days": ["Monday"] }
+  { "brand_synonyms": ["TAGS"], "folder_name": "TAGS", "emails": ["donna@buzzcannabis.com"], "days": ["Monday"] },
+  { "brand_synonyms": ["Delighted"], "folder_name": "Delighted", "emails": ["donna@buzzcannabis.com"], "days": ["Monday"] },
+  { "brand_synonyms": ["Ball Family Farms"], "folder_name": "Ball Family Farms", "emails": ["donna@buzzcannabis.com"], "days": ["Monday"] }
   ]
 }
