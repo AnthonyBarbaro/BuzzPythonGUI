@@ -5,7 +5,10 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 import pandas as pd
 from openpyxl import load_workbook
-from openpyxl.styles import Font, Alignment, PatternFill
+from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+from openpyxl.chart import BarChart, Reference, PieChart
+from openpyxl.formatting.rule import ColorScaleRule
+from openpyxl.utils import get_column_letter
 import traceback
 from datetime import datetime
 import shutil
@@ -21,13 +24,12 @@ CONFIG_FILE = "config.txt"
 INPUT_COLUMNS = ['Available', 'Product', 'Category', 'Brand', 'Price', 'Cost']
 
 # --- Price selection behavior ---------------------------------------------- #
-# We’ll prefer a per-location price if it exists and is > 0. Otherwise fallback
-# to base Price. Add/remove aliases here as needed.
+# Prefer location price if present and > 0, otherwise fall back to base Price.
 LOCATION_PRICE_ALIASES = [
-    "Location price",     # current export spelling
-    "Location Price",     # alternate spelling
-    "location price",     # tolerant
-    "location_price",     # just in case
+    "Location price",
+    "Location Price",
+    "location price",
+    "location_price",
 ]
 
 # --- Thresholds for filtering products ------------------------------------- #
@@ -36,12 +38,12 @@ MIN_AVAILABLE_QTY = 5          # Minimum inventory units to keep a product
 MIN_COST = 1.0                 # Minimum cost to keep a product
 
 # --- Margin & tax/fees configuration --------------------------------------- #
-# For the "everyday" scenario we treat effective revenue as:
-#   30% off + 10% back in points = 37% total discount ⇒ 63% of shelf price
+# Everyday scenario: 30% off + 10% back in points ≈ 37% total discount
+# Effective revenue is about 63% of shelf price.
 EFFECTIVE_REVENUE_RATE = 0.63
 OUT_THE_DOOR_MULTIPLIER = 1.33  # multiplier from effective price
 
-# --- Promo definitions (easy to tweak) ------------------------------------- #
+# --- Promo definitions ------------------------------------------------------ #
 # Scenario 1: 50% discount + 10% back in points (~55% total) + 30% lower cost
 PROMO_50 = {
     "label": "50% Off + 10% Back + 30% Cost Relief",
@@ -54,6 +56,20 @@ PROMO_40 = {
     "label": "40% Off + 10% Back + 25% Cost Relief",
     "total_discount": 0.46,     # 1 - (0.60 * 0.90) = 0.46
     "cost_reduction": 0.25,     # vendor gives 25% cost support
+}
+
+# Scenario 3: 50% discount + 10% back + 25% lower cost (softer vendor support)
+PROMO_50_SOFT = {
+    "label": "50% Off + 10% Back + 25% Cost Relief",
+    "total_discount": 0.55,
+    "cost_reduction": 0.25,
+}
+
+# Scenario 4: 40% discount + 10% back + 20% lower cost
+PROMO_40_SOFT = {
+    "label": "40% Off + 10% Back + 20% Cost Relief",
+    "total_discount": 0.46,
+    "cost_reduction": 0.20,
 }
 
 # --- Columns to strip from the final export -------------------------------- #
@@ -71,7 +87,7 @@ COLUMNS_TO_STRIP = [
     "SourceFile",
 ]
 
-# Columns to format as currency / percent in Excel
+# Columns to format as currency / percent in Excel (for Products sheet only)
 CURRENCY_COLUMNS = {
     "Price",
     "Cost",
@@ -84,22 +100,19 @@ CURRENCY_COLUMNS = {
     "Promo50_Cost",
     "Promo40_Effective_Price",
     "Promo40_Cost",
+    "Promo50_Cost_25Relief",
+    "Promo40_Cost_20Relief",
 }
 
 PERCENT_COLUMNS = {
     "Margin",
     "Margin_Promo50",
     "Margin_Promo40",
-}
-
-# (Not used yet; kept in case you want to reintroduce it)
-store_abbr_map = {
-    "Buzz Cannabis - Mission Valley",
-    "Buzz Cannabis-La Mesa",
-    "Buzz Cannabis - SORRENTO VALLEY",
-    "Buzz Cannabis - Lemon Grove",
-    "Buzz Cannabis (National City)",
-    "Buzz Cannabis Wildomar Palomar"
+    "Margin_Promo50_25Relief",
+    "Margin_Promo40_20Relief",
+    "AvgMargin",
+    "MinMargin",
+    "MaxMargin",
 }
 
 # =============================================================================
@@ -109,6 +122,7 @@ store_abbr_map = {
 def ensure_dir_exists(directory):
     if not os.path.exists(directory):
         os.makedirs(directory)
+
 
 def organize_by_brand(output_directory):
     """
@@ -137,6 +151,7 @@ def organize_by_brand(output_directory):
                     print(f"Moving {old_path} → {new_path}")
                     shutil.move(old_path, new_path)
 
+
 def extract_strain_type(product_name: str):
     """Identify single-letter strain markers like S, H, I in the product name."""
     if not isinstance(product_name, str):
@@ -149,6 +164,7 @@ def extract_strain_type(product_name: str):
     if re.search(r'\bI\b', name):
         return 'I'
     return ""
+
 
 def extract_product_details(product_name: str):
     """
@@ -169,6 +185,7 @@ def extract_product_details(product_name: str):
 
     return weight, sub_type
 
+
 def is_empty_or_numbers(val):
     """
     If the 'Product' cell is empty or only digits, we consider it invalid.
@@ -178,18 +195,19 @@ def is_empty_or_numbers(val):
     val_str = val.strip()
     return val_str == "" or val_str.isdigit()
 
+
 def format_excel_file(filename: str) -> None:
     """
-    Make the final Excel more readable:
-      - Freeze header row
-      - Dark colored header with white text
-      - Zebra-stripe data rows
-      - Auto column widths
-      - Currency / percent formats on key columns
+    Generic formatting for all sheets EXCEPT the Summary sheet.
+    Summary gets its own, more visual formatting.
     """
     wb = load_workbook(filename)
 
     for ws in wb.worksheets:
+        # Summary sheet is handled by a dedicated function
+        if ws.title == "Summary":
+            continue
+
         # Freeze header row
         ws.freeze_panes = "A2"
 
@@ -202,10 +220,11 @@ def format_excel_file(filename: str) -> None:
             cell.alignment = Alignment(horizontal='center', vertical='center')
             cell.fill = header_fill
 
-        # Light grey stripe every other data row
+        # Zebra stripes
         stripe_fill = PatternFill(start_color="F2F2F2", end_color="F2F2F2", fill_type="solid")
+        max_row = ws.max_row
 
-        # Go column by column so we can set widths + formats
+        # Go column by column so we can set widths + formats + conditional formatting
         for col_cells in ws.columns:
             max_length = 0
             header_cell = col_cells[0]
@@ -226,7 +245,7 @@ def format_excel_file(filename: str) -> None:
             # Auto width
             ws.column_dimensions[col_letter].width = max_length + 2
 
-            # Number formats + right alignment for numeric columns
+            # Number formats + right alignment
             if header_text in CURRENCY_COLUMNS:
                 for cell in col_cells[1:]:
                     cell.number_format = '"$"#,##0.00'
@@ -235,6 +254,14 @@ def format_excel_file(filename: str) -> None:
                 for cell in col_cells[1:]:
                     cell.number_format = '0.0%'
                     cell.alignment = Alignment(horizontal='right')
+                # Color scale for percentages: red → yellow → green
+                data_range = f"{col_letter}2:{col_letter}{max_row}"
+                rule = ColorScaleRule(
+                    start_type="min", start_color="F8696B",   # red
+                    mid_type="percentile", mid_value=50, mid_color="FFEB84",  # yellow
+                    end_type="max", end_color="63BE7B"       # green
+                )
+                ws.conditional_formatting.add(data_range, rule)
 
     wb.save(filename)
 
@@ -242,23 +269,24 @@ def format_excel_file(filename: str) -> None:
 # PRICE SELECTION & PROMO HELPERS
 # =============================================================================
 
-def _first_present_column(df: pd.DataFrame, candidates) -> str | None:
-    """Return the first column name from candidates that exists in df.columns."""
+def _first_present_column(df: pd.DataFrame, candidates):
+    """Return the first column name from candidates that exists in df."""
     for c in candidates:
         if c in df.columns:
             return c
     return None
 
+
 def _to_num(series):
     """Coerce to numeric; invalid → NaN."""
     return pd.to_numeric(series, errors="coerce")
 
-def inject_sell_price_columns(df: pd.DataFrame) -> tuple[pd.DataFrame, str | None]:
+
+def inject_sell_price_columns(df: pd.DataFrame):
     """
     Create two diagnostic columns:
       - Price_Used: numeric value actually used for downstream math
       - Price_Used_Source: string label ('Location price' or 'Price')
-    Returns (df, location_price_colname_or_None).
     """
     loc_col = _first_present_column(df, LOCATION_PRICE_ALIASES)
     price_col_exists = 'Price' in df.columns
@@ -282,11 +310,10 @@ def inject_sell_price_columns(df: pd.DataFrame) -> tuple[pd.DataFrame, str | Non
 # CORE DATA PROCESSING
 # =============================================================================
 
-def process_single_file(file_path: str, selected_brands: list[str]) -> pd.DataFrame | None:
+def process_single_file(file_path: str, selected_brands):
     """
     Read one CSV, clean/filter it, compute margins & promo simulations,
     and return a DataFrame of valid products for that file.
-    No Excel is written here; we just return data for aggregation.
     """
     try:
         df = pd.read_csv(file_path)
@@ -400,9 +427,7 @@ def process_single_file(file_path: str, selected_brands: list[str]) -> pd.DataFr
         df['DiffTo45Margin'] = df['TargetPrice_45Margin'] - df['Price_Used']
 
         # --- Promo 50% off + 10% back + 30% lower cost --------------------
-        # Customer pays 45% of shelf Price_Used.
         promo50_price = price * (1 - PROMO_50["total_discount"])  # Price_Used * 0.45
-        # Vendor gives 30% cost relief.
         promo50_cost = cost * (1 - PROMO_50["cost_reduction"])    # Cost * 0.70
 
         df['Promo50_Effective_Price'] = promo50_price
@@ -415,7 +440,6 @@ def process_single_file(file_path: str, selected_brands: list[str]) -> pd.DataFr
         )
 
         # --- Promo 40% off + 10% back + 25% cost relief -------------------
-        # Customer pays 54% of shelf Price_Used. Vendor covers 25% of cost.
         promo40_price = price * (1 - PROMO_40["total_discount"])  # Price_Used * 0.54
         promo40_cost = cost * (1 - PROMO_40["cost_reduction"])    # Cost * 0.75
 
@@ -425,6 +449,25 @@ def process_single_file(file_path: str, selected_brands: list[str]) -> pd.DataFr
         df['Margin_Promo40'] = np.where(
             promo40_price.notna() & (promo40_price > 0),
             (promo40_price - promo40_cost) / promo40_price,
+            np.nan
+        )
+
+        # --- Alternate promo scenarios with less cost relief -------------
+        # 50% off + 10% back, but only 25% cost relief
+        promo50_cost_soft = cost * (1 - PROMO_50_SOFT["cost_reduction"])  # Cost * 0.75
+        df['Promo50_Cost_25Relief'] = promo50_cost_soft
+        df['Margin_Promo50_25Relief'] = np.where(
+            promo50_price.notna() & (promo50_price > 0),
+            (promo50_price - promo50_cost_soft) / promo50_price,
+            np.nan
+        )
+
+        # 40% off + 10% back, but only 20% cost relief
+        promo40_cost_soft = cost * (1 - PROMO_40_SOFT["cost_reduction"])  # Cost * 0.80
+        df['Promo40_Cost_20Relief'] = promo40_cost_soft
+        df['Margin_Promo40_20Relief'] = np.where(
+            promo40_price.notna() & (promo40_price > 0),
+            (promo40_price - promo40_cost_soft) / promo40_price,
             np.nan
         )
 
@@ -441,8 +484,13 @@ def process_single_file(file_path: str, selected_brands: list[str]) -> pd.DataFr
         df['Promo40_Effective_Price'] = np.nan
         df['Promo40_Cost'] = np.nan
         df['Margin_Promo40'] = np.nan
+        df['Promo50_Cost_25Relief'] = np.nan
+        df['Margin_Promo50_25Relief'] = np.nan
+        df['Promo40_Cost_20Relief'] = np.nan
+        df['Margin_Promo40_20Relief'] = np.nan
 
     return df
+
 
 def consolidate_across_stores(df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -454,9 +502,6 @@ def consolidate_across_stores(df: pd.DataFrame) -> pd.DataFrame:
 
     Grouping key (per SKU):
       Brand, Product, Category, Cost.
-
-    Within each SKU, we still keep one row per (Price_Used, Price_Used_Source),
-    but we collapse store names and propagate Is_Store_Specific.
     """
     if df is None or df.empty:
         return df
@@ -478,7 +523,7 @@ def consolidate_across_stores(df: pd.DataFrame) -> pd.DataFrame:
     consolidated_rows = []
 
     grouped = df.groupby(key_cols, dropna=False)
-    for key, sku_df in grouped:
+    for _, sku_df in grouped:
         if sku_df.empty:
             continue
 
@@ -508,6 +553,7 @@ def consolidate_across_stores(df: pd.DataFrame) -> pd.DataFrame:
     # Fallback
     return df.reset_index(drop=True)
 
+
 def merge_similar_products(brand_df: pd.DataFrame) -> pd.DataFrame:
     """
     Inside a single brand, merge 'similar' products when they share:
@@ -519,13 +565,6 @@ def merge_similar_products(brand_df: pd.DataFrame) -> pd.DataFrame:
     We DON'T care about which stores or whether the price came from
     base 'Price' vs 'Location price' as long as the actual Price_Used
     and Cost are identical.
-
-    The merged row:
-      - Product          → first product name, with a "+N more" suffix if merged
-      - Product_List     → '; '-joined list of all product names in the group
-      - Merged_Count     → number of products merged
-      - Store            → combined store labels (if present)
-      - Is_Store_Specific → True if any underlying row used location_price
     """
     if brand_df is None or brand_df.empty:
         return brand_df
@@ -562,7 +601,7 @@ def merge_similar_products(brand_df: pd.DataFrame) -> pd.DataFrame:
 
         row = grp.iloc[0].copy()
 
-        # ---------- merge product names ----------
+        # Merge product names
         product_names = sorted({str(x) for x in grp['Product'].dropna()})
         count = len(product_names)
 
@@ -578,17 +617,345 @@ def merge_similar_products(brand_df: pd.DataFrame) -> pd.DataFrame:
         row['Product_List'] = "; ".join(product_names)
         row['Merged_Count'] = count
 
-        # ---------- merge Store label if present ----------
+        # Merge Store label if present
         if 'Store' in grp.columns:
             stores_vals = sorted({str(x) for x in grp['Store'].dropna()})
             row['Store'] = ", ".join(stores_vals)
 
-        # ---------- propagate store-specific flag ----------
+        # propagate store-specific flag
         row['Is_Store_Specific'] = bool(grp['Is_Store_Specific'].any())
 
         merged_rows.append(row)
 
     return pd.DataFrame(merged_rows).reset_index(drop=True)
+
+# =============================================================================
+# SUMMARY / DASHBOARD HELPERS
+# =============================================================================
+
+def build_scenario_summary(df: pd.DataFrame) -> list[dict]:
+    """
+    Build one row per pricing scenario (current, promos) with
+    Avg / Min / Max margin, SKU count and a simple quality band.
+    """
+    scenario_rows: list[dict] = []
+
+    scenario_label_map = {
+        "Margin": "Current Everyday Pricing",
+        "Margin_Promo50": PROMO_50["label"],
+        "Margin_Promo40": PROMO_40["label"],
+        "Margin_Promo50_25Relief": PROMO_50_SOFT["label"],
+        "Margin_Promo40_20Relief": PROMO_40_SOFT["label"],
+    }
+
+    for col, label in scenario_label_map.items():
+        if col not in df.columns:
+            continue
+        s = pd.to_numeric(df[col], errors="coerce").dropna()
+        if s.empty:
+            continue
+
+        avg = s.mean()
+        mn = s.min()
+        mx = s.max()
+
+        # Simple quality band – tweak thresholds here if you like
+        if avg >= 0.60:
+            quality = "Excellent"
+        elif avg >= 0.45:
+            quality = "Good"
+        elif avg >= 0.35:
+            quality = "OK"
+        else:
+            quality = "Needs Attention"
+
+        scenario_rows.append({
+            "Scenario": label,
+            "AvgMargin": avg,
+            "MinMargin": mn,
+            "MaxMargin": mx,
+            "SKUsWithMargin": len(s),
+            "Quality": quality,
+        })
+
+    return scenario_rows
+
+
+def build_category_summary(df: pd.DataFrame) -> list[dict]:
+    """
+    Build one row per product Category with:
+      - Avg margin under each scenario
+      - SKU count
+    """
+    rows: list[dict] = []
+    if "Category" not in df.columns:
+        return rows
+
+    grouped = df.groupby("Category", dropna=True)
+    for cat, grp in grouped:
+        if cat is None:
+            continue
+        cat_label = str(cat).strip()
+        if not cat_label:
+            continue
+
+        row = {"Category": cat_label}
+
+        # How many distinct products in this category
+        if "Product" in grp.columns:
+            skus = grp["Product"].nunique()
+        else:
+            skus = len(grp)
+        row["SKUs"] = skus
+
+        # Average margins by scenario
+        for col, key in [
+            ("Margin", "AvgMargin_Current"),
+            ("Margin_Promo50", "AvgMargin_Promo50"),
+            ("Margin_Promo40", "AvgMargin_Promo40"),
+        ]:
+            if col in grp.columns:
+                s = pd.to_numeric(grp[col], errors="coerce").dropna()
+                row[key] = s.mean() if not s.empty else np.nan
+            else:
+                row[key] = np.nan
+
+        rows.append(row)
+
+    # Sort alphabetically by category name
+    rows.sort(key=lambda r: r["Category"])
+    return rows
+
+
+def enhance_summary_and_charts(filename: str, brand: str, data_df: pd.DataFrame) -> None:
+    """
+    Create a 'Summary' sheet that acts as a visual dashboard:
+      - Scenario Summary table + bar chart
+      - Category Margin Breakdown table + bar chart + pie chart
+    """
+    wb = load_workbook(filename)
+
+    # Start fresh each time
+    if "Summary" in wb.sheetnames:
+        wb.remove(wb["Summary"])
+    ws = wb.create_sheet("Summary")
+
+    scenario_rows = build_scenario_summary(data_df)
+    category_rows = build_category_summary(data_df)
+
+    # Big title row
+    max_cols_for_title = 12
+    ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=max_cols_for_title)
+    title_cell = ws.cell(row=1, column=1)
+    title_cell.value = f"{brand} - Margin Dashboard"
+    title_cell.font = Font(name="Calibri", size=16, bold=True, color="FFFFFF")
+    title_cell.alignment = Alignment(horizontal="center", vertical="center")
+    title_cell.fill = PatternFill(start_color="305496", end_color="305496", fill_type="solid")
+
+    thin_border = Border(
+        left=Side(style='thin'),
+        right=Side(style='thin'),
+        top=Side(style='thin'),
+        bottom=Side(style='thin'),
+    )
+
+    current_row = 3
+
+    # ---------------------------------------------------------------------
+    # Scenario summary section
+    # ---------------------------------------------------------------------
+    if scenario_rows:
+        sec_title = ws.cell(row=current_row, column=1)
+        sec_title.value = "Scenario Summary"
+        sec_title.font = Font(size=13, bold=True)
+        current_row += 1
+
+        scen_header_row = current_row
+        scen_headers = ["Scenario", "Avg Margin", "Min Margin", "Max Margin", "# SKUs", "Quality"]
+
+        # Header
+        for col_idx, header in enumerate(scen_headers, start=1):
+            cell = ws.cell(row=scen_header_row, column=col_idx)
+            cell.value = header
+            cell.font = Font(bold=True, color="FFFFFF")
+            cell.alignment = Alignment(horizontal="center", vertical="center")
+            cell.fill = PatternFill(start_color="808080", end_color="808080", fill_type="solid")
+            cell.border = thin_border
+
+        scen_data_start = scen_header_row + 1
+        r = scen_data_start
+
+        # Data rows
+        for rowdata in scenario_rows:
+            ws.cell(row=r, column=1, value=rowdata["Scenario"])
+            ws.cell(row=r, column=2, value=rowdata["AvgMargin"])
+            ws.cell(row=r, column=3, value=rowdata["MinMargin"])
+            ws.cell(row=r, column=4, value=rowdata["MaxMargin"])
+            ws.cell(row=r, column=5, value=rowdata["SKUsWithMargin"])
+            ws.cell(row=r, column=6, value=rowdata["Quality"])
+            r += 1
+
+        scen_data_end = r - 1
+
+        stripe_fill = PatternFill(start_color="F2F2F2", end_color="F2F2F2", fill_type="solid")
+
+        # Format data rows
+        for row_idx in range(scen_data_start, scen_data_end + 1):
+            for col_idx in range(1, len(scen_headers) + 1):
+                cell = ws.cell(row=row_idx, column=col_idx)
+                cell.border = thin_border
+
+                if col_idx in (2, 3, 4):      # margin %
+                    cell.number_format = "0.0%"
+                    cell.alignment = Alignment(horizontal="right", vertical="center")
+                elif col_idx == 5:            # SKU count
+                    cell.number_format = "0"
+                    cell.alignment = Alignment(horizontal="right", vertical="center")
+                else:
+                    cell.alignment = Alignment(horizontal="left", vertical="center")
+
+                # Zebra stripe effect
+                if (row_idx - scen_data_start) % 2 == 0:
+                    cell.fill = stripe_fill
+
+        # Color scale on Avg Margin column
+        avg_col_letter = get_column_letter(2)
+        data_range = f"{avg_col_letter}{scen_data_start}:{avg_col_letter}{scen_data_end}"
+        rule = ColorScaleRule(
+            start_type="min", start_color="F8696B",
+            mid_type="percentile", mid_value=50, mid_color="FFEB84",
+            end_type="max", end_color="63BE7B"
+        )
+        ws.conditional_formatting.add(data_range, rule)
+
+        # Bar chart: Avg Margin by Scenario
+        chart = BarChart()
+        chart.type = "col"
+        chart.style = 10
+        chart.title = "Average Margin by Scenario"
+        chart.y_axis.title = "Margin"
+        chart.x_axis.title = "Scenario"
+
+        data = Reference(ws, min_col=2, max_col=2, min_row=scen_header_row, max_row=scen_data_end)
+        cats = Reference(ws, min_col=1, max_col=1, min_row=scen_header_row + 1, max_row=scen_data_end)
+        chart.add_data(data, titles_from_data=True)
+        chart.set_categories(cats)
+
+        ws.add_chart(chart, "H3")
+
+        current_row = scen_data_end + 3
+
+    # ---------------------------------------------------------------------
+    # Category summary section
+    # ---------------------------------------------------------------------
+    if category_rows:
+        sec_title = ws.cell(row=current_row, column=1)
+        sec_title.value = "Category Margin Breakdown"
+        sec_title.font = Font(size=13, bold=True)
+        current_row += 1
+
+        cat_header_row = current_row
+        cat_headers = [
+            "Category",
+            "Avg Margin (Current)",
+            "Avg Margin (Promo 50)",
+            "Avg Margin (Promo 40)",
+            "# SKUs",
+        ]
+
+        # Header
+        for col_idx, header in enumerate(cat_headers, start=1):
+            cell = ws.cell(row=cat_header_row, column=col_idx)
+            cell.value = header
+            cell.font = Font(bold=True, color="FFFFFF")
+            cell.alignment = Alignment(horizontal="center", vertical="center")
+            cell.fill = PatternFill(start_color="808080", end_color="808080", fill_type="solid")
+            cell.border = thin_border
+
+        cat_data_start = cat_header_row + 1
+        r = cat_data_start
+
+        # Data rows
+        for rowdata in category_rows:
+            ws.cell(row=r, column=1, value=rowdata["Category"])
+            ws.cell(row=r, column=2, value=rowdata["AvgMargin_Current"])
+            ws.cell(row=r, column=3, value=rowdata["AvgMargin_Promo50"])
+            ws.cell(row=r, column=4, value=rowdata["AvgMargin_Promo40"])
+            ws.cell(row=r, column=5, value=rowdata["SKUs"])
+            r += 1
+
+        cat_data_end = r - 1
+
+        stripe_fill = PatternFill(start_color="F2F2F2", end_color="F2F2F2", fill_type="solid")
+
+        # Format data rows
+        for row_idx in range(cat_data_start, cat_data_end + 1):
+            for col_idx in range(1, len(cat_headers) + 1):
+                cell = ws.cell(row=row_idx, column=col_idx)
+                cell.border = thin_border
+
+                if col_idx in (2, 3, 4):      # margin %
+                    cell.number_format = "0.0%"
+                    cell.alignment = Alignment(horizontal="right", vertical="center")
+                elif col_idx == 5:            # SKU count
+                    cell.number_format = "0"
+                    cell.alignment = Alignment(horizontal="right", vertical="center")
+                else:
+                    cell.alignment = Alignment(horizontal="left", vertical="center")
+
+                if (row_idx - cat_data_start) % 2 == 0:
+                    cell.fill = stripe_fill
+
+        # Color scales on margin columns
+        for col_idx in (2, 3, 4):
+            col_letter = get_column_letter(col_idx)
+            data_range = f"{col_letter}{cat_data_start}:{col_letter}{cat_data_end}"
+            rule = ColorScaleRule(
+                start_type="min", start_color="F8696B",
+                mid_type="percentile", mid_value=50, mid_color="FFEB84",
+                end_type="max", end_color="63BE7B"
+            )
+            ws.conditional_formatting.add(data_range, rule)
+
+        # Bar chart: Avg Margin (Current) by Category
+        bar = BarChart()
+        bar.type = "col"
+        bar.style = 11
+        bar.title = "Avg Margin by Category (Current)"
+        bar.y_axis.title = "Margin"
+        bar.x_axis.title = "Category"
+
+        data = Reference(ws, min_col=2, max_col=2, min_row=cat_header_row, max_row=cat_data_end)
+        cats = Reference(ws, min_col=1, max_col=1, min_row=cat_header_row + 1, max_row=cat_data_end)
+        bar.add_data(data, titles_from_data=True)
+        bar.set_categories(cats)
+
+        ws.add_chart(bar, f"H{cat_header_row}")
+
+        # Pie chart: SKU mix by Category
+        pie = PieChart()
+        pie.title = "SKU Mix by Category"
+
+        labels = Reference(ws, min_col=1, max_col=1, min_row=cat_data_start, max_row=cat_data_end)
+        data = Reference(ws, min_col=5, max_col=5, min_row=cat_header_row, max_row=cat_data_end)
+        pie.add_data(data, titles_from_data=True)
+        pie.set_categories(labels)
+
+        ws.add_chart(pie, f"N{cat_header_row}")
+
+    # Freeze panes under the first header area
+    ws.freeze_panes = "A5" if scenario_rows else "A3"
+
+    # Auto-fit column widths
+    for col_idx in range(1, ws.max_column + 1):
+        max_length = 0
+        for row in range(1, ws.max_row + 1):
+            val = ws.cell(row=row, column=col_idx).value
+            if val is not None:
+                max_length = max(max_length, len(str(val)))
+        ws.column_dimensions[get_column_letter(col_idx)].width = max_length + 2
+
+    wb.save(filename)
 
 # =============================================================================
 # EXCEL WRITER & SUMMARY
@@ -604,10 +971,8 @@ def write_brand_excel(brand: str,
 
       suffix = "ALL_STORES" or "STORE_SPECIFIC"
 
-    - Sorts rows so they read nicely
-    - Adds a Summary sheet with average / min / max margins
-    - Writes into output_directory/<Brand Name>/
-    - Calls format_excel_file(...) for colors & formatting
+    - 'Products' sheet with all SKU-level detail
+    - 'Summary' sheet with a visual dashboard (scenarios + categories)
     """
     if df is None or df.empty:
         return ""
@@ -615,7 +980,7 @@ def write_brand_excel(brand: str,
     df = df.copy()
 
     # Sort order: store-specific sorted by Store first, then Category/Price/Product
-    sort_cols = []
+    sort_cols: list[str] = []
     if suffix == "STORE_SPECIFIC" and 'Store' in df.columns:
         sort_cols.append('Store')
     if 'Category' in df.columns:
@@ -635,29 +1000,14 @@ def write_brand_excel(brand: str,
 
     filename = os.path.join(brand_folder, f"{safe_brand}_{suffix}_{today_str}.xlsx")
 
+    # Write the main Products sheet
     with pd.ExcelWriter(filename, engine='openpyxl') as writer:
-        # Main data sheet
         df.to_excel(writer, index=False, sheet_name='Products')
 
-        # Auto-discover any margin columns and build a small summary
-        margin_cols = [c for c in df.columns if c.lower().startswith("margin")]
-        summary_rows = []
-        for col in margin_cols:
-            s = pd.to_numeric(df[col], errors='coerce').dropna()
-            if not s.empty:
-                summary_rows.append({
-                    'Margin_Column': col,
-                    'AvgMargin': s.mean(),
-                    'MinMargin': s.min(),
-                    'MaxMargin': s.max(),
-                    'SKUsWithMargin': len(s)
-                })
-
-        if summary_rows:
-            summary_df = pd.DataFrame(summary_rows)
-            summary_df.to_excel(writer, index=False, sheet_name='Summary')
-
+    # Build the Summary dashboard and format all sheets
+    enhance_summary_and_charts(filename, brand, df)
     format_excel_file(filename)
+
     print(f"Created {filename}")
     return filename
 
@@ -671,7 +1021,7 @@ def process_files(input_directory, output_directory, selected_brands):
 
       1. Read all CSVs from input_directory using process_single_file(...)
       2. Combine into one DataFrame
-      3. consolidate_across_stores(...)  → handles location_price vs base price
+      3. consolidate_across_stores(...)  → handles All Stores vs location prices
       4. merge_similar_products(...)     → collapses same price+cost into one row
       5. For each Brand:
            - rows with Is_Store_Specific == False → Brand/Brand_ALL_STORES_*.xlsx
@@ -809,10 +1159,12 @@ def get_all_brands(input_directory):
         return []
     return sorted(list(brands))
 
+
 def save_config(input_dir, output_dir):
     with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
         f.write(f"{input_dir}\n")
         f.write(f"{output_dir}\n")
+
 
 def load_config():
     if os.path.exists(CONFIG_FILE):
@@ -824,6 +1176,7 @@ def load_config():
                 if os.path.isdir(input_dir) and os.path.isdir(output_dir):
                     return input_dir, output_dir
     return None, None
+
 
 def auto_detect_dirs():
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -989,6 +1342,7 @@ class BrandInventoryApp:
             traceback.print_exc()
             messagebox.showerror("Error", f"Error generating reports:\n{e}")
 
+
 class MainHub:
     """Main hub with multiple app choices."""
     def __init__(self, master):
@@ -1019,6 +1373,7 @@ class MainHub:
 
     def return_to_main(self):
         MainHub(self.master)
+
 
 if __name__ == "__main__":
     root = tk.Tk()
