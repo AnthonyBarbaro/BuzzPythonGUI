@@ -684,14 +684,15 @@ def build_scenario_summary(df: pd.DataFrame) -> list[dict]:
 def build_category_summary(df: pd.DataFrame) -> list[dict]:
     """
     Build one row per product Category with:
+      - Total SKU count (using Merged_Count if available)
       - Avg margin under each scenario
-      - SKU count
     """
     rows: list[dict] = []
     if "Category" not in df.columns:
         return rows
 
     grouped = df.groupby("Category", dropna=True)
+
     for cat, grp in grouped:
         if cat is None:
             continue
@@ -701,14 +702,21 @@ def build_category_summary(df: pd.DataFrame) -> list[dict]:
 
         row = {"Category": cat_label}
 
-        # How many distinct products in this category
-        if "Product" in grp.columns:
+        # ---------- SKU count (FIXED) ----------
+        # If we have Merged_Count, use that to count underlying SKUs.
+        if "Merged_Count" in grp.columns:
+            # each row already represents N merged SKUs
+            skus = grp["Merged_Count"].fillna(1).sum()
+        elif "Product" in grp.columns:
+            # fallback: count distinct product names
             skus = grp["Product"].nunique()
         else:
+            # last-resort fallback
             skus = len(grp)
-        row["SKUs"] = skus
 
-        # Average margins by scenario
+        row["SKUs"] = int(skus)
+
+        # ---------- Average margins by scenario ----------
         for col, key in [
             ("Margin", "AvgMargin_Current"),
             ("Margin_Promo50", "AvgMargin_Promo50"),
