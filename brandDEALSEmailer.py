@@ -306,33 +306,71 @@ def send_brand_emails():
 
     # 7) OPTIONAL: Send consolidated email
     if all_brands_info:
-        grand_total = sum(bi["total_owed"] for bi in all_brands_info)
+
+        def build_store_totals_table(store_totals):
+            if not store_totals:
+                return "<p>(No store totals found.)</p>"
+
+            html = """
+            <table border='1' cellpadding='5' cellspacing='0'>
+            <thead>
+                <tr><th>Store</th><th>Total Kickback Owed</th></tr>
+            </thead>
+            <tbody>
+            """
+            for store, total in sorted(store_totals.items(), key=lambda x: str(x[0]).lower()):
+                html += f"<tr><td>{store}</td><td>${total:,.2f}</td></tr>"
+            html += "</tbody></table>"
+            return html
+
+        # --- 1) Totals per store across ALL brands ---
+        all_store_totals = {}
+        for bi in all_brands_info:
+            for store, owed in bi["rows"]:
+                try:
+                    all_store_totals[store] = all_store_totals.get(store, 0.0) + float(owed)
+                except:
+                    pass
+
+        grand_total = sum(all_store_totals.values())
+        store_totals_html = build_store_totals_table(all_store_totals)
+
+        # --- 2) Brand blocks (NO store totals under each brand) ---
         brand_htmls = []
         for bi in all_brands_info:
             brand = bi["brand"]
             link_html = make_html_link_list(bi["links"])
             row_html = build_kickback_table(bi["rows"])
+
             brand_html = f"""
             <h3>{brand}</h3>
             <p><strong>Links:</strong></p>
             {link_html}
             <p><strong>Kickback Summary:</strong></p>
             {row_html}
+            <br>
+            <p><strong>please include/contact joseph@buzzcannabis.com & donna@buzzcannabis.com in all emails regarding these credits. </strong></p>
             """
             brand_htmls.append(brand_html)
 
         consolidated_html = "<hr>".join(brand_htmls)
-        consolidated_html += f"<br><p><strong>GRAND TOTAL OWED: ${grand_total:,.2f}</strong></p>"
+
+        # --- 3) One combined Store Totals section + grand total at very bottom ---
+        consolidated_html += f"""
+        <hr>
+        <h3>All Store Totals</h3>
+        {store_totals_html}
+        <hr>
+        <p><strong>GRAND TOTAL OWED: ${grand_total:,.2f}</strong></p>
+        """
 
         subject = "Consolidated Weekly Kickback (All Brands)"
         html_body = f"""
         <html>
         <body>
-          <p>Hello Team,</p>
-          <p>Below is a consolidated summary of all brands Kickback info:</p>
-          {consolidated_html}
-          <p>Regards,<br>Donna</p>
-        <p><strong>please include/contact anthony@buzzcannabis.com & donna@buzzcannabis.com in all emails regarding these credits. </strong></p>
+        <p>Hello Team,</p>
+        <p>Below is a consolidated summary of all brands Kickback info:</p>
+        {consolidated_html}
         </body>
         </html>
         """
@@ -340,12 +378,10 @@ def send_brand_emails():
         send_email_with_gmail_html(
             subject=subject,
             html_body=html_body,
-            recipients=["anthony@barbaro.tech","donna@buzzcannabis.com","kevin@buzzcannabis.com"],
+            recipients=["anthony@barbaro.tech","donna@buzzcannabis.com","kevin@buzzcannabis.com","joseph@buzzcannabis.com"],
             #recipients=["anthony@barbaro.tech"],
             attachments=None
         )
-
-
 # ---------------------------------------------
 # 6) MAIN
 # ---------------------------------------------

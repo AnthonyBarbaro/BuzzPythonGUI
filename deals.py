@@ -728,24 +728,24 @@ brand_criteria = {
     'Jeeter': {
         'vendors': ['Med For America Inc.'],
         'brands': ['Jeeter'],
-
+        'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
         # default (used by any rule that doesn't override discount/kickback)
-        'discount': 0.40,
-        'kickback': 0.20,
+        'discount': 0.50,
+        'kickback': 0.30,
 
-        'rules': [
-            {
-                'rule_name': 'Jeeter - Monday (50/30)',
-                'days': ['Monday'],
-                'discount': 0.50,
-                'kickback': 0.30,
-            },
-            {
-                'rule_name': 'Jeeter - Tue-Sun (40/20)',
-                'days': ['Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
-                # discount/kickback inherited from base (0.40 / 0.20)
-            },
-        ],
+        # 'rules': [
+        #     {
+        #         'rule_name': 'Jeeter - Monday (50/30)',
+        #         'days': ['Monday'],
+        #         'discount': 0.50,
+        #         'kickback': 0.30,
+        #     },
+        #     {
+        #         'rule_name': 'Jeeter - Tue-Sun (40/20)',
+        #         'days': ['Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+        #         # discount/kickback inherited from base (0.40 / 0.20)
+        #     },
+        # ],
 
         # optional: only if you want to restrict stores
         # 'stores': ['MV','LM','SV','LG','NC','WP'],
