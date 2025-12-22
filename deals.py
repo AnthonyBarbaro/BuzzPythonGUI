@@ -759,11 +759,11 @@ brand_criteria = {
     },
     'Dabwoods': {
         'vendors': ['The Clear Group Inc.','Decoi','Garden Of Weeden Inc.','Garden Of Weeden'],
-        'days': ['Thursday','Friday','Saturday','Sunday'],
+        'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
         'discount': 0.50,
         'kickback': 0.30,
-        'categories': ['Disposables'],
-        'excluded_phrases': ['DabBar X'],
+        'categories': ['Disposables','Cartridges'],
+        'excluded_phrases': ['DabBar X','Cart'],
         'brands': ['Dabwoods','DabBar']
     },
      'Time Machine': {
@@ -979,10 +979,21 @@ brand_criteria = {
     },
     "Sluggers": {
         'vendors': ['Garden Of Weeden','Garden Of Weeden Inc.'],
-        'days': ['Monday','Sunday'],
-        'discount': 0.50,
-        'kickback': 0.30,
-        'brands': ['Sluggers']
+        'brands': ['Sluggers'],
+        'rules': [
+            {
+                'rule_name': 'Sluggers - Monday Sunday (50/30)',
+                'days': ['Monday','Sunday'],
+                'discount': 0.50,
+                'kickback': 0.30,
+            },
+            {
+                'rule_name': 'Sluggers - Tue-Sat (30/0)',
+                'days': ['Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+                'discount': 0.30,
+                'kickback': 0.0,
+            },
+        ],
     },
     "Turn": {
         'vendors': ['Garden Of Weeden','Garden Of Weeden Inc.','Hilife Group MV , LLC'],
@@ -1148,6 +1159,11 @@ brand_criteria = {
            'discount': 0.5,
            'kickback': 0.3,
            'brands': ['JJ Dragon']},
+    'Sol Flora': {'vendors': ['Twisted Roots, Inc.'],
+           'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
+           'discount': 0.5,
+           'kickback': 0.0,
+           'brands': ['Sol Flora']},
 }
 
 def style_summary_sheet(sheet, brand_name):
@@ -1449,21 +1465,30 @@ def days_text_from_rules(rules):
 
 def build_brand_store_data(brand, criteria, store_data):
     """
-    For a single brand, apply ALL rules, per store, without double-counting.
-    If rules overlap, the earlier rule in the list wins.
+    For a single brand:
+      - Apply ALL rules per store
+      - Prevent double-counting
+      - Collect:
+          1) Per-store combined data
+          2) Per-rule combined data (NEW)
     """
     rules = normalize_rules(criteria)
 
-    # working copies per store (so we can drop matched rows and avoid double-count)
     remaining = {
         code: df.copy()
         for code, df in store_data.items()
         if df is not None and not df.empty
     }
-    collected = {code: [] for code in store_data.keys()}
+
+    collected_by_store = {code: [] for code in store_data.keys()}
+    collected_by_rule = {}  # <-- NEW
 
     for rule in rules:
-        allowed_stores = set((rule.get("stores") or DEFAULT_STORES))
+        rule_name = rule.get("rule_name", "Unnamed Rule")
+        collected_by_rule[rule_name] = []
+
+        allowed_stores = set(rule.get("stores", DEFAULT_STORES))
+
         for store_code, df in list(remaining.items()):
             if store_code not in allowed_stores:
                 continue
@@ -1473,27 +1498,90 @@ def build_brand_store_data(brand, criteria, store_data):
                 continue
 
             matched = matched.copy()
-            matched["__deal_rule"] = rule.get("rule_name", "")
+            matched["__deal_rule"] = rule_name
+            matched["__store"] = store_code
 
-            # per-rule math (this is the key to “Jeeter Monday different rate” etc)
+            # Apply per-rule math
             if {"gross sales", "inventory cost"}.issubset(matched.columns):
                 d = float(rule.get("discount", 0.0))
                 k = float(rule.get("kickback", 0.0))
-                d = discount_for_store(d, store_code)  # keeps your WP behavior
+                d = discount_for_store(d, store_code)
                 matched = apply_discounts_and_kickbacks(matched, d, k)
 
-            collected[store_code].append(matched)
+            collected_by_store[store_code].append(matched)
+            collected_by_rule[rule_name].append(matched)
 
-            # prevent double-counting across rules
+            # Prevent double-counting
             remaining[store_code] = df.drop(index=matched.index, errors="ignore")
 
-    out = {}
-    for store_code in store_data.keys():
-        out[store_code] = (
-            pd.concat(collected[store_code], ignore_index=True)
-            if collected[store_code] else pd.DataFrame()
+    # Combine store outputs
+    store_out = {
+        store: (
+            pd.concat(frames, ignore_index=True)
+            if frames else pd.DataFrame()
         )
-    return out, rules
+        for store, frames in collected_by_store.items()
+    }
+
+    # Combine rule outputs
+    rule_out = {
+        rule: (
+            pd.concat(frames, ignore_index=True)
+            if frames else pd.DataFrame()
+        )
+        for rule, frames in collected_by_rule.items()
+    }
+
+    return store_out, rule_out, rules
+def build_rule_summary(rule_df, rule_name, brand, start_date, end_date, days_text):
+    """
+    Builds a Summary-style dataframe for a single rule.
+    """
+    if rule_df.empty:
+        return pd.DataFrame()
+
+    summary = (
+        rule_df
+        .groupby("__store", as_index=False)
+        .agg({
+            "gross sales": "sum",
+            "inventory cost": "sum",
+            "discount amount": "sum",
+            "kickback amount": "sum",
+        })
+    )
+
+    summary.rename(
+        columns={
+            "__store": "Store",
+            "kickback amount": "Kickback Owed",
+        },
+        inplace=True
+    )
+
+    summary["Days Active"] = days_text
+    summary["Date Range"] = f"{start_date} to {end_date}"
+    summary["Brand"] = brand
+    summary["Rule"] = rule_name
+    summary["Margin"] = None
+
+    # Match Summary column order
+    summary = summary[
+        [
+            "Store",
+            "Kickback Owed",
+            "Days Active",
+            "Date Range",
+            "gross sales",
+            "inventory cost",
+            "discount amount",
+            "Margin",
+            "Brand",
+            "Rule",
+        ]
+    ]
+
+    return summary
 
 def run_deals_reports():
     """
@@ -1559,7 +1647,8 @@ def run_deals_reports():
             pass
 
         # --- NEW: apply multiple rules per brand and combine into ONE report ---
-        brand_store_data, rules = build_brand_store_data(brand, criteria, store_data)
+        brand_store_data, rule_data, rules = build_brand_store_data(brand, criteria, store_data)
+
 
         mv_brand_data = brand_store_data["MV"]
         lm_brand_data = brand_store_data["LM"]
@@ -1705,7 +1794,51 @@ def run_deals_reports():
                 wp_brand_data.to_excel(writer, sheet_name="WP_Sales", index=False)
 
             top_sellers_df.to_excel(writer, sheet_name="Top Sellers", index=False)
+            # --- NEW: Rule-level sheets ---
+            for rule_name, rule_df in rule_data.items():
+                if rule_df is None or rule_df.empty:
+                    continue
 
+                safe_rule_name = (
+                    rule_name
+                    .replace("/", " ")
+                    .replace("(", "")
+                    .replace(")", "")
+                    .replace("%", "")
+                )
+
+                sheet_name = f"Rule - {safe_rule_name}"
+                sheet_name = sheet_name[:31]  # Excel limit
+
+                for rule_name, rule_df in rule_data.items():
+                    if rule_df is None or rule_df.empty:
+                        continue
+
+                    safe_rule_name = (
+                        rule_name
+                        .replace("/", " ")
+                        .replace("(", "")
+                        .replace(")", "")
+                        .replace("%", "")
+                    )
+
+                    sheet_name = f"Rule - {safe_rule_name}"[:31]
+
+                    rule_summary_df = build_rule_summary(
+                        rule_df=rule_df,
+                        rule_name=rule_name,
+                        brand=brand,
+                        start_date=start_date,
+                        end_date=end_date,
+                        days_text=days_text,
+                    )
+
+                    rule_summary_df.to_excel(
+                        writer,
+                        sheet_name=sheet_name,
+                        index=False,
+                        startrow=1
+                    )
         # Inject Margin formulas (same layout as before: Margin is column H)
         wb = load_workbook(output_filename)
         summary_sheet = wb["Summary"]
@@ -1729,6 +1862,10 @@ def run_deals_reports():
                 style_worksheet(wb[s])
         if "Top Sellers" in wb.sheetnames:
             style_top_sellers_sheet(wb["Top Sellers"])
+        for sheet_name in wb.sheetnames:
+            if sheet_name.startswith("Rule -"):
+                style_worksheet(wb[sheet_name])
+
         wb.save(output_filename)
 
         total_owed = float(pd.to_numeric(brand_summary.get("Kickback Owed"), errors="coerce").fillna(0).sum())
