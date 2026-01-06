@@ -963,13 +963,6 @@ brand_criteria = {
         'kickback': 0.35,
         'brands': ['Keef']
     },
-    "Decibel": {
-        'vendors': ['Decibel Enterprise Inc.','Hilife LM','Push 365'],
-        'days': ['Sunday'],
-        'discount': 0.50,
-        'kickback': 0.30,
-        'brands': ['Decibel']
-    },
     "PlugnPlay": {
         'vendors': ['Vino & Cigarro, LLC','Garden Of Weeden Inc.','KIVA / LCISM CORP','IE Licensing, LLC'],
         'days': ['Monday','Sunday'],

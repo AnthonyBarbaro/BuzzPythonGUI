@@ -53,10 +53,22 @@ def launchBrowser():
     os.makedirs(files_dir, exist_ok=True)
 
     chrome_options = Options()
-    chrome_options.add_argument("start-maximized")
-    #chrome_options.add_argument("--headless=new")
+
+    # ---- Stability fixes for Ubuntu ----
+    chrome_options.add_argument("--disable-gpu")
+    chrome_options.add_argument("--disable-software-rasterizer")
+    chrome_options.add_argument("--disable-features=VizDisplayCompositor")
+
+    # Fixed window size instead of maximize (prevents compositor redraws)
+    chrome_options.add_argument("--window-size=1920,1080")
+
+    # Other stability flags
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+
+    # Keep browser open after script (your existing behavior)
     chrome_options.add_experimental_option("detach", True)
-    chrome_options.add_experimental_option('excludeSwitches', ['enable-logging'])
+    chrome_options.add_experimental_option("excludeSwitches", ["enable-logging"])
 
     prefs = {
         "download.default_directory": files_dir,
@@ -66,9 +78,13 @@ def launchBrowser():
     }
     chrome_options.add_experimental_option("prefs", prefs)
 
-    d = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
-    d.get("https://dusk.backoffice.dutchie.com/reports/sales/reports/sales-report")
-    return d
+    driver = webdriver.Chrome(
+        service=Service(ChromeDriverManager().install()),
+        options=chrome_options
+    )
+
+    driver.get("https://dusk.backoffice.dutchie.com/reports/sales/reports/sales-report")
+    return driver
 
 def login(driver):
     wait = WebDriverWait(driver, 10)
@@ -211,7 +227,7 @@ def clickActionsAndExport(current_store):
         export_option = wait.until(EC.element_to_be_clickable((By.XPATH, "//li[contains(text(),'Export')]")))
         export_option.click()
         print("Export option clicked successfully.")
-        time.sleep(1)
+        time.sleep(4)
 
         # Wait for a new file to appear in the directory
         downloaded_file = wait_for_new_file(files_dir, before_files, timeout=120)

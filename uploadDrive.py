@@ -36,7 +36,7 @@ def run_drive_upload():
 
     SCOPES = ['https://www.googleapis.com/auth/drive.file']
     LINKS_FILE = "links.txt"
-    PARENT_FOLDER_NAME = "2025_Kickback"
+    PARENT_FOLDER_NAME = "2026_Kickback"
     REPORTS_FOLDER = "brand_reports"
 
     def authenticate_drive_api():
@@ -56,7 +56,8 @@ def run_drive_upload():
 
     def get_week_range_str():
         lm, ls = get_last_monday_sunday()
-        return f"{lm.strftime('%b %d')} to {ls.strftime('%b %d')}"
+        return f"{lm.strftime('%m-%d')} to {ls.strftime('%m-%d')}"
+        
 
     def find_or_create_folder(service, folder_name, parent_id=None):
         query = f"mimeType='application/vnd.google-apps.folder' and name='{folder_name}'"
