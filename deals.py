@@ -616,6 +616,11 @@ brand_criteria = {
            'discount': 0.5,
            'kickback': 0.3,
            'brands': ['Happy Fruit |']},
+    'Highatus': {'vendors': ['Four Star Distribution and Delivery LLC','Highstar Distribution LLC','Hilife LM'],
+           'days': ['Tuesday'],
+           'discount': 0.5,
+           'kickback': 0.3,
+           'brands': ['Highatus |']},
 }
 
 def style_summary_sheet(sheet, brand_name):
