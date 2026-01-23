@@ -380,10 +380,20 @@ brand_criteria = {
     },
     "SeedJunky": {
         'vendors': ['Seed Junky | LCISM Corp','Garden Of Weeden Inc.','Vino & Cigarro, LLC','Garden Of Weeden'],
-        'days': ['Sunday'],
         'discount': 0.50,
         'kickback': 0.30,
-        'brands': ['Seed Junky']
+        'brands': ['Seed Junky'],
+        'rules': [
+            {
+                'rule_name': 'SeedJunky - Sunday (50/30)',
+                'days': ['Sunday'],
+            },
+            {
+                'rule_name': 'SeedJunky - 8ths (50/30))',
+                'days': ['Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday','Monday'],
+    
+            },
+                ]
     },
     "KEEF": {
         'vendors': ['Vino & Cigarro, LLC','Garden Of Weeden Inc.','KIVA / LCISM CORP','GB2, LLC'],
@@ -590,12 +600,6 @@ brand_criteria = {
            'discount': 0.5,
            'kickback': 0.3,
            'brands': ['Planta |']},
-    'Seed Junky': {'vendors': ['Higher Logic LLC','Garden Of Weeden Inc.','Garden Of Weeden','Seed Junky | LCISM Corp'],
-           'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
-           'categories':['Eighths'],
-           'discount': 0.5,
-           'kickback': 0.3,
-           'brands': ['Seed Junky |']},
     'Sauce': {'vendors': ['Garden Of Weeden','Garden Of Weeden Inc.'],
            'days': ['Friday'],
            'discount': 0.5,
