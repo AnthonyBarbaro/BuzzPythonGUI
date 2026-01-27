@@ -305,14 +305,6 @@ brand_criteria = {
         'kickback': 0.0,
         'brands': ['Cake |']
     }, 
-    # 'Green Dawg': { 
-    #     'vendors': ['Artisan Canna Cigars LLC'],
-    #     'days': ['Thursday'],
-    #     'discount': 0.50,
-    #     'kickback': 0.30,
-    #     #'categories': [''], 
-    #     'brands': ['Green Dawg |']
-    # }, 
     'Mary Medical': { 
         'vendors': ["Mary's Tech CA, Inc.",'BRB California LLC', 'Garden Of Weeden Inc.', 'Broadway Alliance, LLC','Garden Of Weeden','Garden Society / LCISM Corp'],
         'days': ['Thursday'],
@@ -336,13 +328,6 @@ brand_criteria = {
         'kickback': 0.0,
         'brands': ["COTC |"]
     },  
-    # 'Master Makers': {
-    #     'vendors': ['Broadway Alliance, LLC'],
-    #     'days': ['Tuesday','Thursday'],
-    #     'discount': 0.50,
-    #     'kickback': 0.30,
-    #     'brands': ['Master Makers |']
-    # }, 
     'Dixie': {
         'vendors': ['Broadway Alliance, LLC','BRB California LLC', 'Garden Of Weeden Inc.','Hilife Group MV , LLC','Garden Of Weeden',"Mary's Tech CA, Inc."],
         'days': ['Saturday','Thursday'],
@@ -378,7 +363,7 @@ brand_criteria = {
         'kickback': 0.30,
         'brands': ['Drops | ']
     },
-    "SeedJunky": {
+    "Seed Junky": {
         'vendors': ['Seed Junky | LCISM Corp','Garden Of Weeden Inc.','Vino & Cigarro, LLC','Garden Of Weeden'],
         'discount': 0.50,
         'kickback': 0.30,
@@ -457,7 +442,7 @@ brand_criteria = {
   },
     "Raw Garden": {
         'vendors': ['Garden Of Weeden Inc.','Garden Of Weeden'],
-        'days': ['Wednsday','Tuesday'],
+        'days': ['Wednesday','Tuesday'],
         'discount': 0.50,
         'kickback': 0.30,
         'brands': ['Raw Garden |']
@@ -476,13 +461,6 @@ brand_criteria = {
         'kickback': 0.30,
         'brands': ['Smokies |']
     },
-    # "Uncle Arnies": {
-    #     'vendors': ['Garden Of Weeden Inc.','Vino & Cigarro, LLC','KIVA / LCISM CORP'],
-    #     'days': ['Monday','Friday'],
-    #     'discount': 0.50,
-    #     'kickback': 0.30,
-    #     'brands': ["Uncle Arnie's |"]
-    # },
     "KANHA": {
         'vendors': ['Garden Of Weeden Inc.','Sunderstorm Bay LLC.'],
         'days': ['Thursday','Sunday'],
@@ -497,20 +475,6 @@ brand_criteria = {
         'kickback': 0.0,
         'brands': ['Kushy Punch |']
     },
-    # "Royal Blunts": {
-    #     'vendors': ['Garden Of Weeden','Garden Of Weeden Inc.','Royal M&D LLC','Bud Technology'],
-    #     'days': ['Monday','Wednesday'],
-    #     'discount': 0.50,
-    #     'kickback': 0.30,
-    #     'brands': ['Royal Blunts']
-    # },
-    # "Heady Heads": {
-    #     'vendors': ['Garden Of Weeden','Garden Of Weeden Inc.','HD Health Industries'],
-    #     'days': ['Wednesday'],
-    #     'discount': 0.50,
-    #     'kickback': 0.30,
-    #     'brands': ['Heady Heads |']
-    # }, 
     "American Weed": {
         'vendors': ['Garden Of Weeden','Garden Of Weeden Inc.'],
         'days': ['Wednesday','Thursday'],
