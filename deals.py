@@ -365,20 +365,21 @@ brand_criteria = {
     },
     "Seed Junky": {
         'vendors': ['Seed Junky | LCISM Corp','Garden Of Weeden Inc.','Vino & Cigarro, LLC','Garden Of Weeden'],
+        'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
         'discount': 0.50,
         'kickback': 0.30,
         'brands': ['Seed Junky'],
-        'rules': [
-            {
-                'rule_name': 'SeedJunky - Sunday (50/30)',
-                'days': ['Sunday'],
-            },
-            {
-                'rule_name': 'SeedJunky - 8ths (50/30))',
-                'days': ['Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday','Monday'],
+        # 'rules': [
+        #     {
+        #         'rule_name': 'SeedJunky - Sunday (50/30)',
+        #         'days': ['Sunday'],
+        #     },
+        #     {
+        #         'rule_name': 'SeedJunky - 8ths (50/30))',
+        #         'days': ['Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday','Monday'],
     
-            },
-                ]
+        #     },
+        #         ]
     },
     "KEEF": {
         'vendors': ['Vino & Cigarro, LLC','Garden Of Weeden Inc.','KIVA / LCISM CORP','GB2, LLC'],
@@ -389,7 +390,7 @@ brand_criteria = {
     },
     "PlugnPlay": {
         'vendors': ['Vino & Cigarro, LLC','Garden Of Weeden Inc.','KIVA / LCISM CORP','IE Licensing, LLC'],
-        'days': ['Monday','Sunday'],
+        'days': ['Saturday','Monday','Sunday'],
         'discount': 0.50,
         'kickback': 0.30,
         'brands': ['Plug n Play |','Plug N Play |']
@@ -443,6 +444,7 @@ brand_criteria = {
     "Raw Garden": {
         'vendors': ['Garden Of Weeden Inc.','Garden Of Weeden'],
         'days': ['Wednesday','Tuesday'],
+        #'days': ['Wednesday'],
         'discount': 0.50,
         'kickback': 0.30,
         'brands': ['Raw Garden |']
@@ -527,13 +529,13 @@ brand_criteria = {
             },
         ],
     },
-    "PBR-NYF-STIDES": {
-        'vendors': ['Garden Of Weeden','Garden Of Weeden Inc.'],
-        'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
-        'discount': 0.50,
-        'kickback': 0.0,
-        'brands': ['NYF |','PBR |','St. Ides |'],
-    },  
+    # "PBR-NYF-STIDES": {
+    #     'vendors': ['Garden Of Weeden','Garden Of Weeden Inc.'],
+    #     'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
+    #     'discount': 0.50,
+    #     'kickback': 0.0,
+    #     'brands': ['NYF |','PBR |','St. Ides |'],
+    # },  
     'CLSICS': {'vendors': ['KIVA / LCISM CORP','Garden Of Weeden Inc.','Vino & Cigarro, LLC'],
             'days': ['Tuesday'],
             'discount': 0.5,
@@ -573,6 +575,7 @@ brand_criteria = {
            'days': ['Tuesday'],
            'discount': 0.5,
            'kickback': 0.3,
+            'excluded_phrases': ['14G'],
            'brands': ['CBX |']},
     'Heirbloom': {'vendors': ['Four Star Distribution and Delivery LLC','Highstar Distribution LLC','Hilife LM'],
            'days': ['Wednesday'],
@@ -589,6 +592,16 @@ brand_criteria = {
            'discount': 0.5,
            'kickback': 0.3,
            'brands': ['Highatus |']},
+    'Ghost': {'vendors': ['DISTRIBUTION HAUS LLC'],
+           'days': ['Thursday'],
+           'discount': 0.5,
+           'kickback': 0.3,
+           'brands': ['Ghost |']},
+    'Maven': {'vendors': ['Garden Of Weeden Inc.','Garden Of Weeden'],
+           'days': ['Monday','Wednesday'],
+           'discount': 0.5,
+           'kickback': 0.3,
+           'brands': ['MVN |']},
 }
 
 def style_summary_sheet(sheet, brand_name):

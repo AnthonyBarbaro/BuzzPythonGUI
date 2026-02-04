@@ -71,6 +71,15 @@ MAX_AVAIL_FOR_UNAVAILABLE = 2
 # ----------------------------------------------------------------------
 #                  CONFIG.TXT load/save
 # ----------------------------------------------------------------------
+def safe_filename(name: str) -> str:
+    """
+    Make a string safe for filesystem paths.
+    - trims whitespace
+    - removes illegal characters
+    """
+    name = name.strip()
+    name = re.sub(r"[^\w\-]+", "_", name)
+    return name
 def load_config():
     """
     Reads the first two lines of config.txt:
@@ -398,9 +407,13 @@ def generate_brand_reports(csv_path, out_dir, selected_brands, include_cost=True
 
         dt_str = datetime.now().strftime("%m-%d-%Y")
         #out_name = f"{base_csv_name}_{brand_name_lower}_{dt_str}.xlsx"
-        out_name = f"{base_csv_name}_{brand_name_lower}.xlsx"
+        safe_brand = safe_filename(brand_name_lower)
+
+        out_name = f"{base_csv_name}_{safe_brand}.xlsx"
         out_path = os.path.join(out_dir, out_name)
 
+        # Ensure output directory exists (extra safety)
+        os.makedirs(os.path.dirname(out_path), exist_ok=True)
         with pd.ExcelWriter(out_path, engine="openpyxl") as writer:
             brand_data.to_excel(writer, index=False, sheet_name="Available")
             if not brand_unavail.empty:
