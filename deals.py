@@ -488,7 +488,7 @@ brand_criteria = {
         'vendors': ['Zasp', 'Garden Of Weeden Inc.', 'Garden Of Weeden'],
         'brands': ['Josh Wax'],
         'discount': 0.40,
-        'kickback': 0.00,
+        'kickback': 0.20,
 
         'rules': [
             {
@@ -513,7 +513,7 @@ brand_criteria = {
         ],
         'brands': ['CAM |', 'CAM|', 'CAM '],  # safer than "CAM"
         'discount': 0.40,
-        'kickback': 0.00,
+        'kickback': 0.20,
 
         'rules': [
             {
@@ -602,6 +602,11 @@ brand_criteria = {
            'discount': 0.5,
            'kickback': 0.3,
            'brands': ['MVN |']},
+    'Stiiizy': {'vendors': [''],
+           'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
+           'discount': 0.5,
+           'kickback': 0.3,
+           'brands': ['Stiiizy |']},
 }
 
 def style_summary_sheet(sheet, brand_name):
