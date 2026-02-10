@@ -592,7 +592,7 @@ brand_criteria = {
            'discount': 0.5,
            'kickback': 0.3,
            'brands': ['Highatus |']},
-    'Ghost': {'vendors': ['DISTRIBUTION HAUS LLC'],
+    'Ghost': {'vendors': ['DISTRIBUTION HAUS LLC','Bud Technology'],
            'days': ['Thursday'],
            'discount': 0.5,
            'kickback': 0.3,
