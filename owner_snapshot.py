@@ -52,10 +52,10 @@ PDF_ROOT = REPORTS_ROOT / "pdf"
 
 # If True: run Selenium export and archive fresh files
 # If False: reuse latest RAW folder, do NOT run Selenium
-RUN_EXPORT = False
+RUN_EXPORT = True
 
 # If RUN_EXPORT=True: delete existing /files downloads first?
-CLEANUP_FILES_BEFORE_EXPORT = False
+CLEANUP_FILES_BEFORE_EXPORT = True
 
 # If RUN_EXPORT=True: do you want to "move" files out of /files, or "copy" them?
 ARCHIVE_ACTION = "move"  # "move" or "copy"
@@ -1457,7 +1457,6 @@ def build_category_summary_table(
 ###############################################################################
 # PDF: Store report
 ###############################################################################
-
 def build_store_pdf(
     out_pdf: Path,
     store_name: str,
@@ -1535,11 +1534,38 @@ def build_store_pdf(
         figsize=(3.55, 2.15),
     )
 
+    # ----------------------------
+    # Drivers (DAILY) - compute only
+    # ----------------------------
+    prod_day = compute_breakdown_net(
+        df_raw,
+        COLUMN_CANDIDATES["product"],
+        end_day,
+        end_day,
+        top_n=TOP_N,
+    )
+
+    brand_day = compute_brand_summary(
+        df_raw,
+        end_day,
+        end_day,
+        top_n=TOP_N,
+    )
+
+    # ----------------------------
     # Drivers (MTD)
+    # ----------------------------
     cat_today = compute_category_summary(df_raw, end_day, end_day)
     cat_mtd = compute_category_summary(df_raw, mtd_start, end_day)
 
-    prod_mtd = compute_breakdown_net(df_raw, COLUMN_CANDIDATES["product"], mtd_start, end_day, top_n=TOP_N)
+    prod_mtd = compute_breakdown_net(
+        df_raw,
+        COLUMN_CANDIDATES["product"],
+        mtd_start,
+        end_day,
+        top_n=TOP_N,
+    )
+
     prod_chart = BytesIO()
     if prod_mtd is not None and not prod_mtd.empty:
         prod_chart = chart_rank_barh(
@@ -1567,11 +1593,21 @@ def build_store_pdf(
 
     bud_today_chart = BytesIO()
     if bud_today is not None and not bud_today.empty:
-        bud_today_chart = chart_rank_barh(bud_today, "budtender", "net_revenue", "Top Budtenders (Report Day)", top_n=min(TOP_N, len(bud_today)), figsize=(7.25, 2.7))
+        bud_today_chart = chart_rank_barh(
+            bud_today, "budtender", "net_revenue",
+            "Top Budtenders (Report Day)",
+            top_n=min(TOP_N, len(bud_today)),
+            figsize=(7.25, 2.7),
+        )
 
     bud_mtd_chart = BytesIO()
     if bud_mtd is not None and not bud_mtd.empty:
-        bud_mtd_chart = chart_rank_barh(bud_mtd, "budtender", "net_revenue", "Top Budtenders (MTD)", top_n=min(TOP_N, len(bud_mtd)), figsize=(7.25, 2.7))
+        bud_mtd_chart = chart_rank_barh(
+            bud_mtd, "budtender", "net_revenue",
+            "Top Budtenders (MTD)",
+            top_n=min(TOP_N, len(bud_mtd)),
+            figsize=(7.25, 2.7),
+        )
 
     # PDF setup
     out_pdf.parent.mkdir(parents=True, exist_ok=True)
@@ -1606,15 +1642,23 @@ def build_store_pdf(
 
     # KPI grid
     kpis: List[List[Paragraph]] = []
-    kpis.append(kpi_cell(styles, "TODAY • NET SALES", money(today["net_revenue"]), delta_html_currency(today["net_revenue"], last_week["net_revenue"], "last week")))
-    kpis.append(kpi_cell(styles, "TODAY • TICKETS", f"{int(today['tickets']):,}", delta_html_int(today["tickets"], last_week["tickets"], "last week")))
-    kpis.append(kpi_cell(styles, "TODAY • BASKET", money2(today["basket"]), delta_html_currency(today["basket"], last_week["basket"], "last week")))
-    kpis.append(kpi_cell(styles, "TODAY • DISC RATE", pct1(today["discount_rate"]), delta_html_pp(today["discount_rate"], last_week["discount_rate"], "last week")))
+    kpis.append(kpi_cell(styles, "TODAY • NET SALES", money(today["net_revenue"]),
+                         delta_html_currency(today["net_revenue"], last_week["net_revenue"], "last week")))
+    kpis.append(kpi_cell(styles, "TODAY • TICKETS", f"{int(today['tickets']):,}",
+                         delta_html_int(today["tickets"], last_week["tickets"], "last week")))
+    kpis.append(kpi_cell(styles, "TODAY • BASKET", money2(today["basket"]),
+                         delta_html_currency(today["basket"], last_week["basket"], "last week")))
+    kpis.append(kpi_cell(styles, "TODAY • DISC RATE", pct1(today["discount_rate"]),
+                         delta_html_pp(today["discount_rate"], last_week["discount_rate"], "last week")))
 
-    kpis.append(kpi_cell(styles, "MTD • NET SALES", money(mtd["net_revenue"]), delta_html_currency(mtd["net_revenue"], last_mtd["net_revenue"], "last MTD")))
-    kpis.append(kpi_cell(styles, "MTD • TICKETS", f"{int(mtd['tickets']):,}", delta_html_int(mtd["tickets"], last_mtd["tickets"], "last MTD")))
-    kpis.append(kpi_cell(styles, "MTD • BASKET", money2(mtd["basket"]), delta_html_currency(mtd["basket"], last_mtd["basket"], "last MTD")))
-    kpis.append(kpi_cell(styles, "MTD • MARGIN", pct1(mtd["margin"]), delta_html_pp(mtd["margin"], last_mtd["margin"], "last MTD")))
+    kpis.append(kpi_cell(styles, "MTD • NET SALES", money(mtd["net_revenue"]),
+                         delta_html_currency(mtd["net_revenue"], last_mtd["net_revenue"], "last MTD")))
+    kpis.append(kpi_cell(styles, "MTD • TICKETS", f"{int(mtd['tickets']):,}",
+                         delta_html_int(mtd["tickets"], last_mtd["tickets"], "last MTD")))
+    kpis.append(kpi_cell(styles, "MTD • BASKET", money2(mtd["basket"]),
+                         delta_html_currency(mtd["basket"], last_mtd["basket"], "last MTD")))
+    kpis.append(kpi_cell(styles, "MTD • MARGIN", pct1(mtd["margin"]),
+                         delta_html_pp(mtd["margin"], last_mtd["margin"], "last MTD")))
 
     story.append(build_kpi_grid(styles, kpis, cols=4))
     story.append(Spacer(1, SPACER["sm"]))
@@ -1628,7 +1672,7 @@ def build_store_pdf(
     ))
     story.append(Spacer(1, SPACER["sm"]))
 
-    # Trend (keep together so header doesn't orphan)
+    # Trend
     story.append(KeepTogether([
         Paragraph("Trends", styles["Section"]),
         Image(net_trend, width=7.25 * inch, height=2.25 * inch) if net_trend.getbuffer().nbytes > 0 else Spacer(1, 0),
@@ -1636,7 +1680,10 @@ def build_store_pdf(
     story.append(Spacer(1, SPACER["xs"]))
 
     # Hourly quick compare (two-up)
-    story.append(Paragraph(f"Hourly Snapshot (Report Day vs {last_week_day.isoformat()} {dow_short(last_week_day)})", styles["Section"]))
+    story.append(Paragraph(
+        f"Hourly Snapshot (Report Day vs {last_week_day.isoformat()} {dow_short(last_week_day)})",
+        styles["Section"],
+    ))
     hourly_grid = Table(
         [[
             Image(ch_rev, width=3.55*inch, height=2.15*inch) if ch_rev.getbuffer().nbytes > 0 else Spacer(1, 0),
@@ -1653,7 +1700,7 @@ def build_store_pdf(
     ]))
     story.append(hourly_grid)
 
-    # Page 2: Hourly deep-dive (more metrics)
+    # Page 2: Hourly deep-dive
     story.append(PageBreak())
     story.append(Paragraph("Hourly Performance", styles["TitleBig"]))
     story.append(Paragraph("Shadow compare = Last Week (Yellow) behind Report Day (Green).", styles["Tiny"]))
@@ -1681,10 +1728,10 @@ def build_store_pdf(
     ]))
     story.append(hourly_grid2)
 
-    # Page 3: Category summary + products/brands
+    # Page 3: Drivers (Categories + Daily + MTD)
     story.append(PageBreak())
     story.append(Paragraph("Drivers", styles["TitleBig"]))
-    story.append(Paragraph("Major Categories + Products + Brands (MTD).", styles["Tiny"]))
+    story.append(Paragraph("Major Categories + Products + Brands (Daily + MTD).", styles["Tiny"]))
     story.append(Spacer(1, SPACER["sm"]))
 
     # Category tables (today + mtd)
@@ -1696,7 +1743,45 @@ def build_store_pdf(
         story += build_category_summary_table(styles, cat_mtd, "Major Category Summary — MTD", top_n=CATEGORY_TOP_N)
         story.append(Spacer(1, SPACER["sm"]))
 
-    # Top Products (keep header+chart together to prevent orphaned title page)
+    # ----------------------------
+    # ✅ Daily Products table (Report Day)
+    # ----------------------------
+    if prod_day is not None and not prod_day.empty:
+        prod_day_rows = [
+            [str(r[0]), money(float(r.net_revenue))]
+            for r in prod_day.itertuples(index=False)
+        ]
+        story.append(Paragraph(
+            f"Top Products — Report Day ({end_day.isoformat()} {dow_short(end_day)})",
+            styles["Section"],
+        ))
+        story.append(build_table(
+            ["Product", "Day Net"],
+            prod_day_rows,
+            [5.85 * inch, 1.4 * inch],
+        ))
+        story.append(Spacer(1, SPACER["sm"]))
+
+    # ----------------------------
+    # ✅ Daily Brands table (Report Day)
+    # ----------------------------
+    if brand_day is not None and not brand_day.empty:
+        brand_day_rows = [
+            [str(r.brand), money(float(r.net_revenue)), pct1(float(r.margin))]
+            for r in brand_day.itertuples(index=False)
+        ]
+        story.append(Paragraph(
+            f"Top Brands — Report Day ({end_day.isoformat()} {dow_short(end_day)})",
+            styles["Section"],
+        ))
+        story.append(build_table(
+            ["Brand", "Day Net", "Avg Margin"],
+            brand_day_rows,
+            [4.95 * inch, 1.4 * inch, 1.25 * inch],
+        ))
+        story.append(Spacer(1, SPACER["sm"]))
+
+    # Top Products (MTD)
     if prod_mtd is not None and not prod_mtd.empty and prod_chart.getbuffer().nbytes > 0:
         prod_rows = [[str(r[0]), money(float(r.net_revenue))] for r in prod_mtd.itertuples(index=False)]
         story.append(KeepTogether([
@@ -1706,7 +1791,7 @@ def build_store_pdf(
         ]))
         story.append(Spacer(1, SPACER["sm"]))
 
-    # Top Brands + margin
+    # Top Brands (MTD)
     if brand_mtd is not None and not brand_mtd.empty and brand_chart.getbuffer().nbytes > 0:
         brand_rows = [[str(r.brand), money(float(r.net_revenue)), pct1(float(r.margin))] for r in brand_mtd.itertuples(index=False)]
         story.append(KeepTogether([
@@ -1722,12 +1807,22 @@ def build_store_pdf(
     story.append(Spacer(1, SPACER["sm"]))
 
     if bud_today is not None and not bud_today.empty:
-        story.append(Paragraph(f"Budtenders — Report Day ({end_day.isoformat()} {dow_short(end_day)})", styles["Section"]))
+        story.append(Paragraph(
+            f"Budtenders — Report Day ({end_day.isoformat()} {dow_short(end_day)})",
+            styles["Section"],
+        ))
         if bud_today_chart.getbuffer().nbytes > 0:
             story.append(Image(bud_today_chart, width=7.25*inch, height=2.7*inch))
+
         bud_today_rows = []
         for r in bud_today.itertuples(index=False):
-            bud_today_rows.append([str(r.budtender), money(float(r.net_revenue)), f"{int(r.tickets):,}", money2(float(r.basket)), pct1(float(r.discount_rate))])
+            bud_today_rows.append([
+                str(r.budtender),
+                money(float(r.net_revenue)),
+                f"{int(r.tickets):,}",
+                money2(float(r.basket)),
+                pct1(float(r.discount_rate)),
+            ])
         story.append(build_table(
             ["Budtender", "Net", "Tickets", "Basket", "Disc Rate"],
             bud_today_rows,
@@ -1739,9 +1834,16 @@ def build_store_pdf(
         story.append(Paragraph("Budtenders — MTD", styles["Section"]))
         if bud_mtd_chart.getbuffer().nbytes > 0:
             story.append(Image(bud_mtd_chart, width=7.25*inch, height=2.7*inch))
+
         bud_mtd_rows = []
         for r in bud_mtd.itertuples(index=False):
-            bud_mtd_rows.append([str(r.budtender), money(float(r.net_revenue)), f"{int(r.tickets):,}", money2(float(r.basket)), pct1(float(r.discount_rate))])
+            bud_mtd_rows.append([
+                str(r.budtender),
+                money(float(r.net_revenue)),
+                f"{int(r.tickets):,}",
+                money2(float(r.basket)),
+                pct1(float(r.discount_rate)),
+            ])
         story.append(build_table(
             ["Budtender", "MTD Net", "MTD Tickets", "MTD Basket", "Disc Rate"],
             bud_mtd_rows,
