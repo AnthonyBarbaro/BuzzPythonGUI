@@ -7,7 +7,7 @@ from zoneinfo import ZoneInfo
 from typing import Dict, List, Optional, Tuple, Any
 
 import pandas as pd
-from emailer import send_owner_snapshot_email
+from owner_emailer import send_owner_snapshot_email
 # Charts (for PDFs)
 import matplotlib
 matplotlib.use("Agg")
