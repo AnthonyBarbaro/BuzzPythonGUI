@@ -54,10 +54,10 @@ PDF_ROOT = REPORTS_ROOT / "pdf"
 
 # If True: run Selenium export and archive fresh files
 # If False: reuse latest RAW folder, do NOT run Selenium
-RUN_EXPORT = False
-
+RUN_EXPORT = True
+SHOW_BOTH_MARGINS = True
 # If RUN_EXPORT=True: delete existing /files downloads first?
-CLEANUP_FILES_BEFORE_EXPORT = False
+CLEANUP_FILES_BEFORE_EXPORT = True
 
 # If RUN_EXPORT=True: do you want to "move" files out of /files, or "copy" them?
 ARCHIVE_ACTION = "move"  # "move" or "copy"
@@ -206,7 +206,38 @@ def setup_fonts() -> None:
 ###############################################################################
 # Formatting helpers
 ###############################################################################
+def pctN(x: float, n: int = 1) -> str:
+    try:
+        return f"{x*100:,.{n}f}%"
+    except Exception:
+        return f"{0:.{n}f}%"
 
+def fmt_margin_display(kb_margin: float, real_margin: float, *, compact: bool = False, decimals: int = 1) -> str:
+    """
+    kb_margin   = kickback-adjusted margin (includes kickback effect)
+    real_margin = real margin (no kickback)
+
+    compact=True => no spaces "52.3%/40.1%"
+    compact=False => "52.3% / 40.1%"
+    decimals controls % precision.
+    """
+    if not SHOW_BOTH_MARGINS:
+        return pctN(kb_margin, decimals)
+
+    sep = "/" if compact else " / "
+    return f"{pctN(kb_margin, decimals)}{sep}{pctN(real_margin, decimals)}"
+def delta_html_pp_pair(current_kb: float, baseline_kb: float, current_real: float, baseline_real: float, label: str) -> str:
+    """
+    Two-line delta for margins:
+      line1 = KB delta
+      line2 = Real delta
+    """
+    if not SHOW_BOTH_MARGINS:
+        return delta_html_pp(current_kb, baseline_kb, label)
+
+    line1 = delta_html_pp(current_kb, baseline_kb, f"{label} (KB)")
+    line2 = delta_html_pp(current_real, baseline_real, f"{label} (Real)")
+    return f"{line1}<br/>{line2}"
 def money(x: float) -> str:
     try:
         return f"${x:,.0f}"
@@ -715,6 +746,9 @@ METRIC_KEYS = [
     "profit",
     "margin",
     "cogs",
+    "profit_real",
+    "margin_real",
+    "cogs_real",
     "returns_net",
     "returns_tickets",
     "weight_sold",
@@ -754,29 +788,58 @@ def compute_daily_metrics(df: pd.DataFrame) -> pd.DataFrame:
 
     df["_date"] = df[date_col].dt.date
 
-    df["_net"] = to_number(df[net_col]).fillna(0)
-    df["_gross"] = to_number(df[gross_col]).fillna(0) if gross_col else 0.0
-    df["_qty"] = to_number(df[qty_col]).fillna(0) if qty_col else 1.0
+    df["_net"] = to_number(df[net_col]).fillna(0).astype(float)
+    df["_gross"] = to_number(df[gross_col]).fillna(0).astype(float) if gross_col else 0.0
+    df["_qty"] = to_number(df[qty_col]).fillna(0).astype(float) if qty_col else 1.0
 
-    df["_disc_main"] = to_number(df[disc_main_col]).fillna(0) if disc_main_col else 0.0
-    df["_disc_loyal"] = to_number(df[disc_loyal_col]).fillna(0) if disc_loyal_col else 0.0
-    df["_disc_total"] = df["_disc_main"] + df["_disc_loyal"]
+    df["_disc_main"] = to_number(df[disc_main_col]).fillna(0).astype(float) if disc_main_col else 0.0
+    df["_disc_loyal"] = to_number(df[disc_loyal_col]).fillna(0).astype(float) if disc_loyal_col else 0.0
+    df["_disc_total"] = (df["_disc_main"] + df["_disc_loyal"]).astype(float)
 
-    # ✅ Use adjusted COGS/Profit if available
+    # Kickback amount per row (if present)
+    if "_deal_kickback_amt" in df.columns:
+        df["_kickback_amt"] = to_number(df["_deal_kickback_amt"]).fillna(0).astype(float)
+    else:
+        df["_kickback_amt"] = 0.0
+
+    # -------------------------
+    # COGS: Real vs Kickback
+    # -------------------------
+    if "_cogs_raw" in df.columns:
+        df["_cogs_real"] = to_number(df["_cogs_raw"]).fillna(0).astype(float)
+    else:
+        df["_cogs_real"] = to_number(df[cogs_col]).fillna(0).astype(float) if cogs_col else 0.0
+
     if "_cogs_adj" in df.columns:
-        df["_cogs"] = to_number(df["_cogs_adj"]).fillna(0)
+        df["_cogs_kb"] = to_number(df["_cogs_adj"]).fillna(0).astype(float)
     else:
-        df["_cogs"] = to_number(df[cogs_col]).fillna(0) if cogs_col else 0.0
+        df["_cogs_kb"] = df["_cogs_real"]
 
+    # -------------------------
+    # Profit: Real vs Kickback
+    # -------------------------
+    # Real profit: no kickback benefit
+    if profit_col:
+        df["_profit_real"] = to_number(df[profit_col]).fillna(0).astype(float)
+    elif "_profit_adj" in df.columns and "_deal_kickback_amt" in df.columns:
+        # reverse the kickback if we only have adjusted profit
+        df["_profit_real"] = (to_number(df["_profit_adj"]).fillna(0) - df["_kickback_amt"]).astype(float)
+    else:
+        df["_profit_real"] = (df["_net"] - df["_cogs_real"]).astype(float)
+
+    # Kickback profit: includes kickback benefit
     if "_profit_adj" in df.columns:
-        df["_profit"] = to_number(df["_profit_adj"]).fillna(0)
-    elif profit_col:
-        df["_profit"] = to_number(df[profit_col]).fillna(0)
+        df["_profit_kb"] = to_number(df["_profit_adj"]).fillna(0).astype(float)
     else:
-        df["_profit"] = df["_net"] - df["_cogs"]
+        df["_profit_kb"] = (df["_profit_real"] + df["_kickback_amt"]).astype(float)
 
-    df["_weight"] = to_number(df[weight_col]).fillna(0) if weight_col else 0.0
+    # Keep legacy downstream behavior = kickback-adjusted
+    df["_cogs"] = df["_cogs_kb"]
+    df["_profit"] = df["_profit_kb"]
 
+    df["_weight"] = to_number(df[weight_col]).fillna(0).astype(float) if weight_col else 0.0
+
+    # Tickets
     if tx_col:
         tickets = df.groupby("_date")[tx_col].nunique().rename("tickets")
     else:
@@ -790,8 +853,15 @@ def compute_daily_metrics(df: pd.DataFrame) -> pd.DataFrame:
         discount=("_disc_total", "sum"),
         discount_main=("_disc_main", "sum"),
         loyalty_discount=("_disc_loyal", "sum"),
+
+        # kickback-adjusted
         cogs=("_cogs", "sum"),
         profit=("_profit", "sum"),
+
+        # real
+        cogs_real=("_cogs_real", "sum"),
+        profit_real=("_profit_real", "sum"),
+
         weight_sold=("_weight", "sum"),
     ).join(tickets)
 
@@ -822,7 +892,10 @@ def compute_daily_metrics(df: pd.DataFrame) -> pd.DataFrame:
     daily["basket"] = daily.apply(lambda r: r["net_revenue"] / r["tickets"] if r["tickets"] else 0.0, axis=1)
     daily["items_per_ticket"] = daily.apply(lambda r: r["items"] / r["tickets"] if r["tickets"] else 0.0, axis=1)
     daily["net_price_per_item"] = daily.apply(lambda r: r["net_revenue"] / r["items"] if r["items"] else 0.0, axis=1)
+
+    # ✅ Both margins
     daily["margin"] = daily.apply(lambda r: r["profit"] / r["net_revenue"] if r["net_revenue"] else 0.0, axis=1)
+    daily["margin_real"] = daily.apply(lambda r: r["profit_real"] / r["net_revenue"] if r["net_revenue"] else 0.0, axis=1)
 
     # discount_rate: prefer gross if available, else approximate gross = net + discount
     def _disc_rate(row):
@@ -859,6 +932,7 @@ def metrics_for_range(daily: pd.DataFrame, start: date, end: date) -> Dict[str, 
         "net_revenue", "gross_sales", "tickets", "items", "discount",
         "discount_main", "loyalty_discount",
         "cogs", "profit",
+        "cogs_real", "profit_real",
         "returns_net", "returns_tickets",
         "weight_sold",
     ]
@@ -868,13 +942,18 @@ def metrics_for_range(daily: pd.DataFrame, start: date, end: date) -> Dict[str, 
     gross = out["gross_sales"]
     tickets = out["tickets"]
     items = out["items"]
-    profit = out["profit"]
+    profit_kb = out["profit"]
+    profit_real = out.get("profit_real", profit_kb)
     disc = out["discount"]
 
     out["basket"] = net / tickets if tickets else 0.0
     out["items_per_ticket"] = items / tickets if tickets else 0.0
     out["net_price_per_item"] = net / items if items else 0.0
-    out["margin"] = profit / net if net else 0.0
+
+    # ✅ Both margins
+    out["margin"] = profit_kb / net if net else 0.0
+    out["margin_real"] = profit_real / net if net else 0.0
+
     if gross:
         out["discount_rate"] = disc / gross
     else:
@@ -934,8 +1013,10 @@ def compute_brand_summary(
 ) -> Optional[pd.DataFrame]:
     """
     Brand is parsed from product name (before first '|').
-    Returns weighted margin = profit_sum / net_sum
-    Uses _profit_adj if present.
+
+    Returns:
+      - margin        = kickback-adjusted margin
+      - margin_real   = real margin (no kickback)
     """
     prod_col = find_col(df, COLUMN_CANDIDATES["product"])
     net_col = find_col(df, COLUMN_CANDIDATES["net_sales"])
@@ -949,27 +1030,46 @@ def compute_brand_summary(
     if tmp.empty:
         return None
 
-    tmp["_net"] = to_number(tmp[net_col]).fillna(0)
+    tmp["_net"] = to_number(tmp[net_col]).fillna(0).astype(float)
 
-    if "_profit_adj" in tmp.columns:
-        tmp["_profit"] = to_number(tmp["_profit_adj"]).fillna(0)
-    elif profit_col:
-        tmp["_profit"] = to_number(tmp[profit_col]).fillna(0)
+    # kickback amt
+    if "_deal_kickback_amt" in tmp.columns:
+        tmp["_kickback_amt"] = to_number(tmp["_deal_kickback_amt"]).fillna(0).astype(float)
     else:
-        if "_cogs_adj" in tmp.columns:
-            tmp["_cogs"] = to_number(tmp["_cogs_adj"]).fillna(0)
-        else:
-            tmp["_cogs"] = to_number(tmp[cogs_col]).fillna(0) if cogs_col else 0.0
-        tmp["_profit"] = tmp["_net"] - tmp["_cogs"]
+        tmp["_kickback_amt"] = 0.0
+
+    # cogs real
+    if "_cogs_raw" in tmp.columns:
+        tmp["_cogs_real"] = to_number(tmp["_cogs_raw"]).fillna(0).astype(float)
+    else:
+        tmp["_cogs_real"] = to_number(tmp[cogs_col]).fillna(0).astype(float) if cogs_col else 0.0
+
+    # profit real
+    if profit_col:
+        tmp["_profit_real"] = to_number(tmp[profit_col]).fillna(0).astype(float)
+    elif "_profit_adj" in tmp.columns and "_deal_kickback_amt" in tmp.columns:
+        tmp["_profit_real"] = (to_number(tmp["_profit_adj"]).fillna(0) - tmp["_kickback_amt"]).astype(float)
+    else:
+        tmp["_profit_real"] = (tmp["_net"] - tmp["_cogs_real"]).astype(float)
+
+    # profit kb
+    if "_profit_adj" in tmp.columns:
+        tmp["_profit_kb"] = to_number(tmp["_profit_adj"]).fillna(0).astype(float)
+    else:
+        tmp["_profit_kb"] = (tmp["_profit_real"] + tmp["_kickback_amt"]).astype(float)
 
     tmp["_brand"] = tmp[prod_col].apply(parse_brand_from_product)
 
     out = tmp.groupby("_brand", as_index=False).agg(
         net_revenue=("_net", "sum"),
-        profit=("_profit", "sum"),
+        profit=("_profit_kb", "sum"),
+        profit_real=("_profit_real", "sum"),
     )
+
     out["margin"] = out["profit"] / out["net_revenue"].replace({0: None})
+    out["margin_real"] = out["profit_real"] / out["net_revenue"].replace({0: None})
     out["margin"] = out["margin"].fillna(0.0)
+    out["margin_real"] = out["margin_real"].fillna(0.0)
 
     out = out.sort_values("net_revenue", ascending=False).head(top_n)
     out = out.rename(columns={"_brand": "brand"})
@@ -1040,8 +1140,9 @@ def compute_budtender_summary(df: pd.DataFrame, start: date, end: date) -> Optio
 
 def compute_category_summary(df: pd.DataFrame, start: date, end: date) -> Optional[pd.DataFrame]:
     """
-    Returns category-level metrics (for the 'Major Category Summary' tables).
-    Uses adjusted profit/cogs if present.
+    Category-level metrics.
+    profit/margin use kickback-adjusted values.
+    Also includes profit_real/margin_real (no kickback).
     """
     cat_col = find_col(df, COLUMN_CANDIDATES["category"])
     date_col = find_col(df, COLUMN_CANDIDATES["date"])
@@ -1060,33 +1161,59 @@ def compute_category_summary(df: pd.DataFrame, start: date, end: date) -> Option
     if tmp.empty:
         return None
 
-    tmp["_net"] = to_number(tmp[net_col]).fillna(0)
-    tmp["_gross"] = to_number(tmp[gross_col]).fillna(0) if gross_col else 0.0
-    tmp["_qty"] = to_number(tmp[qty_col]).fillna(0) if qty_col else 1.0
-    tmp["_disc_main"] = to_number(tmp[disc_main_col]).fillna(0) if disc_main_col else 0.0
-    tmp["_disc_loyal"] = to_number(tmp[disc_loyal_col]).fillna(0) if disc_loyal_col else 0.0
-    tmp["_disc"] = tmp["_disc_main"] + tmp["_disc_loyal"]
+    tmp["_net"] = to_number(tmp[net_col]).fillna(0).astype(float)
+    tmp["_gross"] = to_number(tmp[gross_col]).fillna(0).astype(float) if gross_col else 0.0
+    tmp["_qty"] = to_number(tmp[qty_col]).fillna(0).astype(float) if qty_col else 1.0
+
+    tmp["_disc_main"] = to_number(tmp[disc_main_col]).fillna(0).astype(float) if disc_main_col else 0.0
+    tmp["_disc_loyal"] = to_number(tmp[disc_loyal_col]).fillna(0).astype(float) if disc_loyal_col else 0.0
+    tmp["_disc"] = (tmp["_disc_main"] + tmp["_disc_loyal"]).astype(float)
+
+    # kickback amt
+    if "_deal_kickback_amt" in tmp.columns:
+        tmp["_kickback_amt"] = to_number(tmp["_deal_kickback_amt"]).fillna(0).astype(float)
+    else:
+        tmp["_kickback_amt"] = 0.0
+
+    # cogs real vs kb
+    if "_cogs_raw" in tmp.columns:
+        tmp["_cogs_real"] = to_number(tmp["_cogs_raw"]).fillna(0).astype(float)
+    else:
+        tmp["_cogs_real"] = to_number(tmp[cogs_col]).fillna(0).astype(float) if cogs_col else 0.0
 
     if "_cogs_adj" in tmp.columns:
-        tmp["_cogs"] = to_number(tmp["_cogs_adj"]).fillna(0)
+        tmp["_cogs_kb"] = to_number(tmp["_cogs_adj"]).fillna(0).astype(float)
     else:
-        tmp["_cogs"] = to_number(tmp[cogs_col]).fillna(0) if cogs_col else 0.0
+        tmp["_cogs_kb"] = tmp["_cogs_real"]
+
+    # profit real vs kb
+    if profit_col:
+        tmp["_profit_real"] = to_number(tmp[profit_col]).fillna(0).astype(float)
+    elif "_profit_adj" in tmp.columns and "_deal_kickback_amt" in tmp.columns:
+        tmp["_profit_real"] = (to_number(tmp["_profit_adj"]).fillna(0) - tmp["_kickback_amt"]).astype(float)
+    else:
+        tmp["_profit_real"] = (tmp["_net"] - tmp["_cogs_real"]).astype(float)
 
     if "_profit_adj" in tmp.columns:
-        tmp["_profit"] = to_number(tmp["_profit_adj"]).fillna(0)
-    elif profit_col:
-        tmp["_profit"] = to_number(tmp[profit_col]).fillna(0)
+        tmp["_profit_kb"] = to_number(tmp["_profit_adj"]).fillna(0).astype(float)
     else:
-        tmp["_profit"] = tmp["_net"] - tmp["_cogs"]
+        tmp["_profit_kb"] = (tmp["_net"] - tmp["_cogs_kb"]).astype(float)
 
     tmp[cat_col] = tmp[cat_col].fillna("Unknown").astype(str)
 
     out = tmp.groupby(cat_col, as_index=False).agg(
         net_revenue=("_net", "sum"),
         gross_sales=("_gross", "sum"),
-        profit=("_profit", "sum"),
+
+        # kickback-adjusted
+        profit=("_profit_kb", "sum"),
+        cogs=("_cogs_kb", "sum"),
+
+        # real
+        profit_real=("_profit_real", "sum"),
+        cogs_real=("_cogs_real", "sum"),
+
         discount=("_disc", "sum"),
-        cogs=("_cogs", "sum"),
         items=("_qty", "sum"),
     ).rename(columns={cat_col: "category"})
 
@@ -1103,8 +1230,12 @@ def compute_category_summary(df: pd.DataFrame, start: date, end: date) -> Option
         return r["discount"] / approx_g if approx_g else 0.0
 
     out["discount_rate"] = out.apply(_disc_rate_row, axis=1)
+
+    # ✅ Both margins
     out["margin"] = out["profit"] / out["net_revenue"].replace({0: None})
+    out["margin_real"] = out["profit_real"] / out["net_revenue"].replace({0: None})
     out["margin"] = out["margin"].fillna(0.0)
+    out["margin_real"] = out["margin_real"].fillna(0.0)
 
     out["price_per_item"] = out["net_revenue"] / out["items"].replace({0: None})
     out["price_per_item"] = out["price_per_item"].fillna(0.0)
@@ -1121,8 +1252,7 @@ def compute_category_summary(df: pd.DataFrame, start: date, end: date) -> Option
 def compute_hourly_metrics(df: pd.DataFrame, day: date) -> Optional[pd.DataFrame]:
     """
     Hourly metrics for one day:
-      - net_revenue, profit, tickets, basket, margin
-    Uses adjusted profit if present.
+      - net_revenue, profit (kickback), profit_real, tickets, basket, margin (kickback), margin_real
     """
     date_col = find_col(df, COLUMN_CANDIDATES["date"])
     tx_col = find_col(df, COLUMN_CANDIDATES["transaction_id"])
@@ -1139,32 +1269,55 @@ def compute_hourly_metrics(df: pd.DataFrame, day: date) -> Optional[pd.DataFrame
     tmp["_date"] = tmp[date_col].dt.date
     tmp = tmp[tmp["_date"] == day]
     if tmp.empty:
-        return pd.DataFrame(columns=["hour", "net_revenue", "profit", "tickets", "basket", "margin"])
+        return pd.DataFrame(columns=["hour", "net_revenue", "profit", "profit_real", "tickets", "basket", "margin", "margin_real"])
 
     tmp["_hour"] = tmp[date_col].dt.hour
-    tmp["_net"] = to_number(tmp[net_col]).fillna(0)
+    tmp["_net"] = to_number(tmp[net_col]).fillna(0).astype(float)
 
-    if "_profit_adj" in tmp.columns:
-        tmp["_profit"] = to_number(tmp["_profit_adj"]).fillna(0)
-    elif profit_col:
-        tmp["_profit"] = to_number(tmp[profit_col]).fillna(0)
+    # kickback amt
+    if "_deal_kickback_amt" in tmp.columns:
+        tmp["_kickback_amt"] = to_number(tmp["_deal_kickback_amt"]).fillna(0).astype(float)
     else:
-        if "_cogs_adj" in tmp.columns:
-            tmp["_cogs"] = to_number(tmp["_cogs_adj"]).fillna(0)
-        else:
-            tmp["_cogs"] = to_number(tmp[cogs_col]).fillna(0) if cogs_col else 0.0
-        tmp["_profit"] = tmp["_net"] - tmp["_cogs"]
+        tmp["_kickback_amt"] = 0.0
+
+    # cogs real
+    if "_cogs_raw" in tmp.columns:
+        tmp["_cogs_real"] = to_number(tmp["_cogs_raw"]).fillna(0).astype(float)
+    else:
+        tmp["_cogs_real"] = to_number(tmp[cogs_col]).fillna(0).astype(float) if cogs_col else 0.0
+
+    # cogs kb
+    if "_cogs_adj" in tmp.columns:
+        tmp["_cogs_kb"] = to_number(tmp["_cogs_adj"]).fillna(0).astype(float)
+    else:
+        tmp["_cogs_kb"] = tmp["_cogs_real"]
+
+    # profit real
+    if profit_col:
+        tmp["_profit_real"] = to_number(tmp[profit_col]).fillna(0).astype(float)
+    elif "_profit_adj" in tmp.columns and "_deal_kickback_amt" in tmp.columns:
+        tmp["_profit_real"] = (to_number(tmp["_profit_adj"]).fillna(0) - tmp["_kickback_amt"]).astype(float)
+    else:
+        tmp["_profit_real"] = (tmp["_net"] - tmp["_cogs_real"]).astype(float)
+
+    # profit kb
+    if "_profit_adj" in tmp.columns:
+        tmp["_profit_kb"] = to_number(tmp["_profit_adj"]).fillna(0).astype(float)
+    else:
+        tmp["_profit_kb"] = (tmp["_net"] - tmp["_cogs_kb"]).astype(float)
 
     if tx_col:
         agg = tmp.groupby("_hour").agg(
             net_revenue=("_net", "sum"),
-            profit=("_profit", "sum"),
+            profit=("_profit_kb", "sum"),
+            profit_real=("_profit_real", "sum"),
             tickets=(tx_col, "nunique"),
         ).reset_index().rename(columns={"_hour": "hour"})
     else:
         agg = tmp.groupby("_hour").agg(
             net_revenue=("_net", "sum"),
-            profit=("_profit", "sum"),
+            profit=("_profit_kb", "sum"),
+            profit_real=("_profit_real", "sum"),
             tickets=("_net", "size"),
         ).reset_index().rename(columns={"_hour": "hour"})
 
@@ -1172,7 +1325,9 @@ def compute_hourly_metrics(df: pd.DataFrame, day: date) -> Optional[pd.DataFrame
     agg["basket"] = agg["basket"].fillna(0.0)
 
     agg["margin"] = agg["profit"] / agg["net_revenue"].replace({0: None})
+    agg["margin_real"] = agg["profit_real"] / agg["net_revenue"].replace({0: None})
     agg["margin"] = agg["margin"].fillna(0.0)
+    agg["margin_real"] = agg["margin_real"].fillna(0.0)
 
     return agg.sort_values("hour")
 
@@ -1311,7 +1466,7 @@ def chart_hourly_shadow_compare(
     plt.xticks(x, xt, fontsize=7.2)
     plt.title(title)
     plt.grid(True, axis="y", alpha=1.0, zorder=0)
-    plt.legend(loc="upper right", frameon=False, fontsize=7.4)
+    # plt.legend(loc="upper right", frameon=False, fontsize=6)
     plt.tight_layout()
 
     plt.savefig(buf, format="png", dpi=190)
@@ -1570,12 +1725,17 @@ def build_category_summary_table(
     d_all = cat_df.copy()
     d = d_all.head(top_n).copy()
 
+    profit_real_total = float(d_all["profit_real"].sum()) if "profit_real" in d_all.columns else float(d_all["profit"].sum())
+    cogs_real_total = float(d_all["cogs_real"].sum()) if "cogs_real" in d_all.columns else float(d_all["cogs"].sum())
+
     totals = {
         "category": "Totals",
         "net_revenue": float(d_all["net_revenue"].sum()),
         "profit": float(d_all["profit"].sum()),
+        "profit_real": profit_real_total,
         "discount": float(d_all["discount"].sum()),
         "cogs": float(d_all["cogs"].sum()),
+        "cogs_real": cogs_real_total,
         "items": float(d_all["items"].sum()),
     }
 
@@ -1587,6 +1747,8 @@ def build_category_summary_table(
         totals["discount_rate"] = totals["discount"] / approx_g if approx_g else 0.0
 
     totals["margin"] = totals["profit"] / totals["net_revenue"] if totals["net_revenue"] else 0.0
+    totals["margin_real"] = totals["profit_real"] / totals["net_revenue"] if totals["net_revenue"] else 0.0
+
     totals["price_per_item"] = totals["net_revenue"] / totals["items"] if totals["items"] else 0.0
     totals["profit_per_item"] = totals["profit"] / totals["items"] if totals["items"] else 0.0
     totals["cogs_pct"] = totals["cogs"] / totals["net_revenue"] if totals["net_revenue"] else 0.0
@@ -1608,24 +1770,32 @@ def build_category_summary_table(
 
     headers = [
         "#", "Major Category", "Revenue", "% Rev", "Profit", "% Profit",
-        "Discount %", "Margin %", "Items", "Price/Item", "Profit/Item", "% COGS",
+        "Discount %", "Marg(KB)", "Margin",
+        "Items", "Price/Item", "Profit/Item", "% COGS",
     ]
 
     rows: List[List[Any]] = []
     for idx, r in enumerate(d.itertuples(index=False), start=1):
+        # margin display: compact + 0 decimals so it fits (KB/REAL)
+        mr = float(getattr(r, "margin_real", 0.0))
+        margin_text = fmt_margin_display(float(r.margin), mr, compact=True, decimals=0)
+
         rows.append([
             str(idx),
             str(r.category),
-            BarCell(money(r.net_revenue), (r.net_revenue / max_rev) if max_rev else 0.0, HEX_GREEN, BASE_FONT, 7.4),
-            BarCell(pct1(r.pct_revenue), (r.pct_revenue / d["pct_revenue"].max()) if d["pct_revenue"].max() else 0.0, HEX_GREEN, BASE_FONT, 7.4),
-            BarCell(money(r.profit), (abs(r.profit) / max_profit) if max_profit else 0.0, HEX_GREEN, BASE_FONT, 7.4),
-            BarCell(pct1(r.pct_profit), (abs(r.pct_profit) / d["pct_profit"].abs().max()) if d["pct_profit"].abs().max() else 0.0, HEX_GREEN, BASE_FONT, 7.4),
-            BarCell(pct1(r.discount_rate), (r.discount_rate / max_disc) if max_disc else 0.0, HEX_YELLOW, BASE_FONT, 7.4),
-            BarCell(pct1(r.margin), (r.margin / max_margin) if max_margin else 0.0, HEX_GREEN, BASE_FONT, 7.4),
-            BarCell(f"{int(r.items):,}", (r.items / max_items) if max_items else 0.0, HEX_GREEN, BASE_FONT, 7.4),
-            BarCell(money2(r.price_per_item), (r.price_per_item / max_price) if max_price else 0.0, HEX_YELLOW, BASE_FONT, 7.4),
-            BarCell(money2(r.profit_per_item), (abs(r.profit_per_item) / max_ppi) if max_ppi else 0.0, HEX_GREEN, BASE_FONT, 7.4),
-            BarCell(pct1(r.cogs_pct), (r.cogs_pct / max_cogs) if max_cogs else 0.0, HEX_YELLOW, BASE_FONT, 7.4),
+            BarCell(money(r.net_revenue), (r.net_revenue / max_rev) if max_rev else 0.0, HEX_GREEN, BASE_FONT, 6),
+            BarCell(pct1(r.pct_revenue), (r.pct_revenue / d["pct_revenue"].max()) if d["pct_revenue"].max() else 0.0, HEX_GREEN, BASE_FONT, 6),
+            BarCell(money(r.profit), (abs(r.profit) / max_profit) if max_profit else 0.0, HEX_GREEN, BASE_FONT, 6),
+            BarCell(pct1(r.pct_profit), (abs(r.pct_profit) / d["pct_profit"].abs().max()) if d["pct_profit"].abs().max() else 0.0, HEX_GREEN, BASE_FONT, 6),
+            BarCell(pct1(r.discount_rate), (r.discount_rate / max_disc) if max_disc else 0.0, HEX_YELLOW, BASE_FONT, 6),
+
+            # ✅ KB/REAL margin label
+            BarCell(pct1(r.margin),(r.margin / max_margin) if max_margin else 0.0,HEX_GREEN,BASE_FONT,6),
+            BarCell(pct1(getattr(r, "margin_real", 0.0)),(getattr(r, "margin_real", 0.0) / max_margin) if max_margin else 0.0,HEX_YELLOW,BASE_FONT,6),
+            BarCell(f"{int(r.items):,}", (r.items / max_items) if max_items else 0.0, HEX_GREEN, BASE_FONT, 6),
+            BarCell(money2(r.price_per_item), (r.price_per_item / max_price) if max_price else 0.0, HEX_YELLOW, BASE_FONT, 6),
+            BarCell(money2(r.profit_per_item), (abs(r.profit_per_item) / max_ppi) if max_ppi else 0.0, HEX_GREEN, BASE_FONT, 6),
+            BarCell(pct1(r.cogs_pct), (r.cogs_pct / max_cogs) if max_cogs else 0.0, HEX_YELLOW, BASE_FONT, 6),
         ])
 
     rows.append([
@@ -1637,6 +1807,7 @@ def build_category_summary_table(
         "100.0%",
         pct1(totals["discount_rate"]),
         pct1(totals["margin"]),
+        pct1(totals["margin_real"]),
         f"{int(totals['items']):,}",
         money2(totals["price_per_item"]),
         money2(totals["profit_per_item"]),
@@ -1647,8 +1818,9 @@ def build_category_summary_table(
         [headers] + rows,
         repeatRows=1,
         colWidths=[
-            0.18*inch, 1.25*inch, 0.85*inch, 0.55*inch,
-            0.80*inch, 0.55*inch, 0.60*inch, 0.55*inch,
+            0.18*inch, 1.15*inch, 0.85*inch, 0.55*inch,
+            0.80*inch, 0.55*inch, 0.60*inch,
+            0.55*inch, 0.55*inch, 
             0.55*inch, 0.70*inch, 0.70*inch, 0.50*inch,
         ],
     )
@@ -1657,7 +1829,7 @@ def build_category_summary_table(
         ("BACKGROUND", (0, 0), (-1, 0), THEME["black"]),
         ("TEXTCOLOR", (0, 0), (-1, 0), THEME["yellow"]),
         ("FONTNAME", (0, 0), (-1, 0), BASE_FONT_BOLD),
-        ("FONTSIZE", (0, 0), (-1, 0), 8.0),
+        ("FONTSIZE", (0, 0), (-1, 0), 6.3),
         ("GRID", (0, 0), (-1, -1), 0.3, THEME["border"]),
         ("ROWBACKGROUNDS", (0, 1), (-1, -2), [colors.white, THEME["row_alt"]]),
         ("FONTNAME", (0, 1), (-1, -1), BASE_FONT),
@@ -1713,15 +1885,22 @@ def build_store_pdf(
     hourly_today = compute_hourly_metrics(df_raw, end_day)
     hourly_last = compute_hourly_metrics(df_raw, last_week_day)
     if hourly_today is None:
-        hourly_today = pd.DataFrame(columns=["hour", "net_revenue", "profit", "tickets", "basket", "margin"])
-    if hourly_last is None:
-        hourly_last = pd.DataFrame(columns=["hour", "net_revenue", "profit", "tickets", "basket", "margin"])
+        hourly_today = pd.DataFrame(columns=[
+            "hour", "net_revenue", "profit", "profit_real",
+            "tickets", "basket", "margin", "margin_real"
+        ])
 
+    if hourly_last is None:
+        hourly_last = pd.DataFrame(columns=[
+            "hour", "net_revenue", "profit", "profit_real",
+            "tickets", "basket", "margin", "margin_real"
+        ])
     ch_rev = chart_hourly_shadow_compare(hourly_today, hourly_last, "net_revenue", "Revenue by Hour", "money", (3.55, 2.15))
     ch_tix = chart_hourly_shadow_compare(hourly_today, hourly_last, "tickets", "Tickets by Hour", "int", (3.55, 2.15))
     ch_profit = chart_hourly_shadow_compare(hourly_today, hourly_last, "profit", "Profit by Hour", "money", (3.55, 2.15))
     ch_basket = chart_hourly_shadow_compare(hourly_today, hourly_last, "basket", "Basket by Hour", "money", (3.55, 2.15))
-    ch_margin = chart_hourly_shadow_compare(hourly_today, hourly_last, "margin", "Margin by Hour", "pct", (3.55, 2.15))
+    ch_margin_kb = chart_hourly_shadow_compare(hourly_today, hourly_last, "margin", "Kickback Margin by Hour", "pct", (3.55, 2.15))
+    ch_margin_real = chart_hourly_shadow_compare(hourly_today, hourly_last, "margin_real", "Real Margin by Hour", "pct", (3.55, 2.15))
 
     prod_day = compute_breakdown_net(df_raw, COLUMN_CANDIDATES["product"], end_day, end_day, top_n=TOP_N)
     brand_day = compute_brand_summary(df_raw, end_day, end_day, top_n=TOP_N)
@@ -1816,8 +1995,13 @@ def build_store_pdf(
                          delta_html_int(mtd["tickets"], last_mtd["tickets"], "last MTD")))
     kpis.append(kpi_cell(styles, "MTD • BASKET", money2(mtd["basket"]),
                          delta_html_currency(mtd["basket"], last_mtd["basket"], "last MTD")))
-    kpis.append(kpi_cell(styles, "MTD • MARGIN", pct1(mtd["margin"]),
-                         delta_html_pp(mtd["margin"], last_mtd["margin"], "last MTD")))
+    kpis.append(kpi_cell(
+        styles,
+        "MTD • MARGIN (KB/REAL)",
+        fmt_margin_display(mtd["margin"], mtd.get("margin_real", 0.0), compact=False, decimals=1),
+        delta_html_pp_pair(
+            mtd["margin"], last_mtd["margin"],
+            mtd.get("margin_real", 0.0), last_mtd.get("margin_real", 0.0),"last MTD")))
 
     story.append(build_kpi_grid(styles, kpis, cols=4))
     story.append(Spacer(1, SPACER["sm"]))
@@ -1854,11 +2038,28 @@ def build_store_pdf(
         ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
         ("VALIGN", (0, 0), (-1, -1), "TOP"),
     ]))
-    story.append(hourly_grid)
+    hourly_container = Table(
+    [[hourly_grid]],
+    colWidths=[6.8 * inch]
+)
+
+    hourly_container.setStyle(TableStyle([
+        ("LEFTPADDING", (0,0), (-1,-1), 0.25*inch),
+        ("RIGHTPADDING", (0,0), (-1,-1), 0.25*inch),]))
+    story.append(hourly_container)
 
     story.append(PageBreak())
+    story.append(Spacer(1, 0.25 * inch))
     story.append(Paragraph("Hourly Performance", styles["TitleBig"]))
-    story.append(Paragraph("Shadow compare = Last Week (Yellow) behind Report Day (Green).", styles["Tiny"]))
+    story.append(Spacer(1, 0.05 * inch))
+
+    story.append(Paragraph(
+        "<b>Guide:</b> Yellow = Last Week • Green = Report Day • "
+        "Bars are shadow compared (Last Week behind Report Day).",
+        styles["Muted"]
+    ))
+
+    story.append(Spacer(1, 0.12 * inch))
     story.append(Spacer(1, SPACER["sm"]))
 
     hourly_grid2 = Table(
@@ -1868,8 +2069,8 @@ def build_store_pdf(
                 Image(ch_basket, width=3.55*inch, height=2.15*inch) if ch_basket.getbuffer().nbytes > 0 else Spacer(1, 0),
             ],
             [
-                Image(ch_margin, width=3.55*inch, height=2.15*inch) if ch_margin.getbuffer().nbytes > 0 else Spacer(1, 0),
-                Spacer(1, 0),
+                Image(ch_margin_kb, width=3.55*inch, height=2.15*inch) if ch_margin_kb.getbuffer().nbytes > 0 else Spacer(1, 0),
+                Image(ch_margin_real, width=3.55*inch, height=2.15*inch) if ch_margin_real.getbuffer().nbytes > 0 else Spacer(1, 0),
             ],
         ],
         colWidths=[3.8*inch, 3.8*inch],
@@ -1906,12 +2107,14 @@ def build_store_pdf(
         story.append(Spacer(1, SPACER["sm"]))
 
     if brand_day is not None and not brand_day.empty:
-        brand_day_rows = [[str(r.brand), money(float(r.net_revenue)), pct1(float(r.margin))] for r in brand_day.itertuples(index=False)]
+        brand_day_rows = [[str(r.brand),
+        money(float(r.net_revenue)),
+        fmt_margin_display(float(r.margin), float(getattr(r, "margin_real", 0.0)), compact=True, decimals=1),] for r in brand_day.itertuples(index=False)]
         story.append(Paragraph(
             f"Top Brands — Report Day ({end_day.isoformat()} {dow_short(end_day)})",
             styles["Section"],
         ))
-        story.append(build_table(["Brand", "Day Net", "Avg Margin"], brand_day_rows, [4.95 * inch, 1.4 * inch, 1.25 * inch]))
+        story.append(build_table(["Brand", "Day Net", "Avg Margin"], brand_day_rows, [4.65 * inch, 1.4 * inch, 1.55 * inch]))
         story.append(Spacer(1, SPACER["sm"]))
 
     if prod_mtd is not None and not prod_mtd.empty and prod_chart.getbuffer().nbytes > 0:
@@ -1924,11 +2127,12 @@ def build_store_pdf(
         story.append(Spacer(1, SPACER["sm"]))
 
     if brand_mtd is not None and not brand_mtd.empty and brand_chart.getbuffer().nbytes > 0:
-        brand_rows = [[str(r.brand), money(float(r.net_revenue)), pct1(float(r.margin))] for r in brand_mtd.itertuples(index=False)]
+        brand_rows = [[str(r.brand), money(float(r.net_revenue)), fmt_margin_display(float(r.margin),float(getattr(r, "margin_real", 0.0)),
+        compact=True,decimals=1),] for r in brand_mtd.itertuples(index=False)]
         story.append(KeepTogether([
             Paragraph("Top Brands (MTD)", styles["Section"]),
             Image(brand_chart, width=7.25 * inch, height=2.8 * inch),
-            build_table(["Brand", "MTD Net", "Avg Margin"], brand_rows, [4.95*inch, 1.4*inch, 1.25*inch]),
+            build_table(["Brand", "MTD Net", "Avg Margin"], brand_rows, [4.65 * inch, 1.4 * inch, 1.55 * inch]),
         ]))
 
     story.append(PageBreak())
@@ -2051,7 +2255,7 @@ def build_all_stores_summary_pdf(out_pdf: Path, store_daily_map: Dict[str, pd.Da
             fmt_signed_money(d_today),
             money(mtd["net_revenue"]),
             fmt_signed_money(d_mtd),
-            pct1(mtd["margin"]),
+            fmt_margin_display(mtd["margin"], mtd.get("margin_real", 0.0), compact=True, decimals=1),
             f"{int(mtd['tickets']):,}",
         ])
         store_rank.append([f"{abbr} - {store_label(store_name)}", float(mtd["net_revenue"])])
@@ -2076,7 +2280,7 @@ def build_all_stores_summary_pdf(out_pdf: Path, store_daily_map: Dict[str, pd.Da
     story.append(build_table(
         headers=["Store", "Today Net", "Δ vs LW", "MTD Net", "Δ vs Last MTD", "MTD Margin", "MTD Tickets"],
         rows=rows,
-        col_widths=[2.70*inch, 0.9*inch, 0.85*inch, 0.9*inch, 1.05*inch, 0.85*inch, 0.75*inch],
+        col_widths=[2.45*inch, 0.85*inch, 0.80*inch, 0.85*inch, 0.95*inch, 1.05*inch, 0.65*inch],
     ))
 
     doc.build(story, onFirstPage=footer, onLaterPages=footer)
@@ -2170,9 +2374,9 @@ def main():
         data_end=end_day,
         to_email=[
         "anthony@buzzcannabis.com",
-        "ray@buzzcannabis.com",
-        "kevin@buzzcannabis.com",
-        "joseph@buzzcannabis.com",
+        # "ray@buzzcannabis.com",
+        # "kevin@buzzcannabis.com",
+        # "joseph@buzzcannabis.com",
     ],
     )
     print("\nDone ✅")

@@ -334,7 +334,7 @@ def process_single_file(file_path: str, selected_brands):
 
     # 1) EXCLUDE PROMO / SAMPLE by name
     if 'Product' in df.columns:
-        df = df[~df['Product'].str.contains(r'(?i)\bpromo(s)?\b|\bsample\b', na=False)]
+        df = df[~df['Product'].str.contains(r'(?i)\bpromo(?:s)?\b|\bsample\b', na=False)]
 
     # 2) EXCLUDE Category = "Accessories"
     if 'Category' in df.columns:

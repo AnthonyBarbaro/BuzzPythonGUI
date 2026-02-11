@@ -342,12 +342,12 @@ def generate_brand_reports(csv_path, out_dir, selected_brands, include_cost=True
         df = df[~df["Product"].str.contains(r"(?i)\bsample\b|\bpromo\b", na=False)]
 
     # Split into available/unavailable
-    unavailable_df = df[df["Available"] <= MAX_AVAIL_FOR_UNAVAILABLE]
-    available_df = df[df["Available"] > MAX_AVAIL_FOR_UNAVAILABLE]
+    unavailable_df = df[df["Available"] <= MAX_AVAIL_FOR_UNAVAILABLE].copy()
+    available_df   = df[df["Available"] > MAX_AVAIL_FOR_UNAVAILABLE].copy()
      # Drop Cost column if disabled
     if not include_cost:
         if "Cost" in available_df.columns:
-            available_df.drop(columns=["Cost"], inplace=True)
+            available_df = available_df.drop(columns=["Cost"])
         if "Cost" in unavailable_df.columns:
             unavailable_df.drop(columns=["Cost"], inplace=True)
     if "Brand" not in available_df.columns or available_df.empty:
@@ -382,7 +382,7 @@ def generate_brand_reports(csv_path, out_dir, selected_brands, include_cost=True
     if "Product" in available_df.columns:
         sort_cols.append("Product")
     if sort_cols:
-        available_df.sort_values(by=sort_cols, inplace=True, na_position="last")
+        available_df = available_df.sort_values(by=sort_cols, na_position="last")
 
     # # Drop "Cost"
     # if "Cost" in available_df.columns:
