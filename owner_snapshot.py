@@ -5,7 +5,9 @@ from pathlib import Path
 from datetime import datetime, timedelta, date
 from zoneinfo import ZoneInfo
 from typing import Dict, List, Optional, Tuple, Any
-
+import calendar
+import json
+import numpy as np
 import importlib
 import pandas as pd
 from owner_emailer import send_owner_snapshot_email
@@ -54,10 +56,10 @@ PDF_ROOT = REPORTS_ROOT / "pdf"
 
 # If True: run Selenium export and archive fresh files
 # If False: reuse latest RAW folder, do NOT run Selenium
-RUN_EXPORT = True
+RUN_EXPORT = False
 SHOW_BOTH_MARGINS = True
 # If RUN_EXPORT=True: delete existing /files downloads first?
-CLEANUP_FILES_BEFORE_EXPORT = True
+CLEANUP_FILES_BEFORE_EXPORT = False
 
 # If RUN_EXPORT=True: do you want to "move" files out of /files, or "copy" them?
 ARCHIVE_ACTION = "move"  # "move" or "copy"
@@ -96,7 +98,28 @@ DEFAULT_KICKBACK_BY_DISCOUNT = {
 # Debug prints per store
 DEBUG_DEAL_KICKBACKS = False
 
+###############################################################################
+# ✅ MONTH-END FORECAST (self-learning)
+###############################################################################
 
+FORECAST_ENABLED = True
+
+FORECAST_DIR = REPORTS_ROOT / "forecast"
+FORECAST_HISTORY_PATH = FORECAST_DIR / "daily_history.csv.gz"
+FORECAST_MODEL_PATH = FORECAST_DIR / "month_end_forecaster.joblib"
+FORECAST_META_PATH = FORECAST_DIR / "month_end_forecaster_meta.json"
+
+# Training / data rules
+FORECAST_MIN_ASOF_DAY = 4                  # don’t train/predict on day 1-3 (too noisy)
+FORECAST_MONTH_COVERAGE_THRESHOLD = 0.90   # month must have >= 90% days to be "complete"
+FORECAST_MIN_COMPLETE_MONTHS = 2           # minimum complete months before ML trains
+FORECAST_RETRAIN_EVERY_RUN = True          # simplest "keeps learning" behavior
+
+# Baseline fallback (also used for features)
+FORECAST_WEEKDAY_WINDOW_DAYS = 56          # last 8 weeks weekday profile
+
+# If sklearn is available, also train P10/P90 bands for net & profit
+FORECAST_USE_QUANTILES = True
 ###############################################################################
 # Column candidates
 ###############################################################################
@@ -578,7 +601,773 @@ def enrich_with_deal_kickbacks_by_brand(df: pd.DataFrame, store_code: str) -> pd
 
     return out
 
+###############################################################################
+# ✅ Month-End Forecasting Engine (Self-learning)
+###############################################################################
 
+def _ensure_forecast_dir() -> None:
+    FORECAST_DIR.mkdir(parents=True, exist_ok=True)
+
+def _last_day_of_month(d: date) -> date:
+    _, n = calendar.monthrange(d.year, d.month)
+    return date(d.year, d.month, n)
+
+def _normalize_dt(s: pd.Series) -> pd.Series:
+    # store dates as midnight timestamps for stable grouping/joins
+    return pd.to_datetime(s, errors="coerce").dt.normalize()
+
+def _history_keep_cols() -> List[str]:
+    # Keep a rich daily feature set so the model can learn “factors”
+    # (discounting, tickets, margin, basket, etc.)
+    return [
+        "date",
+        "net_revenue",
+        "gross_sales",
+        "tickets",
+        "items",
+        "discount",
+        "discount_main",
+        "loyalty_discount",
+        "discount_rate",
+        "basket",
+        "items_per_ticket",
+        "net_price_per_item",
+        "profit",
+        "profit_real",
+        "margin",
+        "margin_real",
+        "cogs",
+        "cogs_real",
+        "returns_net",
+        "returns_tickets",
+        "weight_sold",
+    ]
+
+def _load_history() -> pd.DataFrame:
+    _ensure_forecast_dir()
+    if not FORECAST_HISTORY_PATH.exists():
+        return pd.DataFrame(columns=["store_code"] + _history_keep_cols())
+
+    try:
+        df = pd.read_csv(FORECAST_HISTORY_PATH, compression="gzip")
+        if "date" in df.columns:
+            df["date"] = _normalize_dt(df["date"])
+        return df
+    except Exception as e:
+        print(f"[FORECAST] WARN: Could not load history file: {e}")
+        return pd.DataFrame(columns=["store_code"] + _history_keep_cols())
+
+def _save_history(df: pd.DataFrame) -> None:
+    _ensure_forecast_dir()
+    try:
+        df2 = df.copy()
+        df2.to_csv(FORECAST_HISTORY_PATH, index=False, compression="gzip")
+    except Exception as e:
+        print(f"[FORECAST] WARN: Could not save history file: {e}")
+
+def _daily_to_history_rows(store_code: str, daily_df: pd.DataFrame) -> pd.DataFrame:
+    if daily_df is None or daily_df.empty:
+        return pd.DataFrame(columns=["store_code"] + _history_keep_cols())
+
+    keep = _history_keep_cols()
+    out = daily_df.copy()
+    if "date" not in out.columns:
+        return pd.DataFrame(columns=["store_code"] + keep)
+
+    for c in keep:
+        if c not in out.columns:
+            out[c] = 0.0
+
+    out = out[keep].copy()
+    out["date"] = _normalize_dt(out["date"])
+    out.insert(0, "store_code", store_code)
+    return out
+
+def _aggregate_all_stores_daily(store_daily_map: Dict[str, pd.DataFrame]) -> pd.DataFrame:
+    frames = []
+    for abbr, d in (store_daily_map or {}).items():
+        if d is None or d.empty:
+            continue
+        frames.append(d.copy())
+
+    if not frames:
+        return pd.DataFrame(columns=_history_keep_cols())
+
+    big = pd.concat(frames, ignore_index=True)
+    big["date"] = _normalize_dt(big["date"])
+
+    # Sum numeric columns; then recompute ratio metrics from totals
+    num_cols = [c for c in _history_keep_cols() if c != "date"]
+    agg = big.groupby("date", as_index=False)[num_cols].sum(numeric_only=True)
+
+    # Recompute derived fields (avoid summing ratios)
+    agg["basket"] = agg["net_revenue"] / agg["tickets"].replace({0: np.nan})
+    agg["items_per_ticket"] = agg["items"] / agg["tickets"].replace({0: np.nan})
+    agg["net_price_per_item"] = agg["net_revenue"] / agg["items"].replace({0: np.nan})
+    agg["margin"] = agg["profit"] / agg["net_revenue"].replace({0: np.nan})
+    agg["margin_real"] = agg["profit_real"] / agg["net_revenue"].replace({0: np.nan})
+
+    # discount_rate: prefer gross
+    approx_g = (agg["net_revenue"] + agg["discount"]).replace({0: np.nan})
+    agg["discount_rate"] = np.where(
+        agg["gross_sales"] > 0,
+        agg["discount"] / agg["gross_sales"].replace({0: np.nan}),
+        agg["discount"] / approx_g,
+    )
+
+    agg = agg.fillna(0.0)
+    return agg[_history_keep_cols()].copy()
+
+def forecast_upsert_history(store_daily_map: Dict[str, pd.DataFrame]) -> pd.DataFrame:
+    """
+    Appends current run daily data into the long-term history and dedupes.
+    Also writes an ALL store_code row per day so the model can learn ALL STORES directly.
+    Returns the updated history DF.
+    """
+    hist = _load_history()
+
+    new_rows = []
+    for abbr, daily in (store_daily_map or {}).items():
+        if daily is None or daily.empty:
+            continue
+        new_rows.append(_daily_to_history_rows(abbr, daily))
+
+    # Add ALL STORES aggregate rows
+    all_daily = _aggregate_all_stores_daily(store_daily_map)
+    if all_daily is not None and not all_daily.empty:
+        new_rows.append(_daily_to_history_rows("ALL", all_daily))
+
+    if not new_rows:
+        return hist
+
+    add = pd.concat(new_rows, ignore_index=True)
+    add["date"] = _normalize_dt(add["date"])
+
+    # Coerce numeric
+    for c in _history_keep_cols():
+        if c == "date":
+            continue
+        add[c] = pd.to_numeric(add[c], errors="coerce").fillna(0.0)
+
+    combined = pd.concat([hist, add], ignore_index=True)
+    combined["date"] = _normalize_dt(combined["date"])
+    combined["store_code"] = combined["store_code"].fillna("").astype(str)
+
+    # Dedupe: keep latest row per store/date
+    combined = combined.sort_values(["store_code", "date"])
+    combined = combined.drop_duplicates(subset=["store_code", "date"], keep="last").reset_index(drop=True)
+
+    _save_history(combined)
+    return combined
+
+def _slope(values: List[float]) -> float:
+    # simple slope estimate without sklearn
+    n = len(values)
+    if n < 2:
+        return 0.0
+    x = np.arange(n, dtype=float)
+    y = np.array(values, dtype=float)
+    x = x - x.mean()
+    y = y - y.mean()
+    denom = float((x * x).sum())
+    if denom == 0:
+        return 0.0
+    return float((x * y).sum() / denom)
+
+def _weekday_counts(start_d: date, end_d: date) -> Dict[str, int]:
+    # counts weekdays in inclusive range
+    if end_d < start_d:
+        return {f"wd_{i}": 0 for i in range(7)}
+
+    cur = start_d
+    out = {f"wd_{i}": 0 for i in range(7)}
+    while cur <= end_d:
+        out[f"wd_{cur.weekday()}"] += 1
+        cur += timedelta(days=1)
+    return out
+
+def _build_asof_features(hist: pd.DataFrame, store_code: str, as_of: date) -> Dict[str, Any]:
+    """
+    Build a single feature row for a given store + "as-of" date.
+    This is what the model learns from over time.
+    """
+    if hist is None or hist.empty:
+        hist = pd.DataFrame(columns=["store_code"] + _history_keep_cols())
+
+    as_of_ts = pd.Timestamp(as_of)
+    store = str(store_code)
+
+    # Pull store history up to as_of
+    h = hist[(hist["store_code"] == store) & (hist["date"] <= as_of_ts)].copy()
+    h = h.sort_values("date")
+
+    # Month slice (MTD)
+    mtd_start = pd.Timestamp(date(as_of.year, as_of.month, 1))
+    mtd = h[h["date"] >= mtd_start].copy()
+
+    # last X windows (trend/pace signals)
+    lb7_start = as_of_ts - pd.Timedelta(days=6)
+    lb14_start = as_of_ts - pd.Timedelta(days=13)
+    lbW_start = as_of_ts - pd.Timedelta(days=FORECAST_WEEKDAY_WINDOW_DAYS - 1)
+
+    last7 = h[h["date"] >= lb7_start]
+    last14 = h[h["date"] >= lb14_start]
+    winW = h[h["date"] >= lbW_start]
+
+    # Month context
+    last_dom = _last_day_of_month(as_of)
+    days_in_month = last_dom.day
+    day_of_month = as_of.day
+    remaining_days = max((last_dom - as_of).days, 0)
+
+    # Previous month totals (seasonal baseline)
+    if as_of.month == 1:
+        prev_y, prev_m = as_of.year - 1, 12
+    else:
+        prev_y, prev_m = as_of.year, as_of.month - 1
+    prev_start = pd.Timestamp(date(prev_y, prev_m, 1))
+    prev_end = pd.Timestamp(_last_day_of_month(date(prev_y, prev_m, 1)))
+
+    prev_month = hist[(hist["store_code"] == store) & (hist["date"] >= prev_start) & (hist["date"] <= prev_end)]
+    prev_net = float(prev_month["net_revenue"].sum()) if not prev_month.empty else 0.0
+    prev_profit = float(prev_month["profit"].sum()) if not prev_month.empty else 0.0
+    prev_tickets = float(prev_month["tickets"].sum()) if not prev_month.empty else 0.0
+
+    # MTD sums
+    mtd_net = float(mtd["net_revenue"].sum()) if not mtd.empty else 0.0
+    mtd_profit = float(mtd["profit"].sum()) if not mtd.empty else 0.0
+    mtd_tickets = float(mtd["tickets"].sum()) if not mtd.empty else 0.0
+    mtd_discount = float(mtd["discount"].sum()) if not mtd.empty else 0.0
+    mtd_gross = float(mtd["gross_sales"].sum()) if not mtd.empty else 0.0
+
+    mtd_margin = (mtd_profit / mtd_net) if mtd_net else 0.0
+    mtd_basket = (mtd_net / mtd_tickets) if mtd_tickets else 0.0
+    mtd_disc_rate = (mtd_discount / mtd_gross) if mtd_gross else ((mtd_discount / (mtd_net + mtd_discount)) if (mtd_net + mtd_discount) else 0.0)
+
+    # last7/14 sums
+    last7_net = float(last7["net_revenue"].sum()) if not last7.empty else 0.0
+    last7_profit = float(last7["profit"].sum()) if not last7.empty else 0.0
+    last7_tickets = float(last7["tickets"].sum()) if not last7.empty else 0.0
+    last7_disc = float(last7["discount"].sum()) if not last7.empty else 0.0
+
+    last14_net = float(last14["net_revenue"].sum()) if not last14.empty else 0.0
+    last14_profit = float(last14["profit"].sum()) if not last14.empty else 0.0
+    last14_tickets = float(last14["tickets"].sum()) if not last14.empty else 0.0
+
+    # trend slope (pace)
+    last7_daily = last7.sort_values("date")["net_revenue"].astype(float).tolist() if not last7.empty else []
+    net_slope_7 = _slope(last7_daily)
+
+    # Weekday profile (baseline)
+    weekday_avg_net = {i: 0.0 for i in range(7)}
+    weekday_avg_profit = {i: 0.0 for i in range(7)}
+    if winW is not None and not winW.empty:
+        tmp = winW.copy()
+        tmp["wd"] = tmp["date"].dt.weekday
+        g = tmp.groupby("wd").agg(
+            net=("net_revenue", "mean"),
+            profit=("profit", "mean"),
+        )
+        for i in range(7):
+            if i in g.index:
+                weekday_avg_net[i] = float(g.loc[i, "net"])
+                weekday_avg_profit[i] = float(g.loc[i, "profit"])
+
+    # Remaining weekday counts (calendar factor)
+    rem_counts = _weekday_counts(as_of + timedelta(days=1), last_dom)
+
+    feats = {
+        "store_code": store,
+        "year": int(as_of.year),
+        "month": int(as_of.month),
+        "dow": int(as_of.weekday()),
+        "day_of_month": int(day_of_month),
+        "days_in_month": int(days_in_month),
+        "pct_elapsed": float(day_of_month / days_in_month) if days_in_month else 0.0,
+        "remaining_days": int(remaining_days),
+
+        "mtd_net": mtd_net,
+        "mtd_profit": mtd_profit,
+        "mtd_tickets": mtd_tickets,
+        "mtd_margin": mtd_margin,
+        "mtd_basket": mtd_basket,
+        "mtd_discount": mtd_discount,
+        "mtd_discount_rate": mtd_disc_rate,
+
+        "last7_net": last7_net,
+        "last7_profit": last7_profit,
+        "last7_tickets": last7_tickets,
+        "last7_discount": last7_disc,
+
+        "last14_net": last14_net,
+        "last14_profit": last14_profit,
+        "last14_tickets": last14_tickets,
+
+        "net_slope_7": net_slope_7,
+
+        "prev_month_net": prev_net,
+        "prev_month_profit": prev_profit,
+        "prev_month_tickets": prev_tickets,
+    }
+
+    # Add weekday remaining counts
+    feats.update(rem_counts)
+
+    # Add weekday profile features (what’s a “typical” Mon/Tue/etc)
+    for i in range(7):
+        feats[f"wd_avg_net_{i}"] = float(weekday_avg_net[i])
+        feats[f"wd_avg_profit_{i}"] = float(weekday_avg_profit[i])
+
+    return feats
+
+def _complete_month_groups(hist: pd.DataFrame) -> List[Tuple[str, pd.Period, pd.DataFrame]]:
+    """
+    Returns list of (store_code, month_period, df_month) for months with enough coverage.
+    """
+    if hist is None or hist.empty:
+        return []
+
+    df = hist.copy()
+    df = df[df["store_code"].astype(str).str.len() > 0].copy()
+    df["date"] = _normalize_dt(df["date"])
+    df["ym"] = df["date"].dt.to_period("M")
+
+    out = []
+    for (store, ym), g in df.groupby(["store_code", "ym"]):
+        g = g.sort_values("date")
+        if g.empty:
+            continue
+
+        # month coverage
+        days_in_month = int(g["date"].dt.daysinmonth.iloc[0])
+        coverage = (g["date"].nunique() / float(days_in_month)) if days_in_month else 0.0
+        if coverage < FORECAST_MONTH_COVERAGE_THRESHOLD:
+            continue
+
+        out.append((str(store), ym, g))
+
+    return out
+
+def _build_training_data(hist: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, pd.Series], Dict[str, Any]]:
+    """
+    Builds a supervised dataset:
+      X = as-of features inside complete historical months
+      y = month-end totals (net, profit, tickets, discount)
+
+    Returns:
+      X_df,
+      y_dict (target_name -> Series),
+      meta dict
+    """
+    groups = _complete_month_groups(hist)
+    if not groups:
+        return pd.DataFrame(), {}, {"n_complete_months": 0, "n_samples": 0}
+
+    # Month-end targets per (store, ym)
+    month_targets = {}
+    for store, ym, g in groups:
+        month_targets[(store, ym)] = {
+            "y_net": float(g["net_revenue"].sum()),
+            "y_profit": float(g["profit"].sum()),
+            "y_tickets": float(g["tickets"].sum()),
+            "y_discount": float(g["discount"].sum()),
+        }
+
+    X_rows = []
+    y_net = []
+    y_profit = []
+    y_tickets = []
+    y_discount = []
+
+    for store, ym, g in groups:
+        target = month_targets[(store, ym)]
+        # build as-of samples inside that month
+        dates = g["date"].dt.date.tolist()
+
+        for d in dates:
+            if d.day < FORECAST_MIN_ASOF_DAY:
+                continue
+            # don’t create sample on the final day (no forecasting needed)
+            if d == _last_day_of_month(d):
+                continue
+
+            feats = _build_asof_features(hist, store, d)
+            X_rows.append(feats)
+            y_net.append(target["y_net"])
+            y_profit.append(target["y_profit"])
+            y_tickets.append(target["y_tickets"])
+            y_discount.append(target["y_discount"])
+
+    X_df = pd.DataFrame(X_rows)
+    y_dict = {
+        "net": pd.Series(y_net, name="y_net"),
+        "profit": pd.Series(y_profit, name="y_profit"),
+        "tickets": pd.Series(y_tickets, name="y_tickets"),
+        "discount": pd.Series(y_discount, name="y_discount"),
+    }
+
+    meta = {
+        "n_complete_months": len({(s, m) for s, m, _ in groups}),
+        "n_samples": len(X_df),
+    }
+    return X_df, y_dict, meta
+
+def _try_import_sklearn():
+    try:
+        import joblib
+        from sklearn.compose import ColumnTransformer
+        from sklearn.pipeline import Pipeline
+        from sklearn.preprocessing import OneHotEncoder
+        from sklearn.impute import SimpleImputer
+        from sklearn.ensemble import HistGradientBoostingRegressor, GradientBoostingRegressor
+        return {
+            "ok": True,
+            "joblib": joblib,
+            "ColumnTransformer": ColumnTransformer,
+            "Pipeline": Pipeline,
+            "OneHotEncoder": OneHotEncoder,
+            "SimpleImputer": SimpleImputer,
+            "HistGradientBoostingRegressor": HistGradientBoostingRegressor,
+            "GradientBoostingRegressor": GradientBoostingRegressor,
+        }
+    except Exception:
+        return {"ok": False}
+
+def _weekday_profile_baseline(hist: pd.DataFrame, store_code: str, as_of: date) -> Dict[str, float]:
+    """
+    Smart fallback forecast if we can’t train ML yet.
+    Uses:
+      - MTD actual totals
+      - expected remaining days = weekday averages over last N days
+    """
+    as_of_ts = pd.Timestamp(as_of)
+    last_dom = _last_day_of_month(as_of)
+    store = str(store_code)
+
+    h = hist[(hist["store_code"] == store) & (hist["date"] <= as_of_ts)].copy().sort_values("date")
+    mtd_start = pd.Timestamp(date(as_of.year, as_of.month, 1))
+    mtd = h[h["date"] >= mtd_start].copy()
+
+    mtd_net = float(mtd["net_revenue"].sum()) if not mtd.empty else 0.0
+    mtd_profit = float(mtd["profit"].sum()) if not mtd.empty else 0.0
+    mtd_tickets = float(mtd["tickets"].sum()) if not mtd.empty else 0.0
+    mtd_discount = float(mtd["discount"].sum()) if not mtd.empty else 0.0
+
+    # weekday means from last window
+    win_start = as_of_ts - pd.Timedelta(days=FORECAST_WEEKDAY_WINDOW_DAYS - 1)
+    win = h[h["date"] >= win_start].copy()
+    if win.empty:
+        # no history at all: simplest pace
+        days_in_month = _last_day_of_month(as_of).day
+        pace = (mtd_net / as_of.day) if as_of.day else 0.0
+        total_net = pace * days_in_month
+        pace_p = (mtd_profit / as_of.day) if as_of.day else 0.0
+        total_profit = pace_p * days_in_month
+        pace_t = (mtd_tickets / as_of.day) if as_of.day else 0.0
+        total_tickets = pace_t * days_in_month
+        pace_d = (mtd_discount / as_of.day) if as_of.day else 0.0
+        total_discount = pace_d * days_in_month
+        return {
+            "net_pred": max(total_net, mtd_net),
+            "profit_pred": max(total_profit, mtd_profit),
+            "tickets_pred": max(total_tickets, mtd_tickets),
+            "discount_pred": max(total_discount, mtd_discount),
+        }
+
+    win["wd"] = win["date"].dt.weekday
+    wd_means = win.groupby("wd").agg(
+        net=("net_revenue", "mean"),
+        profit=("profit", "mean"),
+        tickets=("tickets", "mean"),
+        discount=("discount", "mean"),
+    )
+
+    # remaining dates
+    rem_net = rem_profit = rem_tickets = rem_discount = 0.0
+    cur = as_of + timedelta(days=1)
+    while cur <= last_dom:
+        wd = cur.weekday()
+        if wd in wd_means.index:
+            rem_net += float(wd_means.loc[wd, "net"])
+            rem_profit += float(wd_means.loc[wd, "profit"])
+            rem_tickets += float(wd_means.loc[wd, "tickets"])
+            rem_discount += float(wd_means.loc[wd, "discount"])
+        cur += timedelta(days=1)
+
+    return {
+        "net_pred": max(mtd_net + rem_net, mtd_net),
+        "profit_pred": max(mtd_profit + rem_profit, mtd_profit),
+        "tickets_pred": max(mtd_tickets + rem_tickets, mtd_tickets),
+        "discount_pred": max(mtd_discount + rem_discount, mtd_discount),
+    }
+
+class MonthEndForecaster:
+    """
+    Trains & predicts month-end totals.
+    Persists to disk so it “learns” as history grows.
+    """
+    def __init__(self):
+        self.sklearn = _try_import_sklearn()
+        self.models = {}          # point models
+        self.q_models = {}        # quantile models (optional)
+        self.meta = {}
+
+    def train(self, hist: pd.DataFrame) -> None:
+        X, y_dict, meta = _build_training_data(hist)
+        self.meta = dict(meta)
+
+        # Not enough data -> no ML model
+        complete_months = int(meta.get("n_complete_months", 0))
+        if complete_months < FORECAST_MIN_COMPLETE_MONTHS or X.empty or not y_dict:
+            self.meta["model_name"] = "baseline_weekday_profile"
+            self.models = {}
+            self.q_models = {}
+            return
+
+        if not self.sklearn.get("ok"):
+            self.meta["model_name"] = "baseline_weekday_profile"
+            self.models = {}
+            self.q_models = {}
+            return
+
+        # Build preprocess
+        ColumnTransformer = self.sklearn["ColumnTransformer"]
+        Pipeline = self.sklearn["Pipeline"]
+        OneHotEncoder = self.sklearn["OneHotEncoder"]
+        SimpleImputer = self.sklearn["SimpleImputer"]
+        HistGBR = self.sklearn["HistGradientBoostingRegressor"]
+        GBR = self.sklearn["GradientBoostingRegressor"]
+
+        cat_cols = ["store_code", "month"]
+        num_cols = [c for c in X.columns if c not in cat_cols]
+
+        preprocess = ColumnTransformer(
+            transformers=[
+                ("cat", OneHotEncoder(handle_unknown="ignore"), cat_cols),
+                ("num", Pipeline([("imputer", SimpleImputer(strategy="median"))]), num_cols),
+            ],
+            remainder="drop",
+        )
+
+        # Point model (strong non-linear learner)
+        def make_point_model():
+            return HistGBR(
+                max_depth=6,
+                learning_rate=0.05,
+                max_iter=600,
+                l2_regularization=0.01,
+                random_state=42,
+            )
+
+        def make_quantile_model(alpha: float):
+            # More compatible across sklearn versions than HistGBR quantile
+            return GBR(
+                loss="quantile",
+                alpha=alpha,
+                n_estimators=700,
+                learning_rate=0.03,
+                max_depth=3,
+                random_state=42,
+            )
+
+        self.models = {}
+        for target_name in ["net", "profit", "tickets", "discount"]:
+            y = y_dict[target_name]
+            pipe = Pipeline([("prep", preprocess), ("model", make_point_model())])
+            pipe.fit(X, y)
+            self.models[target_name] = pipe
+
+        # Optional quantile bands for net & profit
+        self.q_models = {}
+        if FORECAST_USE_QUANTILES:
+            for target_name in ["net", "profit"]:
+                y = y_dict[target_name]
+                p10 = Pipeline([("prep", preprocess), ("model", make_quantile_model(0.10))])
+                p90 = Pipeline([("prep", preprocess), ("model", make_quantile_model(0.90))])
+                p10.fit(X, y)
+                p90.fit(X, y)
+                self.q_models[target_name] = {"p10": p10, "p90": p90}
+
+        self.meta["model_name"] = "HistGradientBoosting (self-learning)"
+        self.meta["trained_at"] = datetime.now().isoformat(timespec="seconds")
+
+    def save(self) -> None:
+        if not self.sklearn.get("ok"):
+            return
+        _ensure_forecast_dir()
+        try:
+            joblib = self.sklearn["joblib"]
+            joblib.dump({"models": self.models, "q_models": self.q_models, "meta": self.meta}, FORECAST_MODEL_PATH)
+            with open(FORECAST_META_PATH, "w") as f:
+                json.dump(self.meta, f, indent=2)
+        except Exception as e:
+            print(f"[FORECAST] WARN: Could not save model: {e}")
+
+    def load(self) -> bool:
+        if not self.sklearn.get("ok"):
+            return False
+        if not FORECAST_MODEL_PATH.exists():
+            return False
+        try:
+            joblib = self.sklearn["joblib"]
+            blob = joblib.load(FORECAST_MODEL_PATH)
+            self.models = blob.get("models", {})
+            self.q_models = blob.get("q_models", {})
+            self.meta = blob.get("meta", {})
+            return True
+        except Exception as e:
+            print(f"[FORECAST] WARN: Could not load model: {e}")
+            return False
+
+    def predict(self, hist: pd.DataFrame, store_code: str, as_of: date) -> Dict[str, Any]:
+        """
+        Predict month-end totals as-of a given date.
+        Always clamps predicted totals >= MTD actual totals.
+        """
+        store = str(store_code)
+
+        # Build current feature row
+        feats = _build_asof_features(hist, store, as_of)
+        X1 = pd.DataFrame([feats])
+
+        # Pull MTD actual (for clamping + reporting)
+        as_of_ts = pd.Timestamp(as_of)
+        mtd_start = pd.Timestamp(date(as_of.year, as_of.month, 1))
+        h_store = hist[(hist["store_code"] == store) & (hist["date"] >= mtd_start) & (hist["date"] <= as_of_ts)]
+        mtd_net = float(h_store["net_revenue"].sum()) if not h_store.empty else 0.0
+        mtd_profit = float(h_store["profit"].sum()) if not h_store.empty else 0.0
+        mtd_tickets = float(h_store["tickets"].sum()) if not h_store.empty else 0.0
+        mtd_discount = float(h_store["discount"].sum()) if not h_store.empty else 0.0
+
+        # If ML model exists, use it; else baseline.
+        if not self.models:
+            base = _weekday_profile_baseline(hist, store, as_of)
+            net_pred = float(base["net_pred"])
+            profit_pred = float(base["profit_pred"])
+            tickets_pred = float(base["tickets_pred"])
+            discount_pred = float(base["discount_pred"])
+            p10_net = p90_net = None
+            p10_profit = p90_profit = None
+            model_name = self.meta.get("model_name", "baseline_weekday_profile")
+        else:
+            net_pred = float(self.models["net"].predict(X1)[0])
+            profit_pred = float(self.models["profit"].predict(X1)[0])
+            tickets_pred = float(self.models["tickets"].predict(X1)[0])
+            discount_pred = float(self.models["discount"].predict(X1)[0])
+
+            # Quantiles if available
+            p10_net = p90_net = None
+            p10_profit = p90_profit = None
+            if self.q_models.get("net"):
+                p10_net = float(self.q_models["net"]["p10"].predict(X1)[0])
+                p90_net = float(self.q_models["net"]["p90"].predict(X1)[0])
+            if self.q_models.get("profit"):
+                p10_profit = float(self.q_models["profit"]["p10"].predict(X1)[0])
+                p90_profit = float(self.q_models["profit"]["p90"].predict(X1)[0])
+
+            model_name = self.meta.get("model_name", "ML")
+
+        # Clamp totals >= MTD actuals
+        net_pred = max(net_pred, mtd_net)
+        profit_pred = max(profit_pred, mtd_profit)
+        tickets_pred = max(tickets_pred, mtd_tickets)
+        discount_pred = max(discount_pred, mtd_discount)
+
+        # Derived
+        margin_pred = (profit_pred / net_pred) if net_pred else 0.0
+        basket_pred = (net_pred / tickets_pred) if tickets_pred else 0.0
+
+        last_dom = _last_day_of_month(as_of)
+        remaining_days = max((last_dom - as_of).days, 0)
+        remaining_net = net_pred - mtd_net
+        remaining_profit = profit_pred - mtd_profit
+
+        req_net_per_day = (remaining_net / remaining_days) if remaining_days else 0.0
+        req_profit_per_day = (remaining_profit / remaining_days) if remaining_days else 0.0
+
+        return {
+            "store_code": store,
+            "as_of": as_of.isoformat(),
+            "model": model_name,
+
+            "mtd_net": mtd_net,
+            "mtd_profit": mtd_profit,
+            "mtd_tickets": mtd_tickets,
+            "mtd_discount": mtd_discount,
+
+            "net_pred": net_pred,
+            "profit_pred": profit_pred,
+            "tickets_pred": tickets_pred,
+            "discount_pred": discount_pred,
+
+            "margin_pred": margin_pred,
+            "basket_pred": basket_pred,
+
+            "remaining_days": int(remaining_days),
+            "remaining_net": float(remaining_net),
+            "remaining_profit": float(remaining_profit),
+            "req_net_per_day": float(req_net_per_day),
+            "req_profit_per_day": float(req_profit_per_day),
+
+            "net_p10": p10_net,
+            "net_p90": p90_net,
+            "profit_p10": p10_profit,
+            "profit_p90": p90_profit,
+        }
+
+def run_month_end_forecast_pipeline(store_daily_map: Dict[str, pd.DataFrame], as_of: date) -> Dict[str, Any]:
+    """
+    1) Upsert latest run data into history
+    2) Train / load model (retrain every run if configured)
+    3) Predict ALL + each store
+    Returns a bundle safe to print / embed in PDFs.
+    """
+    hist = forecast_upsert_history(store_daily_map)
+
+    engine = MonthEndForecaster()
+    loaded = engine.load()
+
+    if FORECAST_RETRAIN_EVERY_RUN or not loaded:
+        engine.train(hist)
+        engine.save()
+
+    # Predict ALL + stores
+    by_store = {}
+    by_store["ALL"] = engine.predict(hist, "ALL", as_of)
+
+    for store_name, abbr in store_abbr_map.items():
+        by_store[abbr] = engine.predict(hist, abbr, as_of)
+
+    bundle = {
+        "as_of": as_of.isoformat(),
+        "meta": engine.meta,
+        "stores": by_store,
+    }
+    return bundle
+
+def print_forecast_bundle(bundle: Dict[str, Any]) -> None:
+    if not bundle:
+        return
+    meta = bundle.get("meta", {})
+    stores = bundle.get("stores", {})
+
+    print("\n================ MONTH-END PROJECTION ================")
+    print(f"As of: {bundle.get('as_of')} • Model: {meta.get('model_name','')} • "
+          f"Complete months: {meta.get('n_complete_months',0)} • Samples: {meta.get('n_samples',0)}")
+
+    all_fc = stores.get("ALL", {})
+    if all_fc:
+        print("\n[ALL STORES]")
+        print(f"  MTD Net: {money(all_fc['mtd_net'])}  ->  Projected Month Net: {money(all_fc['net_pred'])}")
+        print(f"  MTD Profit: {money(all_fc['mtd_profit'])}  ->  Projected Month Profit: {money(all_fc['profit_pred'])}")
+        if all_fc.get("net_p10") is not None and all_fc.get("net_p90") is not None:
+            print(f"  Net Band (P10–P90): {money(all_fc['net_p10'])} – {money(all_fc['net_p90'])}")
+        if all_fc.get("profit_p10") is not None and all_fc.get("profit_p90") is not None:
+            print(f"  Profit Band (P10–P90): {money(all_fc['profit_p10'])} – {money(all_fc['profit_p90'])}")
+        print(f"  Margin (proj): {pct1(all_fc['margin_pred'])} • Remaining days: {all_fc['remaining_days']} • "
+              f"Req Net/Day: {money(all_fc['req_net_per_day'])}")
+
+    print("======================================================\n")
 ###############################################################################
 # Reading exports robustly (Row 5 header fix)
 ###############################################################################
@@ -2192,7 +2981,7 @@ def build_store_pdf(
 # PDF: All stores summary (kept simple but consistent)
 ###############################################################################
 
-def build_all_stores_summary_pdf(out_pdf: Path, store_daily_map: Dict[str, pd.DataFrame], end_day: date, start_day: date) -> None:
+def build_all_stores_summary_pdf(out_pdf: Path, store_daily_map: Dict[str, pd.DataFrame], end_day: date, start_day: date, forecast_bundle: Optional[Dict[str, Any]] = None) -> None:
     styles = build_styles()
     generated_at = datetime.now(ZoneInfo(REPORT_TZ)).strftime("%B %d, %Y at %I:%M %p %Z")
     mtd_start = month_start(end_day)
@@ -2282,6 +3071,67 @@ def build_all_stores_summary_pdf(out_pdf: Path, store_daily_map: Dict[str, pd.Da
         rows=rows,
         col_widths=[2.45*inch, 0.85*inch, 0.80*inch, 0.85*inch, 0.95*inch, 1.05*inch, 0.65*inch],
     ))
+    # -------------------------
+    # ✅ Month-End Projection Page (ALL STORES)
+    # -------------------------
+    if forecast_bundle and forecast_bundle.get("stores"):
+        stores_fc = forecast_bundle["stores"]
+        meta = forecast_bundle.get("meta", {})
+
+        story.append(PageBreak())
+        story.append(Paragraph("Month-End Projection", styles["TitleBig"]))
+        story.append(Paragraph(
+            f"As of {forecast_bundle.get('as_of')} • Model: {meta.get('model_name','baseline')} • "
+            f"Training months: {meta.get('n_complete_months',0)} • Samples: {meta.get('n_samples',0)}",
+            styles["Tiny"],
+        ))
+        story.append(Spacer(1, SPACER["sm"]))
+
+        all_fc = stores_fc.get("ALL", {})
+        if all_fc:
+            # Summary table
+            rows = [
+                ["MTD Net Revenue", money(all_fc["mtd_net"])],
+                ["Projected Month Net Revenue", money(all_fc["net_pred"])],
+                ["MTD Net Profit", money(all_fc["mtd_profit"])],
+                ["Projected Month Net Profit", money(all_fc["profit_pred"])],
+                ["Projected Month Margin", pct1(all_fc["margin_pred"])],
+                ["Remaining Days", str(all_fc["remaining_days"])],
+                ["Required Net / Day (remaining)", money(all_fc["req_net_per_day"])],
+            ]
+
+            if all_fc.get("net_p10") is not None and all_fc.get("net_p90") is not None:
+                rows.insert(2, ["Net Revenue Band (P10–P90)", f"{money(all_fc['net_p10'])} – {money(all_fc['net_p90'])}"])
+            if all_fc.get("profit_p10") is not None and all_fc.get("profit_p90") is not None:
+                rows.insert(5, ["Net Profit Band (P10–P90)", f"{money(all_fc['profit_p10'])} – {money(all_fc['profit_p90'])}"])
+
+            story.append(build_table(["Metric", "Projection"], rows, [3.3*inch, 3.9*inch]))
+            story.append(Spacer(1, SPACER["sm"]))
+
+        # Store-level projection table
+        proj_rows = []
+        for store_name, abbr in store_abbr_map.items():
+            fc = stores_fc.get(abbr)
+            if not fc:
+                continue
+            proj_rows.append([
+                abbr,
+                money(fc["mtd_net"]),
+                money(fc["net_pred"]),
+                money(fc["remaining_net"]),
+                money(fc["profit_pred"]),
+                pct1(fc["margin_pred"]),
+                str(fc["remaining_days"]),
+                money(fc["req_net_per_day"]),
+            ])
+
+        if proj_rows:
+            story.append(Paragraph("Store Projections", styles["Section"]))
+            story.append(build_table(
+                ["Store", "MTD Net", "Proj Net", "Remaining Net", "Proj Profit", "Proj Margin", "Days Left", "Req Net/Day"],
+                proj_rows,
+                [0.50*inch, 0.90*inch, 0.90*inch, 1.1*inch, 0.90*inch, 0.90*inch, 0.7*inch, 0.9*inch],
+            ))
 
     doc.build(story, onFirstPage=footer, onLaterPages=footer)
     print(f"✅ All-stores summary PDF created: {out_pdf}")
@@ -2328,6 +3178,7 @@ def main():
     store_daily_map: Dict[str, pd.DataFrame] = {}
     store_raw_df_map: Dict[str, pd.DataFrame] = {}
 
+
     for store_name, abbr in store_abbr_map.items():
         path = abbr_to_file.get(abbr)
         if not path:
@@ -2345,6 +3196,14 @@ def main():
         daily = compute_daily_metrics(df)
         daily = daily[(daily["date"] >= start_day) & (daily["date"] <= end_day)]
         store_daily_map[abbr] = daily
+    forecast_bundle = None
+    if FORECAST_ENABLED:
+        try:
+            forecast_bundle = run_month_end_forecast_pipeline(store_daily_map, as_of=end_day)
+            print_forecast_bundle(forecast_bundle)
+        except Exception as e:
+            print(f"[FORECAST] WARN: Forecast pipeline failed: {e}")
+            forecast_bundle = None
 
     pdf_run_dir = PDF_ROOT / f"{start_day.isoformat()}_to_{end_day.isoformat()}"
     pdf_run_dir.mkdir(parents=True, exist_ok=True)
@@ -2363,7 +3222,8 @@ def main():
 
     if GENERATE_ALL_STORES_SUMMARY_PDF:
         out_pdf = pdf_run_dir / safe_filename(f"ALL STORES - Owner Snapshot - {end_day.isoformat()}.pdf")
-        build_all_stores_summary_pdf(out_pdf, store_daily_map, end_day=end_day, start_day=start_day)
+        build_all_stores_summary_pdf(out_pdf, store_daily_map, end_day=end_day, start_day=start_day, forecast_bundle=forecast_bundle)
+
 
     pdfs = sorted(str(p) for p in pdf_run_dir.glob("*.pdf"))
 
