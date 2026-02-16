@@ -390,7 +390,8 @@ brand_criteria = {
     },
     "PlugnPlay": {
         'vendors': ['Vino & Cigarro, LLC','Garden Of Weeden Inc.','KIVA / LCISM CORP','IE Licensing, LLC'],
-        'days': ['Saturday','Monday','Sunday'],
+        # 'days': ['Saturday','Monday','Sunday'],
+        'days': ['Monday'],
         'discount': 0.50,
         'kickback': 0.30,
         'brands': ['Plug n Play |','Plug N Play |']
@@ -488,7 +489,7 @@ brand_criteria = {
         'vendors': ['Zasp', 'Garden Of Weeden Inc.', 'Garden Of Weeden'],
         'brands': ['Josh Wax'],
         'discount': 0.40,
-        'kickback': 0.20,
+        'kickback': 0.00,
 
         'rules': [
             {
@@ -604,9 +605,14 @@ brand_criteria = {
            'brands': ['MVN |']},
     'Stiiizy': {'vendors': [''],
            'days': ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
-           'discount': 0.5,
-           'kickback': 0.3,
+           'discount': 0.4,
+           'kickback': 0.0,
            'brands': ['Stiiizy |']},
+    'Lyfe Sauce': {'vendors': ['DYVINEL, INC.'],
+           'days': ['Friday'],
+           'discount': 0.5,
+           'kickback': 0.30,
+           'brands': ['Lyfe Sauce |']},
 }
 
 def style_summary_sheet(sheet, brand_name):
@@ -615,7 +621,7 @@ def style_summary_sheet(sheet, brand_name):
       - A bold title in row 1
       - Headers in row 2 (gray background, centered)
       - Data starts in row 3
-      - Freeze pane at A3
+      - Freeze pane at A3  
       - Banded row styling for data
       - Currency/date formatting as needed
     """
